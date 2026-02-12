@@ -1,6 +1,7 @@
 const HARVEST_ENERGY_PER_UNIT: u16 = 10_u16;
 const HARVEST_TIME_PER_UNIT: u16 = 2_u16;
 const ENERGY_REGEN_PER_100_BLOCKS: u16 = 20_u16;
+const WORLD_GEN_VERSION_ACTIVE: u16 = 1_u16;
 
 #[starknet::interface]
 pub trait IHarvestingManager<T> {
@@ -32,13 +33,14 @@ pub trait IHarvestingManager<T> {
 pub mod harvesting_manager {
     use super::{
         ENERGY_REGEN_PER_100_BLOCKS, HARVEST_ENERGY_PER_UNIT, HARVEST_TIME_PER_UNIT, IHarvestingManager,
+        WORLD_GEN_VERSION_ACTIVE,
     };
     use dojo::event::EventStorage;
     use dojo::model::ModelStorage;
     use dojo_starter::events::harvesting_events::{
         HarvestingCancelled, HarvestingCompleted, HarvestingStarted,
     };
-    use dojo_starter::libs::world_gen::derive_plant_profile;
+    use dojo_starter::libs::world_gen::derive_plant_profile_with_config;
     use dojo_starter::models::adventurer::Adventurer;
     use dojo_starter::models::economics::AdventurerEconomics;
     use dojo_starter::models::harvesting::{
@@ -46,7 +48,7 @@ pub mod harvesting_manager {
         derive_plant_key,
     };
     use dojo_starter::models::inventory::{BackpackItem, Inventory};
-    use dojo_starter::models::world::Hex;
+    use dojo_starter::models::world::{Hex, WorldGenConfig};
     use dojo_starter::systems::harvesting_manager::{
         CancelOutcome, CompleteOutcome, InitOutcome, StartOutcome, cancel_transition, complete_transition,
         init_transition, start_transition,
@@ -72,7 +74,10 @@ pub mod harvesting_manager {
             plant.hex_coordinate = hex_coordinate;
             plant.area_id = area_id;
             plant.plant_id = plant_id;
-            let generated = derive_plant_profile(hex_coordinate, area_id, plant_id, hex.biome);
+            let world_gen_config: WorldGenConfig = world.read_model(WORLD_GEN_VERSION_ACTIVE);
+            let generated = derive_plant_profile_with_config(
+                hex_coordinate, area_id, plant_id, hex.biome, world_gen_config,
+            );
 
             let initialized = init_transition(
                 plant,

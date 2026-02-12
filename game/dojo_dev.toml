@@ -23,4 +23,11 @@ private_key = "0xc5b2fcab997346f3ea1c00b002ecf6f382c5f9c9659a3894eb783c5320f912"
 # world_address = "0x026d5777eccca1861a23303ee0ba48c0e8349e849d0377a21c3801ef1d0f8cef"
 
 [writers]
-"dojo_starter" = ["dojo_starter-actions"]
+"dojo_starter" = [
+  "dojo_starter-world_manager",
+  "dojo_starter-adventurer_manager",
+  "dojo_starter-harvesting_manager",
+  "dojo_starter-economic_manager",
+  "dojo_starter-ownership_manager",
+  "dojo_starter-world_gen_manager",
+]

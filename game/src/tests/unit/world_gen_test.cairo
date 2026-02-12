@@ -1,9 +1,11 @@
 #[cfg(test)]
 mod tests {
     use dojo_starter::libs::world_gen::{
-        derive_area_profile, derive_hex_profile, derive_plant_profile,
+        default_world_gen_config, derive_area_profile, derive_area_profile_with_config,
+        derive_hex_profile, derive_hex_profile_with_config, derive_plant_profile,
+        derive_plant_profile_with_config,
     };
-    use dojo_starter::models::world::{AreaType, Biome, SizeCategory};
+    use dojo_starter::models::world::{AreaType, Biome, SizeCategory, WorldGenConfig};
 
     #[test]
     fn world_gen_hex_profile_is_deterministic_and_bounded() {
@@ -19,12 +21,11 @@ mod tests {
 
     #[test]
     fn world_gen_hex_profile_changes_with_coordinate() {
-        let first = derive_hex_profile(111_felt252);
-        let second = derive_hex_profile(112_felt252);
-        assert(
-            first.biome != second.biome || first.area_count != second.area_count,
-            'GEN_HEX_CHANGE',
-        );
+        let base = derive_hex_profile(111_felt252);
+        let c1 = derive_hex_profile(112_felt252);
+        let c2 = derive_hex_profile(113_felt252);
+        let c3 = derive_hex_profile(114_felt252);
+        assert(base != c1 || base != c2 || base != c3, 'GEN_HEX_CHANGE');
     }
 
     #[test]
@@ -83,5 +84,65 @@ mod tests {
         let plant_a = derive_plant_profile(994_felt252, 995_felt252, 1_u8, Biome::Swamp);
         let plant_b = derive_plant_profile(994_felt252, 995_felt252, 2_u8, Biome::Swamp);
         assert(plant_a.genetics_hash != plant_b.genetics_hash, 'GEN_PLANT_GENE_CHANGE');
+    }
+
+    #[test]
+    fn world_gen_with_config_defaults_match_plain_derivations() {
+        let default_cfg = default_world_gen_config();
+        let hex_plain = derive_hex_profile(222_felt252);
+        let hex_cfg = derive_hex_profile_with_config(222_felt252, default_cfg);
+        assert(hex_plain.biome == hex_cfg.biome, 'GEN_CFG_HEX_BIOME');
+        assert(hex_plain.area_count == hex_cfg.area_count, 'GEN_CFG_HEX_AREAS');
+
+        let area_plain = derive_area_profile(333_felt252, 2_u8, Biome::Forest);
+        let area_cfg = derive_area_profile_with_config(333_felt252, 2_u8, Biome::Forest, default_cfg);
+        assert(area_plain.area_type == area_cfg.area_type, 'GEN_CFG_AREA_TYPE');
+        assert(area_plain.resource_quality == area_cfg.resource_quality, 'GEN_CFG_AREA_QUAL');
+        assert(area_plain.size_category == area_cfg.size_category, 'GEN_CFG_AREA_SIZE');
+
+        let plant_plain = derive_plant_profile(444_felt252, 445_felt252, 1_u8, Biome::Mountain);
+        let plant_cfg = derive_plant_profile_with_config(
+            444_felt252, 445_felt252, 1_u8, Biome::Mountain, default_cfg,
+        );
+        assert(plant_plain.species == plant_cfg.species, 'GEN_CFG_PLANT_SPEC');
+        assert(plant_plain.max_yield == plant_cfg.max_yield, 'GEN_CFG_PLANT_MAX');
+        assert(plant_plain.regrowth_rate == plant_cfg.regrowth_rate, 'GEN_CFG_PLANT_REGROW');
+        assert(plant_plain.genetics_hash == plant_cfg.genetics_hash, 'GEN_CFG_PLANT_GENE');
+    }
+
+    #[test]
+    fn world_gen_with_config_changes_output_when_tuning_changes() {
+        let base = default_world_gen_config();
+        let tuned = WorldGenConfig {
+            generation_version: 1_u16,
+            global_seed: 'WORLD_GEN_SEED_V1'_felt252,
+            biome_scale_bp: 4000_u16,
+            area_scale_bp: 9000_u16,
+            plant_scale_bp: 12000_u16,
+            biome_octaves: 6_u8,
+            area_octaves: 7_u8,
+            plant_octaves: 8_u8,
+        };
+
+        let base_hex = derive_hex_profile_with_config(555_felt252, base);
+        let tuned_hex = derive_hex_profile_with_config(555_felt252, tuned);
+        let base_area = derive_area_profile_with_config(555_felt252, 2_u8, Biome::Forest, base);
+        let tuned_area = derive_area_profile_with_config(555_felt252, 2_u8, Biome::Forest, tuned);
+        let base_plant = derive_plant_profile_with_config(555_felt252, 556_felt252, 1_u8, Biome::Forest, base);
+        let tuned_plant = derive_plant_profile_with_config(
+            555_felt252, 556_felt252, 1_u8, Biome::Forest, tuned,
+        );
+
+        assert(
+            base_hex.biome != tuned_hex.biome || base_hex.area_count != tuned_hex.area_count
+                || base_area.area_type != tuned_area.area_type
+                || base_area.resource_quality != tuned_area.resource_quality
+                || base_area.size_category != tuned_area.size_category
+                || base_plant.species != tuned_plant.species
+                || base_plant.max_yield != tuned_plant.max_yield
+                || base_plant.regrowth_rate != tuned_plant.regrowth_rate
+                || base_plant.genetics_hash != tuned_plant.genetics_hash,
+            'GEN_CFG_TUNING_CHANGE',
+        );
     }
 }

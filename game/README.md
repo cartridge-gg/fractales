@@ -24,6 +24,28 @@ A quickstart guide to help you build and deploy your first Dojo provable game.
 
 Read the full tutorial [here](https://dojoengine.org/tutorial/dojo-starter).
 
+## Deterministic Generation Ops
+
+World generation is now deterministic and config-driven through `WorldGenConfig` (active key: `generation_version=1`).
+
+- `scarb run migrate` now performs:
+1. `sozo build`
+2. `sozo migrate`
+3. `init-world-gen` one-time active config initialization
+
+Manual init (if needed):
+
+```bash
+sozo execute dojo_starter-world_gen_manager initialize_active_world_gen_config \
+  -c 0x574f524c445f47454e5f534545445f5631 2200 2200 2200 3 3 3 --wait
+```
+
+Verify active config:
+
+```bash
+sozo model get dojo_starter-WorldGenConfig 1
+```
+
 ## Running Locally
 
 #### Terminal one (Make sure this is running)

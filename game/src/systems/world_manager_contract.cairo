@@ -1,5 +1,6 @@
 const ENERGY_PER_HEX_MOVE: u16 = 15_u16;
 const ENERGY_PER_EXPLORE: u16 = 25_u16;
+const WORLD_GEN_VERSION_ACTIVE: u16 = 1_u16;
 
 #[starknet::interface]
 pub trait IWorldManager<T> {
@@ -19,7 +20,7 @@ pub trait IWorldManager<T> {
 
 #[dojo::contract]
 pub mod world_manager {
-    use super::{ENERGY_PER_EXPLORE, ENERGY_PER_HEX_MOVE, IWorldManager};
+    use super::{ENERGY_PER_EXPLORE, ENERGY_PER_HEX_MOVE, IWorldManager, WORLD_GEN_VERSION_ACTIVE};
     use dojo::event::EventStorage;
     use dojo::model::ModelStorage;
     use dojo_starter::events::adventurer_events::AdventurerMoved;
@@ -27,12 +28,15 @@ pub mod world_manager {
     use dojo_starter::events::world_events::{AreaDiscovered, HexDiscovered};
     use dojo_starter::libs::adjacency::is_adjacent;
     use dojo_starter::libs::coord_codec::decode_cube;
-    use dojo_starter::libs::world_gen::{derive_area_profile, derive_hex_profile};
+    use dojo_starter::libs::world_gen::{
+        derive_area_profile_with_config, derive_hex_profile_with_config,
+    };
     use dojo_starter::models::adventurer::{Adventurer, can_be_controlled_by, spend_energy};
     use dojo_starter::models::ownership::AreaOwnership;
     use dojo_starter::models::world::{
-        DiscoveryWriteStatus, Hex, HexArea, derive_area_id, discover_area_once_with_status,
-        discover_hex_once_with_status, is_valid_area_identity, is_valid_area_index,
+        DiscoveryWriteStatus, Hex, HexArea, WorldGenConfig, derive_area_id,
+        discover_area_once_with_status, discover_hex_once_with_status, is_valid_area_identity,
+        is_valid_area_index,
     };
     use starknet::{get_block_info, get_caller_address};
 
@@ -63,7 +67,8 @@ pub mod world_manager {
             }
             let mut hex: Hex = world.read_model(hex_coordinate);
             hex.coordinate = hex_coordinate;
-            let hex_profile = derive_hex_profile(hex_coordinate);
+            let world_gen_config: WorldGenConfig = world.read_model(WORLD_GEN_VERSION_ACTIVE);
+            let hex_profile = derive_hex_profile_with_config(hex_coordinate, world_gen_config);
 
             let block_number = get_block_info().unbox().block_number;
             let discovered = discover_hex_once_with_status(
@@ -127,7 +132,10 @@ pub mod world_manager {
                 controller_adventurer_id = control_ownership.owner_adventurer_id;
                 controller_claim_block = control_ownership.claim_block;
             }
-            let area_profile = derive_area_profile(hex_coordinate, area_index, hex.biome);
+            let world_gen_config: WorldGenConfig = world.read_model(WORLD_GEN_VERSION_ACTIVE);
+            let area_profile = derive_area_profile_with_config(
+                hex_coordinate, area_index, hex.biome, world_gen_config,
+            );
 
             let area_id = derive_area_id(hex_coordinate, area_index);
             let mut area: HexArea = world.read_model(area_id);

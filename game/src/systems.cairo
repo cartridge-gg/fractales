@@ -8,3 +8,5 @@ pub mod economic_manager;
 pub mod economic_manager_contract;
 pub mod ownership_manager;
 pub mod ownership_manager_contract;
+pub mod world_gen_manager;
+pub mod world_gen_manager_contract;

@@ -2,6 +2,10 @@
 version = 1
 
 [[package]]
+name = "cubit"
+version = "1.3.0"
+
+[[package]]
 name = "dojo"
 version = "1.8.0"
 source = "registry+https://scarbs.xyz/"
@@ -39,6 +43,7 @@ dependencies = [
 name = "dojo_starter"
 version = "1.8.0"
 dependencies = [
+ "cubit",
  "dojo",
  "dojo_cairo_test",
  "dojo_snf_test",

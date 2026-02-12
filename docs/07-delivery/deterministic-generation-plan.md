@@ -169,8 +169,10 @@ Exit gate:
 ## G5 - Migration, Indexing, and Ops
 
 - Migration for changed interfaces/events.
-- Torii/event compatibility checks for updated payload behavior.
-- Update runbooks with generation config initialization.
+- Add `WorldGenManager` ops entrypoint to initialize active `WorldGenConfig` once, gated by namespace owner check.
+- Update migration flow to call world-gen initialization immediately after migrate.
+- Torii/event compatibility checks for updated payload behavior, including `WorldGenConfigInitialized`.
+- Update runbooks with generation config initialization + verification commands.
 
 Exit gate:
 

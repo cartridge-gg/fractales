@@ -36,6 +36,7 @@ mod tests {
                 TestResource::Model("Inventory"),
                 TestResource::Model("BackpackItem"),
                 TestResource::Model("Hex"),
+                TestResource::Model("WorldGenConfig"),
                 TestResource::Model("PlantNode"),
                 TestResource::Model("HarvestReservation"),
                 TestResource::Event("HarvestingStarted"),

@@ -21,6 +21,7 @@ mod tests {
             resources: [
                 TestResource::Model("Adventurer"),
                 TestResource::Model("Hex"),
+                TestResource::Model("WorldGenConfig"),
                 TestResource::Model("HexArea"),
                 TestResource::Model("AreaOwnership"),
                 TestResource::Event("HexDiscovered"),

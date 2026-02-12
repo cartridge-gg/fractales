@@ -27,6 +27,7 @@ mod tests {
                 TestResource::Model("Adventurer"),
                 TestResource::Model("AdventurerEconomics"),
                 TestResource::Model("Hex"),
+                TestResource::Model("WorldGenConfig"),
                 TestResource::Model("HexArea"),
                 TestResource::Model("HexDecayState"),
                 TestResource::Model("ClaimEscrow"),

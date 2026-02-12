@@ -37,6 +37,7 @@ mod tests {
                 TestResource::Model("Inventory"),
                 TestResource::Model("BackpackItem"),
                 TestResource::Model("Hex"),
+                TestResource::Model("WorldGenConfig"),
                 TestResource::Model("HexArea"),
                 TestResource::Model("AreaOwnership"),
                 TestResource::Model("HexDecayState"),

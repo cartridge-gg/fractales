@@ -12,9 +12,9 @@ unstable-add-statements-code-locations-debug-info = true
 inlining-strategy = "avoid"
 
 [scripts]
-migrate = "sozo build && sozo migrate"
-spawn = "sozo execute dojo_starter-actions spawn --wait"
-move = "sozo execute dojo_starter-actions move -c 1 --wait"
+init-world-gen = "sozo execute dojo_starter-world_gen_manager initialize_active_world_gen_config -c 0x574f524c445f47454e5f534545445f5631 2200 2200 2200 3 3 3 --wait"
+migrate = "sozo build && sozo migrate && scarb run init-world-gen"
+spawn = "sozo execute dojo_starter-adventurer_manager create_adventurer -c 0x414456454e5455524552 --wait"
 perf-budget = "bash ./scripts/check_perf_budgets.sh"
 size-budget = "bash ./scripts/check_contract_size_budgets.sh"
 budget-check = "bash ./scripts/check_perf_budgets.sh && bash ./scripts/check_contract_size_budgets.sh"
@@ -22,6 +22,9 @@ budget-check = "bash ./scripts/check_perf_budgets.sh && bash ./scripts/check_con
 [dependencies]
 dojo = "1.8.0"
 starknet = "2.13.1"
+# Vendored from https://github.com/credence0x/cubit at pinned revision:
+# 8eacc2b1d952d6266f9725776445c7fb97453403
+cubit = { path = "vendor/cubit-credence" }
 
 [dev-dependencies]
 dojo_snf_test = "1.8.0"
@@ -35,3 +38,7 @@ build-external-contracts = ["dojo::world::world_contract::world"]
 
 [tool.scarb]
 allow-prebuilt-plugins = ["dojo_cairo_macros"]
+
+[tool.vendor-pins.cubit]
+repository = "https://github.com/credence0x/cubit"
+rev = "8eacc2b1d952d6266f9725776445c7fb97453403"
