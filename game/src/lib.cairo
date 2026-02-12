@@ -48,5 +48,6 @@ pub mod tests {
         mod e2e_decay_claim_defend;
         mod e2e_permadeath_lockout;
         mod world_gen_manager_integration_test;
+        mod smoke_generation_pipeline_integration_test;
     }
 }

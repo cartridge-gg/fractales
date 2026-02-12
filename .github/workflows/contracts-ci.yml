@@ -1,0 +1,50 @@
+name: Contracts CI
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: contracts-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: game
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Scarb
+        uses: software-mansion/setup-scarb@v1
+        with:
+          scarb-version: "2.13.1"
+          cache: "true"
+          cache-targets: "true"
+
+      - name: Setup Starknet Foundry
+        uses: foundry-rs/setup-snfoundry@v4
+        with:
+          starknet-foundry-version: "0.51.2"
+
+      - name: Setup Dojo
+        uses: dojoengine/setup-dojo@v1
+        with:
+          version: "1.8.0"
+
+      - name: Smoke
+        run: scarb run smoke
+
+      - name: Budget Check
+        run: scarb run budget-check
+
+      - name: Full Test Suite
+        run: snforge test

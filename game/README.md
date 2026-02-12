@@ -46,6 +46,12 @@ Verify active config:
 sozo model get dojo_starter-WorldGenConfig 1
 ```
 
+Run focused smoke coverage:
+
+```bash
+scarb run smoke
+```
+
 ## Running Locally
 
 #### Terminal one (Make sure this is running)

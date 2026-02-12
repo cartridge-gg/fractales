@@ -18,6 +18,7 @@ spawn = "sozo execute dojo_starter-adventurer_manager create_adventurer -c 0x414
 perf-budget = "bash ./scripts/check_perf_budgets.sh"
 size-budget = "bash ./scripts/check_contract_size_budgets.sh"
 budget-check = "bash ./scripts/check_perf_budgets.sh && bash ./scripts/check_contract_size_budgets.sh"
+smoke = "bash ./scripts/run_smoke_tests.sh"
 
 [dependencies]
 dojo = "1.8.0"
