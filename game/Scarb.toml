@@ -6,10 +6,18 @@ edition = "2024_07"
 [cairo]
 sierra-replace-ids = true
 
+[profile.dev.cairo]
+unstable-add-statements-functions-debug-info = true
+unstable-add-statements-code-locations-debug-info = true
+inlining-strategy = "avoid"
+
 [scripts]
 migrate = "sozo build && sozo migrate"
 spawn = "sozo execute dojo_starter-actions spawn --wait"
 move = "sozo execute dojo_starter-actions move -c 1 --wait"
+perf-budget = "bash ./scripts/check_perf_budgets.sh"
+size-budget = "bash ./scripts/check_contract_size_budgets.sh"
+budget-check = "bash ./scripts/check_perf_budgets.sh && bash ./scripts/check_contract_size_budgets.sh"
 
 [dependencies]
 dojo = "1.8.0"

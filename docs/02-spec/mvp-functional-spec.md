@@ -4,7 +4,7 @@
 
 - Core loop: discover hex → discover area → mint ownership (NFT model parity) → initialize harvesting module → start/complete time-locked harvest → convert to energy → pay hex maintenance → decay → claim/defend.
 - Adventurer basics: create, move (adjacent only), energy spend/regenerate, activity time-locks, backpack capacity, and true permadeath.
-- World gen: deterministic biome view, discovery seed on first visit (content initialized lazily by module).
+- World gen: deterministic hex/area/plant generation from `(global_seed, coordinate/id)` using Cubit noise, materialized lazily on first discover/init and immutable on replay.
 - Coordinates: gameplay uses cube coordinates centered at `(0,0,0)`; storage uses felt encoding via deterministic codec.
 - Economics: energy balances, universal conversion (plants → energy), territorial maintenance and decay, claim/defend.
 - Events: HexDiscovered, AreaDiscovered, AdventurerCreated, AdventurerMoved, HarvestingStarted/Completed, ItemsConverted, HexEnergyPaid, HexBecameClaimable, HexClaimed/Defended, AdventurerDied.
@@ -22,6 +22,7 @@
 - Models (storage schema)
   - World.Hex { coordinate, biome, is_discovered, discovery_block, discoverer, area_count }
   - World.HexArea { area_id, hex_coordinate, area_index, area_type, is_discovered, discoverer, resource_quality, size_category }
+  - World.WorldGenConfig { generation_version, global_seed, biome_scale_bp, area_scale_bp, plant_scale_bp, biome_octaves, area_octaves, plant_octaves }
   - Adventurer.Adventurer { adventurer_id, owner, name, energy, max_energy, current_hex, activity_locked_until, is_alive }
   - Adventurer.Inventory { adventurer_id, current_weight, max_weight }
   - Adventurer.BackpackItem { adventurer_id, item_id, quantity, quality, weight_per_unit }
@@ -40,8 +41,8 @@ Note: NFT parity modeled by `Ownership.AreaOwnership`; ERC-721 can be added post
 
 WorldManager
 
-- discover_hex(adventurer_id, hex) → Hex; Pre: adjacent to current; Behavior: idempotent replay; Cost: ENERGY_PER_EXPLORE only on first discovery; Events: HexDiscovered on first discovery only
-- discover_area(adventurer_id, hex, area_index) → AreaId; Pre: hex discovered; area_index valid; deterministic `AreaId = hash(hex, area_index)`; Events: AreaDiscovered
+- discover_hex(adventurer_id, hex) → Hex; Pre: adjacent to current; Behavior: derive `biome` and `area_count` from deterministic Cubit noise; idempotent replay; Cost: ENERGY_PER_EXPLORE only on first discovery; Events: HexDiscovered on first discovery only
+- discover_area(adventurer_id, hex, area_index) → AreaId; Pre: hex discovered; area_index valid; deterministic `AreaId = hash(hex, area_index)`; Behavior: derive `area_type`, `resource_quality`, and `size_category` from deterministic generation keyed by `(hex, area_index)`; Events: AreaDiscovered
 - move_adventurer(adventurer_id, to_hex) → ok; Pre: adjacent; Effects: energy spend, position update; Events: AdventurerMoved
 
 AdventurerManager
@@ -53,7 +54,7 @@ AdventurerManager
 
 Harvesting
 
-- init_harvesting(hex) → instance_ok; Pre: hex discovered
+- init_harvesting(hex, area_id, plant_id) → instance_ok; Pre: hex discovered; Behavior: derive `species`, `max_yield`, `regrowth_rate`, and `genetics_hash` from deterministic generation keyed by `(hex, area_id, plant_id)`
 - start_harvesting(adventurer_id, hex, area_id, plant_id, amount) → activity; Pre: IDLE, `available_yield = current_yield - reserved_yield ≥ amount`, energy≥cost; Effects: create reservation + time-lock; Events: HarvestingStarted
 - complete_harvesting(adventurer_id) → {actual_yield, quality}; Effects: settle reservation, mint items, update plant yield/stress; Events: HarvestingCompleted
 - cancel_harvesting(adventurer_id) → {partial_yield}; Effects: settle reservation with partial/zero yield; Events: HarvestingCancelled
@@ -77,18 +78,24 @@ AreaOwnership
 - discover_hex
 
   - Pre: `is_adjacent(from,to)`; adventurer is alive
-  - Effects (first discovery): create Hex; set discoverer; spend energy
+  - Effects (first discovery): create Hex using deterministic generated `biome` + `area_count`; set discoverer; spend energy
   - Effects (replay on discovered hex): return existing Hex only; no writes; no energy spend
   - Events: HexDiscovered on first discovery only
 
 - discover_area
 
   - Pre: hex.discovered; `area_index < hex.area_count`; area not discovered
-  - Effects: create HexArea with deterministic `AreaId = hash(hex, area_index)`; seed resources
+  - Effects: create HexArea with deterministic `AreaId = hash(hex, area_index)` and deterministic generated `area_type`, `resource_quality`, `size_category`
   - Ownership rule: MVP uses single-controller-per-hex semantics. Controller is the owner of control area `area_index = 0`. All `Ownership.AreaOwnership` rows in a hex must share the current controller as `owner_adventurer_id`.
   - First control-area discoverer becomes controller.
   - Non-control area discoveries set `discoverer_adventurer_id` to caller, but `owner_adventurer_id` to current controller.
   - Events: AreaDiscovered
+
+- init_harvesting
+
+  - Pre: hex.discovered; area discovered; plant not yet initialized
+  - Effects: initialize `PlantNode` from deterministic generated profile (`species`, `max_yield`, `regrowth_rate`, `genetics_hash`) using `(hex, area_id, plant_id)` domain-separated seed derivation
+  - Events: none
 
 - start_harvesting
 
@@ -162,6 +169,10 @@ AreaOwnership
 - No double discovery: hex/area idempotent
 - `discover_hex` replay path is read-only (no write, no energy spend, no event)
 - `AreaId` is deterministic (`hash(hex, area_index)`)
+- Generated hex/area/plant attributes are deterministic for fixed `(generation_version, global_seed, coordinate/id)`.
+- Generation outputs are independent of caller address and block number.
+- Domain-separated generation derivation is enforced (`HEX_V1`, `AREA_V1`, `PLANT_V1`, `GENE_V1` tags).
+- Changing generation config/version does not mutate already materialized discovered hex/area/plant rows.
 - Single controller per hex: all area ownership rows in a hex share one controller at all times
 - Reservation safety: for every plant, `0 <= reserved_yield <= current_yield <= max_yield`
 - Active harvest exclusivity: an adventurer can own at most one ACTIVE harvest reservation
@@ -198,9 +209,9 @@ AreaOwnership
 
 Unit (per system)
 
-- WorldManager: adjacency, first-discovery write path, replay read-only path, deterministic area id derivation, biome determinism view
+- WorldManager: adjacency, first-discovery write path, replay read-only path, deterministic area id derivation, Cubit-backed deterministic biome/area generation view
 - AdventurerManager: create, energy spend/regen bounds, activity locks, permadeath finality, dead-actor global guard behavior
-- Harvesting: yield bounds, reservation lifecycle (start/complete/cancel/death), energy/time calc, stress/health progression
+- Harvesting: deterministic plant init profile generation, yield bounds, reservation lifecycle (start/complete/cancel/death), energy/time calc, stress/health progression
 - Economics: conversion math (supply/demand + exact 100-block volume window penalty), upkeep calc per biome
 - Decay/Claim: checkpointed decay processing, claim marking at 80, escrow lock/refund/expiry, defend and transfer correctness
 
@@ -221,6 +232,7 @@ Property/Fuzz
 - Reservation invariants hold across start/complete/cancel/death interleavings
 - Escrow conservation: `available + locked + spent` remains conserved over claim lifecycle
 - No negative balances; no overflows on accumulated counters
+- Deterministic generation reproducibility: same seed/config + same inputs always produce same hex/area/plant outputs
 
 Performance
 
@@ -232,9 +244,11 @@ Acceptance Criteria (per story)
 - AC-W1: Adjacent movement enforced; attempts beyond neighbors revert
 - AC-W2: First discoverer recorded; repeat `discover_hex` returns same record with no state mutation, no energy spend, and no event
 - AC-W3: `discover_area` uses deterministic `AreaId = hash(hex, area_index)` and enforces single-controller-per-hex ownership
+- AC-W4: `discover_hex` and `discover_area` ignore caller-provided world-content payloads (none accepted) and materialize deterministic Cubit-generated values only
 - AC-H1: Harvesting start fails with insufficient yield/energy; succeeds otherwise
 - AC-H2: Completing harvest mints items or returns partial/failed with full/partial state updates
 - AC-H3: Concurrent starts cannot reserve beyond available yield (`current_yield - reserved_yield`)
+- AC-H4: `init_harvesting(hex, area_id, plant_id)` materializes deterministic plant profile values and rejects replay mutation
 - AC-E1: Conversion produces expected energy within tolerance given rate and penalties
 - AC-E2: Regen is deterministic per block delta, applied lazily, and capped at `max_energy`
 - AC-E3: Conversion volume penalty uses rolling 100-block window and never exceeds 50%

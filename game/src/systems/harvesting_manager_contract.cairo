@@ -9,9 +9,6 @@ pub trait IHarvestingManager<T> {
         hex_coordinate: felt252,
         area_id: felt252,
         plant_id: u8,
-        species: felt252,
-        max_yield: u16,
-        regrowth_rate: u16,
     ) -> bool;
     fn start_harvesting(
         ref self: T,
@@ -41,6 +38,7 @@ pub mod harvesting_manager {
     use dojo_starter::events::harvesting_events::{
         HarvestingCancelled, HarvestingCompleted, HarvestingStarted,
     };
+    use dojo_starter::libs::world_gen::derive_plant_profile;
     use dojo_starter::models::adventurer::Adventurer;
     use dojo_starter::models::economics::AdventurerEconomics;
     use dojo_starter::models::harvesting::{
@@ -62,9 +60,6 @@ pub mod harvesting_manager {
             hex_coordinate: felt252,
             area_id: felt252,
             plant_id: u8,
-            species: felt252,
-            max_yield: u16,
-            regrowth_rate: u16,
         ) -> bool {
             let mut world = self.world_default();
             let caller = get_caller_address();
@@ -77,9 +72,17 @@ pub mod harvesting_manager {
             plant.hex_coordinate = hex_coordinate;
             plant.area_id = area_id;
             plant.plant_id = plant_id;
+            let generated = derive_plant_profile(hex_coordinate, area_id, plant_id, hex.biome);
 
             let initialized = init_transition(
-                plant, caller, hex.is_discovered, species, max_yield, regrowth_rate, block_number,
+                plant,
+                caller,
+                hex.is_discovered,
+                generated.species,
+                generated.max_yield,
+                generated.regrowth_rate,
+                generated.genetics_hash,
+                block_number,
             );
 
             match initialized.outcome {

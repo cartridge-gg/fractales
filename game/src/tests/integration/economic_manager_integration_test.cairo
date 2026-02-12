@@ -651,4 +651,283 @@ mod tests {
         assert(own1.claim_block == 700_u64, 'S5_INT_ROW1_BLOCK');
         assert(own2.claim_block == 700_u64, 'S5_INT_ROW2_BLOCK');
     }
+
+    #[test]
+    fn economic_manager_integration_failure_branches_convert_pay_and_initiate() {
+        let caller = get_default_caller_address();
+        set_block_number(0_u64);
+        let mut world = spawn_test_world([namespace_def()].span());
+        world.sync_perms_and_inits(contract_defs());
+
+        let (contract_address, _) = world.dns(@"economic_manager").unwrap();
+        let manager = IEconomicManagerDispatcher { contract_address };
+
+        let owner_id = 9601_felt252;
+        let claimant_id = 9602_felt252;
+        let hex_coordinate = 9700_felt252;
+        setup_actor(ref world, owner_id, caller, 5_u16, hex_coordinate);
+        setup_actor(ref world, claimant_id, caller, 200_u16, hex_coordinate);
+
+        world.write_model_test(@Inventory { adventurer_id: claimant_id, current_weight: 5_u32, max_weight: 100_u32 });
+        world.write_model_test(
+            @BackpackItem {
+                adventurer_id: claimant_id,
+                item_id: 101_felt252,
+                quantity: 5_u32,
+                quality: 100_u16,
+                weight_per_unit: 1_u16,
+            },
+        );
+        world.write_model_test(
+            @Hex {
+                coordinate: hex_coordinate,
+                biome: Biome::Forest,
+                is_discovered: true,
+                discovery_block: 1_u64,
+                discoverer: caller,
+                area_count: 1_u8,
+            },
+        );
+        world.write_model_test(
+            @HexDecayState {
+                hex_coordinate,
+                owner_adventurer_id: owner_id,
+                current_energy_reserve: 0_u32,
+                last_energy_payment_block: 0_u64,
+                last_decay_processed_block: 0_u64,
+                decay_level: 85_u16,
+                claimable_since_block: 1_u64,
+            },
+        );
+
+        let convert_zero = manager.convert_items_to_energy(claimant_id, 101_felt252, 0_u16);
+        assert(convert_zero == 0_u16, 'S4_INT_FAIL_CONVERT_0');
+
+        let pay_insufficient = manager.pay_hex_maintenance(owner_id, hex_coordinate, 50_u16);
+        assert(!pay_insufficient, 'S4_INT_FAIL_PAY_INSUFF');
+
+        let pay_invalid = manager.pay_hex_maintenance(owner_id, hex_coordinate, 0_u16);
+        assert(!pay_invalid, 'S4_INT_FAIL_PAY_INV');
+
+        let pay_not_controller = manager.pay_hex_maintenance(claimant_id, hex_coordinate, 5_u16);
+        assert(!pay_not_controller, 'S4_INT_FAIL_PAY_CTRL');
+
+        let below_minimum = manager.initiate_hex_claim(claimant_id, hex_coordinate, 1_u16);
+        assert(!below_minimum, 'S4_INT_FAIL_CLAIM_MIN');
+    }
+
+    #[test]
+    fn economic_manager_integration_settle_expired_invalid_claimant_row() {
+        let caller = get_default_caller_address();
+        set_block_number(200_u64);
+        let mut world = spawn_test_world([namespace_def()].span());
+        world.sync_perms_and_inits(contract_defs());
+
+        let (contract_address, _) = world.dns(@"economic_manager").unwrap();
+        let manager = IEconomicManagerDispatcher { contract_address };
+
+        let owner_id = 9611_felt252;
+        let claimant_id = 9612_felt252;
+        let hex_coordinate = 9710_felt252;
+        setup_actor(ref world, owner_id, caller, 300_u16, hex_coordinate);
+        setup_actor(ref world, claimant_id, caller, 300_u16, hex_coordinate);
+
+        world.write_model_test(
+            @Hex {
+                coordinate: hex_coordinate,
+                biome: Biome::Forest,
+                is_discovered: true,
+                discovery_block: 1_u64,
+                discoverer: caller,
+                area_count: 1_u8,
+            },
+        );
+        world.write_model_test(
+            @HexDecayState {
+                hex_coordinate,
+                owner_adventurer_id: owner_id,
+                current_energy_reserve: 0_u32,
+                last_energy_payment_block: 0_u64,
+                last_decay_processed_block: 0_u64,
+                decay_level: 85_u16,
+                claimable_since_block: 1_u64,
+            },
+        );
+
+        let claim_id = derive_hex_claim_id(hex_coordinate);
+        world.write_model_test(
+            @ClaimEscrow {
+                claim_id,
+                hex_coordinate,
+                claimant_adventurer_id: 0_felt252,
+                energy_locked: 55_u16,
+                created_block: 10_u64,
+                expiry_block: 100_u64,
+                status: ClaimEscrowStatus::Active,
+            },
+        );
+
+        let initiated = manager.initiate_hex_claim(claimant_id, hex_coordinate, 0_u16);
+        assert(!initiated, 'S4_INT_FAIL_ESCROW_CALL');
+        let escrow_after: ClaimEscrow = world.read_model(claim_id);
+        assert(escrow_after.status == ClaimEscrowStatus::Expired, 'S4_INT_FAIL_ESCROW_EXP');
+        assert(escrow_after.energy_locked == 0_u16, 'S4_INT_FAIL_ESCROW_ZERO');
+    }
+
+    #[test]
+    fn economic_manager_integration_defend_insufficient_and_not_controller() {
+        let caller = get_default_caller_address();
+        set_block_number(0_u64);
+        let mut world = spawn_test_world([namespace_def()].span());
+        world.sync_perms_and_inits(contract_defs());
+
+        let (contract_address, _) = world.dns(@"economic_manager").unwrap();
+        let manager = IEconomicManagerDispatcher { contract_address };
+
+        let owner_id = 9621_felt252;
+        let claimant_id = 9622_felt252;
+        let outsider_id = 9623_felt252;
+        let hex_coordinate = 9720_felt252;
+        setup_actor(ref world, owner_id, caller, 10_u16, hex_coordinate);
+        setup_actor(ref world, claimant_id, caller, 300_u16, hex_coordinate);
+        setup_actor(ref world, outsider_id, caller, 300_u16, hex_coordinate);
+
+        world.write_model_test(
+            @Hex {
+                coordinate: hex_coordinate,
+                biome: Biome::Forest,
+                is_discovered: true,
+                discovery_block: 1_u64,
+                discoverer: caller,
+                area_count: 1_u8,
+            },
+        );
+        world.write_model_test(
+            @HexDecayState {
+                hex_coordinate,
+                owner_adventurer_id: owner_id,
+                current_energy_reserve: 0_u32,
+                last_energy_payment_block: 0_u64,
+                last_decay_processed_block: 0_u64,
+                decay_level: 85_u16,
+                claimable_since_block: 1_u64,
+            },
+        );
+
+        let claim_id = derive_hex_claim_id(hex_coordinate);
+        world.write_model_test(
+            @ClaimEscrow {
+                claim_id,
+                hex_coordinate,
+                claimant_adventurer_id: claimant_id,
+                energy_locked: 150_u16,
+                created_block: 0_u64,
+                expiry_block: 100_u64,
+                status: ClaimEscrowStatus::Active,
+            },
+        );
+
+        let insufficient = manager.defend_hex_from_claim(owner_id, hex_coordinate, 150_u16);
+        assert(!insufficient, 'S4_INT_DEF_INSUFF_FALSE');
+        let owner_after: Adventurer = world.read_model(owner_id);
+        assert(owner_after.energy == 10_u16, 'S4_INT_DEF_INSUFF_KEEP');
+
+        let not_controller = manager.defend_hex_from_claim(outsider_id, hex_coordinate, 10_u16);
+        assert(!not_controller, 'S4_INT_DEF_NOT_CTRL_FALSE');
+
+        world.write_model_test(
+            @Adventurer {
+                adventurer_id: owner_id,
+                owner: caller,
+                name: 'DEAD'_felt252,
+                energy: 10_u16,
+                max_energy: 10_u16,
+                current_hex: hex_coordinate,
+                activity_locked_until: 0_u64,
+                is_alive: false,
+            },
+        );
+        let dead_defender = manager.defend_hex_from_claim(owner_id, hex_coordinate, 1_u16);
+        assert(!dead_defender, 'S4_INT_DEF_DEAD_FALSE');
+    }
+
+    #[test]
+    fn economic_manager_integration_regression_claim_lock_blocks_double_spend_across_hexes() {
+        let caller = get_default_caller_address();
+        set_block_number(0_u64);
+        let mut world = spawn_test_world([namespace_def()].span());
+        world.sync_perms_and_inits(contract_defs());
+
+        let (contract_address, _) = world.dns(@"economic_manager").unwrap();
+        let manager = IEconomicManagerDispatcher { contract_address };
+
+        let owner_id = 9631_felt252;
+        let claimant_id = 9632_felt252;
+        let hex_a = 9731_felt252;
+        let hex_b = 9732_felt252;
+        setup_actor(ref world, owner_id, caller, 500_u16, hex_a);
+        setup_actor(ref world, claimant_id, caller, 300_u16, hex_a);
+
+        world.write_model_test(
+            @Hex {
+                coordinate: hex_a,
+                biome: Biome::Forest,
+                is_discovered: true,
+                discovery_block: 1_u64,
+                discoverer: caller,
+                area_count: 1_u8,
+            },
+        );
+        world.write_model_test(
+            @Hex {
+                coordinate: hex_b,
+                biome: Biome::Forest,
+                is_discovered: true,
+                discovery_block: 1_u64,
+                discoverer: caller,
+                area_count: 1_u8,
+            },
+        );
+        world.write_model_test(
+            @HexDecayState {
+                hex_coordinate: hex_a,
+                owner_adventurer_id: owner_id,
+                current_energy_reserve: 0_u32,
+                last_energy_payment_block: 0_u64,
+                last_decay_processed_block: 0_u64,
+                decay_level: 85_u16,
+                claimable_since_block: 1_u64,
+            },
+        );
+        world.write_model_test(
+            @HexDecayState {
+                hex_coordinate: hex_b,
+                owner_adventurer_id: owner_id,
+                current_energy_reserve: 0_u32,
+                last_energy_payment_block: 0_u64,
+                last_decay_processed_block: 0_u64,
+                decay_level: 85_u16,
+                claimable_since_block: 1_u64,
+            },
+        );
+
+        let first_claim = manager.initiate_hex_claim(claimant_id, hex_a, 250_u16);
+        assert(first_claim, 'S4_INT_LOCK_FIRST');
+
+        let second_claim = manager.initiate_hex_claim(claimant_id, hex_b, 100_u16);
+        assert(!second_claim, 'S4_INT_LOCK_SECOND');
+
+        let claimant_after: Adventurer = world.read_model(claimant_id);
+        assert(claimant_after.energy == 50_u16, 'S4_INT_LOCK_ENERGY');
+
+        let claim_a = derive_hex_claim_id(hex_a);
+        let claim_b = derive_hex_claim_id(hex_b);
+        let escrow_a: ClaimEscrow = world.read_model(claim_a);
+        let escrow_b: ClaimEscrow = world.read_model(claim_b);
+        assert(escrow_a.status == ClaimEscrowStatus::Active, 'S4_INT_LOCK_A_ST');
+        assert(escrow_a.energy_locked == 250_u16, 'S4_INT_LOCK_A_LOCK');
+        assert(escrow_a.claimant_adventurer_id == claimant_id, 'S4_INT_LOCK_A_CLAIMANT');
+        assert(escrow_b.status == ClaimEscrowStatus::Inactive, 'S4_INT_LOCK_B_ST');
+        assert(escrow_b.energy_locked == 0_u16, 'S4_INT_LOCK_B_LOCK');
+    }
 }

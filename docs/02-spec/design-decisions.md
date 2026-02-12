@@ -191,3 +191,30 @@ Decision lock date: 2026-02-11
 1. Enforce alive checks only in selected systems.
 2. Enforce alive checks for every state-changing entrypoint.
 - Locked decision: Option 2. Dead adventurers are rejected globally, and `kill_adventurer` settles active reservations/escrows.
+
+## DD-021 - Deterministic Discovery and Harvest Initialization Source
+- Status: `locked`
+- Context: Current contracts accept caller-provided discovery and harvesting initialization payloads (`biome`, `area_count`, `area_type`, `resource_quality`, `size_category`, `species`, `max_yield`, `regrowth_rate`), which breaks deterministic world generation guarantees.
+- References: `docs/02-spec/mvp-functional-spec.md`, `docs/07-delivery/deterministic-generation-plan.md`
+- Options:
+1. Keep caller-provided content payloads and validate loosely.
+2. Remove content payload parameters and derive all world/harvest init attributes from deterministic generation.
+- Locked decision: Option 2. `discover_hex`, `discover_area`, and `init_harvesting` materialize deterministic generated values only.
+
+## DD-022 - Noise Backend for Deterministic World Generation
+- Status: `locked`
+- Context: Deterministic generation requires a canonical noise implementation for biome/area/plant profiling.
+- References: `docs/02-spec/mvp-functional-spec.md`, `docs/07-delivery/deterministic-generation-plan.md`, `https://github.com/influenceth/cubit`
+- Options:
+1. Custom hash-only noise implementation.
+2. Cubit-based deterministic noise implementation.
+- Locked decision: Option 2. Cubit is the canonical deterministic noise backend for MVP generation rollout.
+
+## DD-023 - Domain-Separated Seed Tree for Generation
+- Status: `locked`
+- Context: Without explicit domain separation, coordinate/id collisions can leak state between generation stages.
+- References: `docs/02-spec/mvp-functional-spec.md`, `docs/07-delivery/deterministic-generation-plan.md`
+- Options:
+1. Reuse a shared seed derivation path across hex/area/plant generation.
+2. Use versioned domain-separated derivations per generation stage.
+- Locked decision: Option 2. Generation uses domain tags (`HEX_V1`, `AREA_V1`, `PLANT_V1`, `GENE_V1`) over deterministic hash derivation.

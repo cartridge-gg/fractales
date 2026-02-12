@@ -49,6 +49,38 @@ mod tests {
         }
     }
 
+    fn seed_actor(
+        ref world: dojo::world::WorldStorage,
+        adventurer_id: felt252,
+        owner: starknet::ContractAddress,
+        energy: u16,
+    ) {
+        world.write_model_test(
+            @Adventurer {
+                adventurer_id,
+                owner,
+                name: 'SEED'_felt252,
+                energy,
+                max_energy: 100_u16,
+                current_hex: encoded_origin(),
+                activity_locked_until: 0_u64,
+                is_alive: true,
+            },
+        );
+        world.write_model_test(
+            @AdventurerEconomics {
+                adventurer_id,
+                energy_balance: energy,
+                total_energy_spent: 0_u64,
+                total_energy_earned: 0_u64,
+                last_regen_block: 0_u64,
+            },
+        );
+        world.write_model_test(
+            @Inventory { adventurer_id, current_weight: 0_u32, max_weight: 750_u32 },
+        );
+    }
+
     #[test]
     fn adventurer_manager_integration_create_regen_consume_and_kill() {
         let caller = get_default_caller_address();
@@ -96,5 +128,41 @@ mod tests {
 
         let blocked = manager.consume_energy(adventurer_id, 1_u16);
         assert(!blocked, 'S2_INT_DEAD_BLOCK');
+    }
+
+    #[test]
+    fn adventurer_manager_integration_consume_insufficient_and_kill_replay_returns_false() {
+        let caller = get_default_caller_address();
+        set_block_number(0_u64);
+        let mut world = spawn_test_world([namespace_def()].span());
+        world.sync_perms_and_inits(contract_defs());
+
+        let (contract_address, _) = world.dns(@"adventurer_manager").unwrap();
+        let manager = IAdventurerManagerDispatcher { contract_address };
+
+        let adventurer_id = 29001_felt252;
+        seed_actor(ref world, adventurer_id, caller, 5_u16);
+
+        let insufficient = manager.consume_energy(adventurer_id, 50_u16);
+        assert(!insufficient, 'S2_INT_INSUFF_FALSE');
+        let after_insufficient: Adventurer = world.read_model(adventurer_id);
+        let econ_after_insufficient: AdventurerEconomics = world.read_model(adventurer_id);
+        assert(after_insufficient.energy == 5_u16, 'S2_INT_INSUFF_ENE');
+        assert(econ_after_insufficient.energy_balance == 5_u16, 'S2_INT_INSUFF_BAL');
+
+        let killed_once = manager.kill_adventurer(adventurer_id, 'REPLAY'_felt252);
+        assert(killed_once, 'S2_INT_KILL_ONCE');
+        let killed_twice = manager.kill_adventurer(adventurer_id, 'REPLAY'_felt252);
+        assert(!killed_twice, 'S2_INT_KILL_REPLAY_FALSE');
+
+        let foreign_owner: starknet::ContractAddress = 0x999.try_into().unwrap();
+        let foreign_id = 29002_felt252;
+        seed_actor(ref world, foreign_id, foreign_owner, 50_u16);
+
+        let not_owner_consume = manager.consume_energy(foreign_id, 1_u16);
+        assert(!not_owner_consume, 'S2_INT_NOT_OWNER_CONSUME');
+
+        let not_owner_kill = manager.kill_adventurer(foreign_id, 'DENY'_felt252);
+        assert(!not_owner_kill, 'S2_INT_NOT_OWNER_KILL');
     }
 }

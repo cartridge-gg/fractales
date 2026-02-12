@@ -14,6 +14,7 @@ mod tests {
     use dojo_starter::events::harvesting_events::{
         HarvestingCancelled, HarvestingCompleted, HarvestingStarted,
     };
+    use dojo_starter::libs::world_gen::derive_plant_profile;
     use dojo_starter::models::adventurer::Adventurer;
     use dojo_starter::models::economics::AdventurerEconomics;
     use dojo_starter::models::harvesting::{
@@ -107,16 +108,20 @@ mod tests {
         let hex_coordinate = 900_felt252;
         let area_id = 901_felt252;
         let plant_id = 1_u8;
+        let plant_key = derive_plant_key(hex_coordinate, area_id, plant_id);
         setup_actor_and_hex(ref world, adventurer_id, caller, hex_coordinate);
 
-        let inited = manager.init_harvesting(
-            hex_coordinate, area_id, plant_id, 'ROOT'_felt252, 40_u16, 1_u16,
-        );
+        let inited = manager.init_harvesting(hex_coordinate, area_id, plant_id);
         assert(inited, 'H_INT_INIT');
+        let expected_profile = derive_plant_profile(hex_coordinate, area_id, plant_id, Biome::Forest);
+        let inited_plant: PlantNode = world.read_model(plant_key);
+        assert(inited_plant.species == expected_profile.species, 'H_INT_INIT_SPECIES');
+        assert(inited_plant.max_yield == expected_profile.max_yield, 'H_INT_INIT_MAX');
+        assert(inited_plant.regrowth_rate == expected_profile.regrowth_rate, 'H_INT_INIT_REGROW');
+        assert(inited_plant.genetics_hash == expected_profile.genetics_hash, 'H_INT_INIT_GENE');
 
         let started = manager.start_harvesting(adventurer_id, hex_coordinate, area_id, plant_id, 3_u16);
         assert(started, 'H_INT_START');
-        let plant_key = derive_plant_key(hex_coordinate, area_id, plant_id);
         let after_start: PlantNode = world.read_model(plant_key);
         let actor_after_start: Adventurer = world.read_model(adventurer_id);
         assert(after_start.reserved_yield == 3_u16, 'H_INT_START_RESV');
@@ -130,7 +135,7 @@ mod tests {
         let inv_after_complete: Inventory = world.read_model(adventurer_id);
         let reservation_id = derive_harvest_reservation_id(adventurer_id, plant_key);
         let res_after_complete: HarvestReservation = world.read_model(reservation_id);
-        assert(after_complete.current_yield == 37_u16, 'H_INT_COMPLETE_CURR');
+        assert(after_complete.current_yield == expected_profile.max_yield - 3_u16, 'H_INT_COMPLETE_CURR');
         assert(after_complete.reserved_yield == 0_u16, 'H_INT_COMPLETE_RESV');
         assert(inv_after_complete.current_weight == 3_u32, 'H_INT_COMPLETE_INV');
         assert(res_after_complete.status == HarvestReservationStatus::Completed, 'H_INT_COMPLETE_ST');
@@ -145,7 +150,7 @@ mod tests {
         let inv_after_cancel: Inventory = world.read_model(adventurer_id);
         let res_after_cancel: HarvestReservation = world.read_model(reservation_id);
         assert(after_cancel.reserved_yield == 0_u16, 'H_INT_CANCEL_RESV');
-        assert(after_cancel.current_yield == 32_u16, 'H_INT_CANCEL_CURR');
+        assert(after_cancel.current_yield == expected_profile.max_yield - 8_u16, 'H_INT_CANCEL_CURR');
         assert(inv_after_cancel.current_weight == 8_u32, 'H_INT_CANCEL_INV');
         assert(res_after_cancel.status == HarvestReservationStatus::Canceled, 'H_INT_CANCEL_ST');
 
@@ -247,5 +252,192 @@ mod tests {
         assert(started_count == 2_usize, 'H_INT_EVT_START_CNT');
         assert(completed_count == 1_usize, 'H_INT_EVT_COMPLETE_CNT');
         assert(cancelled_count == 1_usize, 'H_INT_EVT_CANCEL_CNT');
+    }
+
+    #[test]
+    fn harvesting_manager_integration_failure_paths_and_inspect() {
+        let caller = get_default_caller_address();
+        set_block_number(0_u64);
+        let mut world = spawn_test_world([namespace_def()].span());
+        world.sync_perms_and_inits(contract_defs());
+
+        let (contract_address, _) = world.dns(@"harvesting_manager").unwrap();
+        let manager = IHarvestingManagerDispatcher { contract_address };
+
+        let adventurer_id = 8810_felt252;
+        let hex_coordinate = 910_felt252;
+        let area_id = 911_felt252;
+        let plant_id = 2_u8;
+        setup_actor_and_hex(ref world, adventurer_id, caller, hex_coordinate);
+
+        world.write_model_test(
+            @Hex {
+                coordinate: hex_coordinate,
+                biome: Biome::Forest,
+                is_discovered: false,
+                discovery_block: 1_u64,
+                discoverer: caller,
+                area_count: 6_u8,
+            },
+        );
+        let init_blocked = manager.init_harvesting(hex_coordinate, area_id, plant_id);
+        assert(!init_blocked, 'H_INT_INIT_BLOCK');
+
+        world.write_model_test(
+            @Hex {
+                coordinate: hex_coordinate,
+                biome: Biome::Forest,
+                is_discovered: true,
+                discovery_block: 1_u64,
+                discoverer: caller,
+                area_count: 6_u8,
+            },
+        );
+        let init_ok = manager.init_harvesting(hex_coordinate, area_id, plant_id);
+        assert(init_ok, 'H_INT_INIT_OK2');
+
+        world.write_model_test(
+            @Adventurer {
+                adventurer_id,
+                owner: caller,
+                name: 'LOWE'_felt252,
+                energy: 5_u16,
+                max_energy: 100_u16,
+                current_hex: hex_coordinate,
+                activity_locked_until: 0_u64,
+                is_alive: true,
+            },
+        );
+        world.write_model_test(
+            @AdventurerEconomics {
+                adventurer_id,
+                energy_balance: 5_u16,
+                total_energy_spent: 0_u64,
+                total_energy_earned: 0_u64,
+                last_regen_block: 0_u64,
+            },
+        );
+
+        let start_insufficient = manager.start_harvesting(
+            adventurer_id, hex_coordinate, area_id, plant_id, 1_u16,
+        );
+        assert(!start_insufficient, 'H_INT_START_INSUFF');
+        let start_invalid_amount = manager.start_harvesting(
+            adventurer_id, hex_coordinate, area_id, plant_id, 0_u16,
+        );
+        assert(!start_invalid_amount, 'H_INT_START_ZERO');
+
+        world.write_model_test(
+            @Adventurer {
+                adventurer_id,
+                owner: caller,
+                name: 'FULL'_felt252,
+                energy: 100_u16,
+                max_energy: 100_u16,
+                current_hex: hex_coordinate,
+                activity_locked_until: 0_u64,
+                is_alive: true,
+            },
+        );
+        world.write_model_test(
+            @AdventurerEconomics {
+                adventurer_id,
+                energy_balance: 100_u16,
+                total_energy_spent: 0_u64,
+                total_energy_earned: 0_u64,
+                last_regen_block: 0_u64,
+            },
+        );
+
+        let started = manager.start_harvesting(adventurer_id, hex_coordinate, area_id, plant_id, 2_u16);
+        assert(started, 'H_INT_START_OK2');
+        let too_early = manager.complete_harvesting(adventurer_id, hex_coordinate, area_id, plant_id);
+        assert(too_early == 0_u16, 'H_INT_COMPLETE_EARLY_0');
+
+        let foreign_owner: starknet::ContractAddress = 0x1234.try_into().unwrap();
+        world.write_model_test(
+            @Adventurer {
+                adventurer_id,
+                owner: foreign_owner,
+                name: 'FORE'_felt252,
+                energy: 100_u16,
+                max_energy: 100_u16,
+                current_hex: hex_coordinate,
+                activity_locked_until: 0_u64,
+                is_alive: true,
+            },
+        );
+        let not_owner_complete = manager.complete_harvesting(
+            adventurer_id, hex_coordinate, area_id, plant_id,
+        );
+        assert(not_owner_complete == 0_u16, 'H_INT_COMPLETE_NOT_OWNER');
+        let not_owner_cancel = manager.cancel_harvesting(adventurer_id, hex_coordinate, area_id, plant_id);
+        assert(not_owner_cancel == 0_u16, 'H_INT_CANCEL_NOT_OWNER');
+
+        let other_adventurer_id = 8811_felt252;
+        setup_actor_and_hex(ref world, other_adventurer_id, caller, hex_coordinate);
+        let cancel_no_active = manager.cancel_harvesting(
+            other_adventurer_id, hex_coordinate, area_id, plant_id,
+        );
+        assert(cancel_no_active == 0_u16, 'H_INT_CANCEL_NO_ACTIVE');
+
+        let inspected = manager.inspect_plant(hex_coordinate, area_id, plant_id);
+        let plant_key = derive_plant_key(hex_coordinate, area_id, plant_id);
+        assert(inspected.plant_key == plant_key, 'H_INT_INSPECT_KEY');
+        assert(inspected.hex_coordinate == hex_coordinate, 'H_INT_INSPECT_HEX');
+    }
+
+    #[test]
+    fn harvesting_manager_integration_regression_prevents_cross_actor_overcommit() {
+        let caller = get_default_caller_address();
+        set_block_number(10_u64);
+        let mut world = spawn_test_world([namespace_def()].span());
+        world.sync_perms_and_inits(contract_defs());
+
+        let (contract_address, _) = world.dns(@"harvesting_manager").unwrap();
+        let manager = IHarvestingManagerDispatcher { contract_address };
+
+        let actor_a = 8821_felt252;
+        let actor_b = 8822_felt252;
+        let hex_coordinate = 920_felt252;
+        let area_id = 921_felt252;
+        let plant_id = 3_u8;
+        setup_actor_and_hex(ref world, actor_a, caller, hex_coordinate);
+        setup_actor_and_hex(ref world, actor_b, caller, hex_coordinate);
+
+        let initialized = manager.init_harvesting(hex_coordinate, area_id, plant_id);
+        assert(initialized, 'H_INT_OVER_INIT');
+        let plant_key = derive_plant_key(hex_coordinate, area_id, plant_id);
+        let seeded_plant: PlantNode = world.read_model(plant_key);
+        world.write_model_test(
+            @PlantNode {
+                current_yield: 10_u16,
+                max_yield: 10_u16,
+                ..seeded_plant
+            },
+        );
+
+        let first_start = manager.start_harvesting(actor_a, hex_coordinate, area_id, plant_id, 8_u16);
+        assert(first_start, 'H_INT_OVER_A_START');
+
+        let second_start = manager.start_harvesting(actor_b, hex_coordinate, area_id, plant_id, 5_u16);
+        assert(!second_start, 'H_INT_OVER_B_BLOCK');
+
+        set_block_number(26_u64);
+        let a_yield = manager.complete_harvesting(actor_a, hex_coordinate, area_id, plant_id);
+        let b_yield = manager.complete_harvesting(actor_b, hex_coordinate, area_id, plant_id);
+        assert(a_yield == 8_u16, 'H_INT_OVER_A_YIELD');
+        assert(b_yield == 0_u16, 'H_INT_OVER_B_ZERO');
+
+        let plant: PlantNode = world.read_model(plant_key);
+        assert(plant.current_yield == 2_u16, 'H_INT_OVER_PLANT_CURR');
+        assert(plant.reserved_yield == 0_u16, 'H_INT_OVER_PLANT_RESV');
+
+        let reservation_a_id = derive_harvest_reservation_id(actor_a, plant_key);
+        let reservation_b_id = derive_harvest_reservation_id(actor_b, plant_key);
+        let reservation_a: HarvestReservation = world.read_model(reservation_a_id);
+        let reservation_b: HarvestReservation = world.read_model(reservation_b_id);
+        assert(reservation_a.status == HarvestReservationStatus::Completed, 'H_INT_OVER_A_ST');
+        assert(reservation_b.status == HarvestReservationStatus::Inactive, 'H_INT_OVER_B_ST');
     }
 }

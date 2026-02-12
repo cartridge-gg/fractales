@@ -12,7 +12,7 @@ mod tests {
     use dojo_starter::models::adventurer::Adventurer;
     use dojo_starter::models::economics::{AdventurerEconomics, HexDecayState};
     use dojo_starter::models::ownership::AreaOwnership;
-    use dojo_starter::models::world::{AreaType, Biome, Hex, SizeCategory, derive_area_id};
+    use dojo_starter::models::world::{Biome, Hex, derive_area_id};
     use dojo_starter::systems::economic_manager_contract::{
         IEconomicManagerDispatcher, IEconomicManagerDispatcherTrait,
     };
@@ -122,15 +122,9 @@ mod tests {
             },
         );
 
-        world_manager.discover_area(
-            owner_id, hex_coordinate, 0_u8, AreaType::Control, 70_u16, SizeCategory::Large,
-        );
-        world_manager.discover_area(
-            claimant_id, hex_coordinate, 1_u8, AreaType::PlantField, 60_u16, SizeCategory::Medium,
-        );
-        world_manager.discover_area(
-            claimant_id, hex_coordinate, 2_u8, AreaType::Wilderness, 50_u16, SizeCategory::Small,
-        );
+        world_manager.discover_area(owner_id, hex_coordinate, 0_u8);
+        world_manager.discover_area(claimant_id, hex_coordinate, 1_u8);
+        world_manager.discover_area(claimant_id, hex_coordinate, 2_u8);
 
         let before0: AreaOwnership = world.read_model(derive_area_id(hex_coordinate, 0_u8));
         let before1: AreaOwnership = world.read_model(derive_area_id(hex_coordinate, 1_u8));

@@ -328,6 +328,8 @@ Run this at end of every stage:
 - [ ] Any repeated formula not moved to libs?
 - [ ] Any entrypoint with overly broad branching that should split?
 - [ ] Any test setup too large due to poor cohesion?
+- [ ] `cd game && scarb run perf-budget` passes.
+- [ ] `cd game && scarb run size-budget` passes.
 
 If yes:
 - [ ] Split file/logic by domain behavior.

@@ -72,4 +72,16 @@ mod tests {
             },
         }
     }
+
+    #[test]
+    fn coord_codec_rejects_non_u128_felt() {
+        // 2^128 cannot fit into u128 conversion path for packed coordinates.
+        let bad_encoded: felt252 = 340282366920938463463374607431768211456;
+        match decode_cube(bad_encoded) {
+            Option::None => {},
+            Option::Some(_) => {
+                assert(1 == 0, 'U128_FAIL');
+            },
+        }
+    }
 }

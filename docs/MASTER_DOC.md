@@ -65,6 +65,7 @@ Long-term product vision and mechanics live in:
 - `dojo-mvp-prd.md`: Detailed build PRD (model-first implementation, system sequencing, contract tightness, and test strategy)
 - `dojo-mvp-implementation-checklist.md`: File-by-file implementation checklist and stage exit gates
 - `mvp-prioritized-implementation-plan.md`: Execution-priority plan (`P0/P1/P2`) with edge-case hardening order
+- `deterministic-generation-plan.md`: Deterministic seed/noise rollout plan for hex -> area -> plant generation
 - `development-plan.md`: Phased implementation plan
 - `dojo-setup-guide.md`: Dojo environment setup and patterns
 

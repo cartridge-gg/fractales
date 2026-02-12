@@ -180,6 +180,7 @@ Goal: ensure economic safety, deterministic behavior, and operational readiness.
 - Enforce gas/size budgets from PRD.
 - Profile harvesting start/complete and decay processing hot paths.
 - Refactor if contract cohesion degrades.
+- Gate checks: `cd game && scarb run perf-budget`, `cd game && scarb run size-budget`.
 
 ### P2.3 Indexing and Ops Readiness
 

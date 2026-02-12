@@ -1,5 +1,3 @@
-use dojo_starter::models::world::{AreaType, Biome, SizeCategory};
-
 const ENERGY_PER_HEX_MOVE: u16 = 15_u16;
 const ENERGY_PER_EXPLORE: u16 = 25_u16;
 
@@ -9,17 +7,12 @@ pub trait IWorldManager<T> {
         ref self: T,
         adventurer_id: felt252,
         hex_coordinate: felt252,
-        biome: Biome,
-        area_count: u8,
     );
     fn discover_area(
         ref self: T,
         adventurer_id: felt252,
         hex_coordinate: felt252,
         area_index: u8,
-        area_type: AreaType,
-        resource_quality: u16,
-        size_category: SizeCategory,
     );
     fn move_adventurer(ref self: T, adventurer_id: felt252, to_hex_coordinate: felt252);
 }
@@ -34,12 +27,12 @@ pub mod world_manager {
     use dojo_starter::events::world_events::{AreaDiscovered, HexDiscovered};
     use dojo_starter::libs::adjacency::is_adjacent;
     use dojo_starter::libs::coord_codec::decode_cube;
+    use dojo_starter::libs::world_gen::{derive_area_profile, derive_hex_profile};
     use dojo_starter::models::adventurer::{Adventurer, can_be_controlled_by, spend_energy};
     use dojo_starter::models::ownership::AreaOwnership;
     use dojo_starter::models::world::{
-        AreaType, Biome, DiscoveryWriteStatus, Hex, HexArea, SizeCategory, derive_area_id,
-        discover_area_once_with_status, discover_hex_once_with_status, is_valid_area_identity,
-        is_valid_area_index,
+        DiscoveryWriteStatus, Hex, HexArea, derive_area_id, discover_area_once_with_status,
+        discover_hex_once_with_status, is_valid_area_identity, is_valid_area_index,
     };
     use starknet::{get_block_info, get_caller_address};
 
@@ -49,8 +42,6 @@ pub mod world_manager {
             ref self: ContractState,
             adventurer_id: felt252,
             hex_coordinate: felt252,
-            biome: Biome,
-            area_count: u8,
         ) {
             let mut world = self.world_default();
             let caller = get_caller_address();
@@ -72,10 +63,15 @@ pub mod world_manager {
             }
             let mut hex: Hex = world.read_model(hex_coordinate);
             hex.coordinate = hex_coordinate;
+            let hex_profile = derive_hex_profile(hex_coordinate);
 
             let block_number = get_block_info().unbox().block_number;
             let discovered = discover_hex_once_with_status(
-                hex, caller, block_number, biome, area_count,
+                hex,
+                caller,
+                block_number,
+                hex_profile.biome,
+                hex_profile.area_count,
             );
 
             match discovered.status {
@@ -105,9 +101,6 @@ pub mod world_manager {
             adventurer_id: felt252,
             hex_coordinate: felt252,
             area_index: u8,
-            area_type: AreaType,
-            resource_quality: u16,
-            size_category: SizeCategory,
         ) {
             let mut world = self.world_default();
             let caller = get_caller_address();
@@ -134,6 +127,7 @@ pub mod world_manager {
                 controller_adventurer_id = control_ownership.owner_adventurer_id;
                 controller_claim_block = control_ownership.claim_block;
             }
+            let area_profile = derive_area_profile(hex_coordinate, area_index, hex.biome);
 
             let area_id = derive_area_id(hex_coordinate, area_index);
             let mut area: HexArea = world.read_model(area_id);
@@ -146,7 +140,11 @@ pub mod world_manager {
             }
 
             let discovered = discover_area_once_with_status(
-                area, caller, area_type, resource_quality, size_category,
+                area,
+                caller,
+                area_profile.area_type,
+                area_profile.resource_quality,
+                area_profile.size_category,
             );
 
             match discovered.status {

@@ -3,7 +3,8 @@ mod tests {
     use dojo_starter::models::adventurer::Adventurer;
     use dojo_starter::models::economics::AdventurerEconomics;
     use dojo_starter::models::harvesting::{
-        HarvestReservation, HarvestReservationStatus, PlantNode, derive_harvest_item_id,
+        HarvestDeathSettleOutcome, HarvestReservation, HarvestReservationStatus, PlantNode,
+        settle_harvest_reservation_on_death, derive_harvest_item_id,
         derive_harvest_reservation_id, derive_plant_key,
     };
     use dojo_starter::models::inventory::{BackpackItem, Inventory};
@@ -61,16 +62,17 @@ mod tests {
         };
 
         let blocked = init_transition(
-            plant, owner, false, 'ROOT'_felt252, 40_u16, 2_u16, 100_u64,
+            plant, owner, false, 'ROOT'_felt252, 40_u16, 2_u16, 444_felt252, 100_u64,
         );
         assert(blocked.outcome == InitOutcome::HexUndiscovered, 'H_INIT_BLOCK');
 
         let initialized = init_transition(
-            blocked.plant, owner, true, 'ROOT'_felt252, 40_u16, 2_u16, 100_u64,
+            blocked.plant, owner, true, 'ROOT'_felt252, 40_u16, 2_u16, 444_felt252, 100_u64,
         );
         assert(initialized.outcome == InitOutcome::Applied, 'H_INIT_OK');
         assert(initialized.plant.current_yield == 40_u16, 'H_INIT_YIELD');
         assert(initialized.plant.health == 100_u16, 'H_INIT_HEALTH');
+        assert(initialized.plant.genetics_hash == 444_felt252, 'H_INIT_GENE');
         assert(initialized.plant.discoverer == owner, 'H_INIT_DISC');
     }
 
@@ -214,5 +216,103 @@ mod tests {
         assert(canceled.partial_yield == 3_u16, 'H_CANCEL_PART');
         assert(canceled.reservation.status == HarvestReservationStatus::Canceled, 'H_CANCEL_ST');
         assert(canceled.plant.reserved_yield == 0_u16, 'H_CANCEL_RESV');
+    }
+
+    #[test]
+    fn harvesting_manager_start_reports_reserve_failures() {
+        let (adventurer, economics, _inventory, owner) = setup_actor();
+        let plant_key = derive_plant_key(510_felt252, 511_felt252, 1_u8);
+        let reservation = HarvestReservation {
+            reservation_id: derive_harvest_reservation_id(adventurer.adventurer_id, plant_key),
+            adventurer_id: 0_felt252,
+            plant_key,
+            reserved_amount: 0_u16,
+            created_block: 0_u64,
+            expiry_block: 0_u64,
+            status: HarvestReservationStatus::Inactive,
+        };
+        let base_plant = PlantNode {
+            plant_key,
+            hex_coordinate: 510_felt252,
+            area_id: 511_felt252,
+            plant_id: 1_u8,
+            species: 'ROOT'_felt252,
+            current_yield: 2_u16,
+            reserved_yield: 0_u16,
+            max_yield: 10_u16,
+            regrowth_rate: 1_u16,
+            health: 100_u16,
+            stress_level: 0_u16,
+            genetics_hash: 1_felt252,
+            last_harvest_block: 0_u64,
+            discoverer: owner,
+        };
+
+        let insufficient = start_transition(
+            adventurer,
+            economics,
+            owner,
+            base_plant,
+            reservation,
+            5_u16,
+            0_u64,
+            20_u16,
+            10_u16,
+            2_u16,
+        );
+        assert(insufficient.outcome == StartOutcome::InsufficientYield, 'H_START_INSUFF_YIELD');
+
+        let invalid_plant = PlantNode { reserved_yield: 3_u16, ..base_plant };
+        let invalid_state = start_transition(
+            adventurer,
+            economics,
+            owner,
+            invalid_plant,
+            reservation,
+            1_u16,
+            0_u64,
+            20_u16,
+            10_u16,
+            2_u16,
+        );
+        assert(invalid_state.outcome == StartOutcome::InvalidPlantState, 'H_START_BAD_STATE');
+    }
+
+    #[test]
+    fn harvesting_models_settle_death_clamps_release_to_reserved_yield() {
+        let (_adventurer, _economics, _inventory, owner) = setup_actor();
+        let plant_key = derive_plant_key(520_felt252, 521_felt252, 1_u8);
+        let plant = PlantNode {
+            plant_key,
+            hex_coordinate: 520_felt252,
+            area_id: 521_felt252,
+            plant_id: 1_u8,
+            species: 'ROOT'_felt252,
+            current_yield: 10_u16,
+            reserved_yield: 2_u16,
+            max_yield: 10_u16,
+            regrowth_rate: 1_u16,
+            health: 100_u16,
+            stress_level: 0_u16,
+            genetics_hash: 1_felt252,
+            last_harvest_block: 0_u64,
+            discoverer: owner,
+        };
+        let reservation = HarvestReservation {
+            reservation_id: derive_harvest_reservation_id(7700_felt252, plant_key),
+            adventurer_id: 7700_felt252,
+            plant_key,
+            reserved_amount: 5_u16,
+            created_block: 0_u64,
+            expiry_block: 0_u64,
+            status: HarvestReservationStatus::Active,
+        };
+
+        let settled = settle_harvest_reservation_on_death(plant, reservation, 7700_felt252);
+        assert(settled.outcome == HarvestDeathSettleOutcome::Applied, 'H_DEATH_SETTLE_APPLIED');
+        assert(settled.released_amount == 2_u16, 'H_DEATH_SETTLE_CLAMP');
+        assert(settled.plant.reserved_yield == 0_u16, 'H_DEATH_SETTLE_PLANT');
+        assert(settled.reservation.reserved_amount == 0_u16, 'H_DEATH_SETTLE_RESV');
+        assert(settled.reservation.status == HarvestReservationStatus::Canceled, 'H_DEATH_SETTLE_ST');
     }
 }

@@ -454,4 +454,112 @@ mod tests {
         assert(paid.outcome == PayOutcome::Applied, 'S4_PAY_SAT_OUT');
         assert(paid.state.current_energy_reserve == 4_294_967_295_u32, 'S4_PAY_SAT_RESV');
     }
+
+    #[test]
+    fn economic_manager_convert_at_energy_cap_mints_zero_but_burns_items() {
+        let owner = 0x779.try_into().unwrap();
+        let adventurer = Adventurer {
+            adventurer_id: 8401_felt252,
+            owner,
+            name: 'CAP'_felt252,
+            energy: 100_u16,
+            max_energy: 100_u16,
+            current_hex: 0_felt252,
+            activity_locked_until: 0_u64,
+            is_alive: true,
+        };
+        let economics = AdventurerEconomics {
+            adventurer_id: 8401_felt252,
+            energy_balance: 100_u16,
+            total_energy_spent: 0_u64,
+            total_energy_earned: 0_u64,
+            last_regen_block: 0_u64,
+        };
+        let inventory = Inventory { adventurer_id: 8401_felt252, current_weight: 12_u32, max_weight: 100_u32 };
+        let item = BackpackItem {
+            adventurer_id: 8401_felt252,
+            item_id: 99_felt252,
+            quantity: 12_u32,
+            quality: 100_u16,
+            weight_per_unit: 1_u16,
+        };
+        let rate = ConversionRate {
+            item_type: 99_felt252,
+            current_rate: 10_u16,
+            base_rate: 10_u16,
+            last_update_block: 0_u64,
+            units_converted_in_window: 0_u32,
+        };
+
+        let converted = convert_transition(
+            adventurer, economics, owner, inventory, item, rate, 6_u16, 10_u64, 100_u64,
+        );
+
+        assert(converted.outcome == ConvertOutcome::Applied, 'S4_CONV_CAP_OUT');
+        assert(converted.energy_gained == 60_u16, 'S4_CONV_CAP_RAW');
+        assert(converted.minted_energy == 0_u16, 'S4_CONV_CAP_MINT');
+        assert(converted.adventurer.energy == 100_u16, 'S4_CONV_CAP_ENERGY');
+        assert(converted.item.quantity == 6_u32, 'S4_CONV_CAP_BURN');
+        assert(converted.inventory.current_weight == 6_u32, 'S4_CONV_CAP_WEIGHT');
+    }
+
+    #[test]
+    fn economic_manager_claim_elapsed_uses_zero_when_now_precedes_claimable_since() {
+        let claimant_owner = 0x780.try_into().unwrap();
+        let claimant = Adventurer {
+            adventurer_id: 8501_felt252,
+            owner: claimant_owner,
+            name: 'ELAP'_felt252,
+            energy: 500_u16,
+            max_energy: 500_u16,
+            current_hex: 906_felt252,
+            activity_locked_until: 0_u64,
+            is_alive: true,
+        };
+        let claimant_econ = AdventurerEconomics {
+            adventurer_id: 8501_felt252,
+            energy_balance: 500_u16,
+            total_energy_spent: 0_u64,
+            total_energy_earned: 0_u64,
+            last_regen_block: 0_u64,
+        };
+        let state = HexDecayState {
+            hex_coordinate: 906_felt252,
+            owner_adventurer_id: 8502_felt252,
+            current_energy_reserve: 0_u32,
+            last_energy_payment_block: 0_u64,
+            last_decay_processed_block: 0_u64,
+            decay_level: 90_u16,
+            claimable_since_block: 600_u64,
+        };
+        let escrow = ClaimEscrow {
+            claim_id: derive_hex_claim_id(906_felt252),
+            hex_coordinate: 906_felt252,
+            claimant_adventurer_id: 0_felt252,
+            energy_locked: 0_u16,
+            created_block: 0_u64,
+            expiry_block: 0_u64,
+            status: ClaimEscrowStatus::Inactive,
+        };
+
+        let initiated = initiate_claim_transition(
+            claimant,
+            claimant_econ,
+            claimant_owner,
+            state,
+            escrow,
+            300_u16,
+            500_u64,
+            100_u64,
+            500_u64,
+            35_u32,
+            20_u16,
+            80_u16,
+        );
+
+        assert(initiated.outcome == ClaimInitOutcome::AppliedPending, 'S4_CLAIM_ELAPSED_ZERO');
+        assert(initiated.escrow.status == ClaimEscrowStatus::Active, 'S4_CLAIM_ELAPSED_ESCROW');
+        assert(initiated.escrow.energy_locked == 300_u16, 'S4_CLAIM_ELAPSED_LOCK');
+        assert(initiated.state.owner_adventurer_id == 8502_felt252, 'S4_CLAIM_ELAPSED_OWNER');
+    }
 }

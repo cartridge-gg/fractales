@@ -102,6 +102,7 @@ pub fn init_transition(
     species: felt252,
     max_yield: u16,
     regrowth_rate: u16,
+    genetics_hash: felt252,
     now_block: u64,
 ) -> InitResult {
     if !is_hex_discovered {
@@ -121,6 +122,7 @@ pub fn init_transition(
     plant.regrowth_rate = regrowth_rate;
     plant.health = 100_u16;
     plant.stress_level = 0_u16;
+    plant.genetics_hash = genetics_hash;
     plant.last_harvest_block = now_block;
     plant.discoverer = discoverer;
 
