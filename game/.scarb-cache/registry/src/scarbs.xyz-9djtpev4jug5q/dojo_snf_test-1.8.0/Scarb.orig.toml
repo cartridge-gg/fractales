@@ -1,0 +1,21 @@
+[package]
+name = "dojo_snf_test"
+description = "Testing library for Dojo using Starknet Foundry."
+license = "MIT"
+version = "1.8.0"
+edition = "2024_07"
+repository = "https://github.com/dojoengine/dojo"
+documentation = "https://book.dojoengine.org"
+keywords = ["dojo", "starknet", "testing"]
+
+[dependencies]
+starknet = "2.13"
+snforge_std = "0.51"
+assert_macros = "2.13"
+
+dojo = { path = "../core", version = "1.7" }
+
+[tool.scarb]
+allow-prebuilt-plugins = ["snforge_std"]
+
+[lib]

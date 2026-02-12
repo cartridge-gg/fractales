@@ -1,0 +1,8 @@
+[package]
+name = "cairo_test"
+version = "2.12.2"
+
+no-core = true
+
+[cairo-plugin]
+builtin = true

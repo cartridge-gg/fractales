@@ -1,0 +1,20 @@
+[package]
+edition = "2024_07"
+description = "The Dojo Core library for autonomous worlds."
+name = "dojo"
+version = "1.8.0"
+license = "MIT"
+repository = "https://github.com/dojoengine/dojo"
+documentation = "https://book.dojoengine.org"
+keywords = ["dojo", "contracts", "starknet"]
+experimental-features = ["negative_impls"]
+re-export-cairo-plugins = ["dojo_cairo_macros"]
+
+[dependencies]
+starknet = "2.13"
+dojo_cairo_macros = { path = "../macros", version = "1.8.0" }
+
+[lib]
+
+[[target.starknet-contract]]
+sierra = true

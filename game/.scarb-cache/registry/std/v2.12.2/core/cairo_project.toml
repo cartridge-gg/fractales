@@ -1,0 +1,12 @@
+[crate_roots]
+core = "src"
+
+[config.global]
+version = "2.12.2"
+edition = "2024_07"
+
+[config.global.experimental_features]
+negative_impls = true
+associated_item_constraints = true
+coupons = true
+user_defined_inline_macros = true

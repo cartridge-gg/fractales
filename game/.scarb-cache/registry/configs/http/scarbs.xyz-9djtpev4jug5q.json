@@ -1,0 +1,1 @@
+{"version":1,"api":"https://scarbs.xyz/api/v1/","dl":"https://scarbs.xyz/api/v1/dl/{package}/{version}","index":"https://scarbs.xyz/api/v1/index/{prefix}/{package}.json","upload":"https://scarbs.xyz/api/v1/packages/new"}

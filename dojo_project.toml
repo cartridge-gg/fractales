@@ -1,0 +1,54 @@
+[config]
+name = "infinite_hex_adventurers"
+description = "Revolutionary blockchain game with discovery-based property rights"
+
+[world]
+name = "IHA_World"
+description = "Infinite Hex Adventurers World"
+cover_uri = "file://assets/cover.png"
+icon_uri = "file://assets/icon.png"
+website = "https://infinite-hex-adventurers.com"
+socials.x = "https://twitter.com/InfiniteHexGame"
+
+[contracts]
+initializer_class_hash = "0x0"
+
+[[models]]
+name = "Hex"
+class_hash = "0x0"
+
+[[models]]
+name = "HexArea"
+class_hash = "0x0"
+
+[[models]]
+name = "AdventurerDiscovery"
+class_hash = "0x0"
+
+[[models]]
+name = "Adventurer"
+class_hash = "0x0"
+
+[[models]]
+name = "AdventurerTraits"
+class_hash = "0x0"
+
+[[models]]
+name = "AdventurerPosition"
+class_hash = "0x0"
+
+[[models]]
+name = "AdventurerEconomics"
+class_hash = "0x0"
+
+[[models]]
+name = "AreaOwnership"
+class_hash = "0x0"
+
+[[models]]
+name = "Plant"
+class_hash = "0x0"
+
+[[systems]]
+name = "world_manager"
+class_hash = "0x0"

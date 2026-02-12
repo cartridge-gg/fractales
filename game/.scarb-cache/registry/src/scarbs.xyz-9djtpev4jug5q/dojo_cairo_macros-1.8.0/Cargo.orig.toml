@@ -1,0 +1,35 @@
+[package]
+name = "dojo_cairo_macros"
+edition = "2021"
+license = "Apache-2.0"
+repository = "https://github.com/dojoengine/dojo/"
+documentation = "https://book.dojoengine.org"
+homepage = "https://dojoengine.org"
+# The version of this package doesn't depend on the workspace version,
+# since it has to be published to Scarb registry before a Dojo package update.
+# Use the workflow "publish-dojo-macros-scarbs-xyz" to publish this package to Scarb registry.
+version = "1.8.0"
+description = """
+Cairo proc macros for the Dojo framework.
+"""
+keywords = ["dojo", "cairo", "starknet", "web3"]
+exclude = [".github/**", "images/**"]
+
+[lib]
+crate-type = ["rlib","cdylib"]
+
+[dependencies]
+anyhow = "1.0"
+dojo-types = { path = "../types", version = "1.7.0" }
+cairo-lang-primitive-token = "1"
+cairo-lang-macro = "0.2.0"
+cairo-lang-parser = "2.13.1"
+cairo-lang-utils = "2.13.1"
+cairo-lang-syntax = "2.13.1"
+cairo-lang-defs = "2.13.1"
+cairo-lang-diagnostics = "2.13.1"
+smol_str = "0.3"
+starknet-crypto = "0.8"
+starknet = "0.17"
+regex = "1.10.3"
+itertools = "0.12.1"

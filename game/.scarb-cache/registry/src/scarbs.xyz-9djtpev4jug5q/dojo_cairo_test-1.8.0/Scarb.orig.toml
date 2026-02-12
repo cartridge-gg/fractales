@@ -1,0 +1,18 @@
+[package]
+name = "dojo_cairo_test"
+description = "Testing library for Dojo using cairo test runner."
+license = "MIT"
+version = "1.8.0"
+edition = "2024_07"
+cairo-version = "2.13"
+repository = "https://github.com/dojoengine/dojo"
+documentation = "https://book.dojoengine.org"
+keywords = ["dojo", "contracts", "starknet", "testing"]
+
+[dependencies]
+starknet = "2.13"
+cairo_test = "2.13"
+
+dojo = { path = "../core", version = "1.7" }
+
+[lib]
