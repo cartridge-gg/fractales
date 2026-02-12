@@ -1,7 +1,7 @@
 {
   "world": {
-    "class_hash": "0x613551abceb2b37073b1149bb862ea70cf029981ce1ca47e9dd7c7ab97cb65d",
-    "address": "0x26d5777eccca1861a23303ee0ba48c0e8349e849d0377a21c3801ef1d0f8cef",
+    "class_hash": "0x2052d0e57d9072277ceecd0dbf19889f3500da0b4c323a6d636a5970e3f437f",
+    "address": "0xf3d3b78a41b212442a64218a7f7dbde331813ea09a07067c7ad12f93620c11",
     "seed": "dojo_starter",
     "name": "Dojo starter",
     "entrypoints": [
@@ -33,14 +33,80 @@
   },
   "contracts": [
     {
-      "address": "0x1ae76ae877518f905b73b643d96731e71e6b848ba68824adb4f1a77760fc3c7",
-      "class_hash": "0x1e4e6be422f3800cb260624f990b0e0a8250217cbd3c79db6c90a8d0c8527a0",
+      "address": "0x4b8f54f8d2eb75a59798003328548115cc5a5f19e2fb93ef9eb0e726676d17d",
+      "class_hash": "0x541ee820312e20b63395f63a197c42ee89081c67801775eb3931d401f562fc9",
       "init_calldata": [],
-      "tag": "dojo_starter-actions",
-      "selector": "0x7a1c71029f2d0b38e3ac89b09931d08b6e48417e079c289ff19a8698d0cba33",
+      "tag": "dojo_starter-adventurer_manager",
+      "selector": "0x12ce62b2f7f6b7485752e140223644852fd0f421a20ed850caf6284b4e48ea1",
       "systems": [
-        "spawn",
-        "move",
+        "create_adventurer",
+        "consume_energy",
+        "regenerate_energy",
+        "kill_adventurer",
+        "upgrade"
+      ]
+    },
+    {
+      "address": "0x3354e109e85a192e8acde41c0f1ada3ef8bb9cead72b3d59853e82b45473f69",
+      "class_hash": "0x4a5624ebc75f9d68fa5ca52de624483a2cf4ac73f6b014393f7c9b7c9dec24",
+      "init_calldata": [],
+      "tag": "dojo_starter-economic_manager",
+      "selector": "0x34e2f6884d3544bc490b7deefc712e20eef6bf1c3760fb385c29f4837d887ed",
+      "systems": [
+        "convert_items_to_energy",
+        "pay_hex_maintenance",
+        "process_hex_decay",
+        "initiate_hex_claim",
+        "defend_hex_from_claim",
+        "upgrade"
+      ]
+    },
+    {
+      "address": "0x21b6f71d28085d6f151fe02c0ffa872658499d4f45ffeaeae2a2bf915b142f0",
+      "class_hash": "0x23666b9b659519a313c84724962471d17a809b4b65bd36a58c409f9bad0caac",
+      "init_calldata": [],
+      "tag": "dojo_starter-harvesting_manager",
+      "selector": "0x5f56bcb882f243efad398fe12f7a6e8b58289fd0232b912822a529f7467c5d5",
+      "systems": [
+        "init_harvesting",
+        "start_harvesting",
+        "complete_harvesting",
+        "cancel_harvesting",
+        "upgrade"
+      ]
+    },
+    {
+      "address": "0x5ef085b348b24eefa13302a77fd1b335861358c3d1ea448013c5a2f38ef273c",
+      "class_hash": "0x45db1cad61d6a4bb132041d93f094833d054ccc3c62d6dbd53d6b47b5bc04bf",
+      "init_calldata": [],
+      "tag": "dojo_starter-ownership_manager",
+      "selector": "0x138393bbcb4747e667866d23300016c720a6fcd095cdd88f9553c0fd7dec8c0",
+      "systems": [
+        "transfer_ownership",
+        "upgrade"
+      ]
+    },
+    {
+      "address": "0x3f635f3585fdf88cb43cfadf2b3bc9e6d8f37d5b0266f1bdc70f2b4ed971231",
+      "class_hash": "0x330e6e3e3a6974159fa345c9da50f8be89fbd39adc22b4809e03cf37ef6de0d",
+      "init_calldata": [],
+      "tag": "dojo_starter-world_gen_manager",
+      "selector": "0x87bca3d0478449a8d605462936aa02a5759f8383e44445dea159bece2b2b5",
+      "systems": [
+        "initialize_active_world_gen_config",
+        "upgrade"
+      ]
+    },
+    {
+      "address": "0xe85af42d5e9cfff05a39d9d44dfa99a07b2e9e87336912009d5cd034bc12cb",
+      "class_hash": "0x7c761448ccca62a947a3f4666ff12404927338de5150ca875257595604c93eb",
+      "init_calldata": [],
+      "tag": "dojo_starter-world_manager",
+      "selector": "0x3529aafb255fef9bfb8407459e4cda7a5ce89c445627ceabba0f245a45c033c",
+      "systems": [
+        "discover_hex",
+        "discover_area",
+        "move_adventurer",
         "upgrade"
       ]
     }
@@ -50,99 +116,1033 @@
     {
       "members": [
         {
-          "name": "player",
-          "type": "core::starknet::contract_address::ContractAddress",
+          "name": "adventurer_id",
+          "type": "core::felt252",
           "key": true
         },
         {
-          "name": "directions",
-          "type": "core::array::Array::<dojo_starter::models::Direction>",
-          "key": false
-        }
-      ],
-      "class_hash": "0x2559fd839331a03a9b36aa013a7a8b07d0c5f1ad5e011ff32e1f0d2d2c8bac0",
-      "tag": "dojo_starter-DirectionsAvailable",
-      "selector": "0x77844f1facb51e60e546a9832d56c6bd04fa23be4fd5b57290caae5e9a3c1e4"
-    },
-    {
-      "members": [
-        {
-          "name": "player",
+          "name": "owner",
           "type": "core::starknet::contract_address::ContractAddress",
-          "key": true
-        },
-        {
-          "name": "remaining",
-          "type": "core::integer::u8",
           "key": false
         },
         {
-          "name": "last_direction",
-          "type": "core::option::Option::<dojo_starter::models::Direction>",
+          "name": "name",
+          "type": "core::felt252",
           "key": false
         },
         {
-          "name": "can_move",
+          "name": "energy",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "max_energy",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "current_hex",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "activity_locked_until",
+          "type": "core::integer::u64",
+          "key": false
+        },
+        {
+          "name": "is_alive",
           "type": "core::bool",
           "key": false
         }
       ],
-      "class_hash": "0x6a76fa6031748b3832fd5916ce4b4e7124c39f523c8e7b5d83da40cc93fc63d",
-      "tag": "dojo_starter-Moves",
-      "selector": "0x2a29373f1af8348bd366a990eb3a342ef2cbe5e85160539eaca3441a673f468"
+      "class_hash": "0x5069b2d6476bf5a57eb115de12ce678a229f678813e135097901d1a1a4c53ec",
+      "tag": "dojo_starter-Adventurer",
+      "selector": "0x75acd4a8474ccb4062b234fc077dc035417f4300a99372ca49a7aaffb26075d"
     },
     {
       "members": [
         {
-          "name": "player",
-          "type": "core::starknet::contract_address::ContractAddress",
+          "name": "adventurer_id",
+          "type": "core::felt252",
           "key": true
         },
         {
-          "name": "vec",
-          "type": "dojo_starter::models::Vec2",
+          "name": "energy_balance",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "total_energy_spent",
+          "type": "core::integer::u64",
+          "key": false
+        },
+        {
+          "name": "total_energy_earned",
+          "type": "core::integer::u64",
+          "key": false
+        },
+        {
+          "name": "last_regen_block",
+          "type": "core::integer::u64",
           "key": false
         }
       ],
-      "class_hash": "0x1f7793c7abcd26a4fb648f883a947c8e6d74077b7161a008e1f1966b3b1f317",
-      "tag": "dojo_starter-Position",
-      "selector": "0x2ac8b4c190f7031b9fc44312e6b047a1dce0b3f2957c33a935ca7846a46dd5b"
+      "class_hash": "0x103ec6fa8677a6ea4be74adcbdc1ff5ee5fe583524045bd794aa6b584ef7460",
+      "tag": "dojo_starter-AdventurerEconomics",
+      "selector": "0x7252357499c53e6628dbcf6ed2870c6643ab946aac30ab125dcf1f72c4aa3ec"
     },
     {
       "members": [
         {
-          "name": "identity",
-          "type": "core::starknet::contract_address::ContractAddress",
+          "name": "area_id",
+          "type": "core::felt252",
           "key": true
         },
         {
-          "name": "position",
-          "type": "core::array::Span::<(core::integer::u8, core::integer::u128)>",
+          "name": "owner_adventurer_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "discoverer_adventurer_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "discovery_block",
+          "type": "core::integer::u64",
+          "key": false
+        },
+        {
+          "name": "claim_block",
+          "type": "core::integer::u64",
           "key": false
         }
       ],
-      "class_hash": "0x71686e5c13179d564fbb3fe4cf68ad197e2722a0869502cb3017e2cf70ffc3",
-      "tag": "dojo_starter-PositionCount",
-      "selector": "0x44e8e8c3aea54e97e01563cacc08abb4a8ce8c468cd4d3a332bca12bfc2290d"
+      "class_hash": "0x91e106506cf1b9f58a66d24e5f64003ef3190b2fe0ea89912478f4fe18e0d9",
+      "tag": "dojo_starter-AreaOwnership",
+      "selector": "0x1a28a75a4ba133576c444f8b1004d97d508443e4ce8584fb51cc700c6acb9f0"
+    },
+    {
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "item_id",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "quantity",
+          "type": "core::integer::u32",
+          "key": false
+        },
+        {
+          "name": "quality",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "weight_per_unit",
+          "type": "core::integer::u16",
+          "key": false
+        }
+      ],
+      "class_hash": "0x652f5fd6d3f52130d7e74a7c6b63ee03ea45ecc7891b54d18a86d9c2c0c592b",
+      "tag": "dojo_starter-BackpackItem",
+      "selector": "0x405e454df4629120f26408ec4f02a0120cac03528e64d4fd33b00a8f6a2280d"
+    },
+    {
+      "members": [
+        {
+          "name": "claim_id",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "hex_coordinate",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "claimant_adventurer_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "energy_locked",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "created_block",
+          "type": "core::integer::u64",
+          "key": false
+        },
+        {
+          "name": "expiry_block",
+          "type": "core::integer::u64",
+          "key": false
+        },
+        {
+          "name": "status",
+          "type": "dojo_starter::models::economics::ClaimEscrowStatus",
+          "key": false
+        }
+      ],
+      "class_hash": "0x6cb27b2fe668bc51dfa5d8eb581ecfec4bda337494af4daba8d588dfb4b3114",
+      "tag": "dojo_starter-ClaimEscrow",
+      "selector": "0xca15829ad329e3d7a2e4dae3ef7eba57fdf9f4ed187c4b5e830acd3d76e860"
+    },
+    {
+      "members": [
+        {
+          "name": "item_type",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "current_rate",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "base_rate",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "last_update_block",
+          "type": "core::integer::u64",
+          "key": false
+        },
+        {
+          "name": "units_converted_in_window",
+          "type": "core::integer::u32",
+          "key": false
+        }
+      ],
+      "class_hash": "0x5f8c3ba28b0bf566210bbcf25a8deae6ca56021da4083368d4b8dfac33409db",
+      "tag": "dojo_starter-ConversionRate",
+      "selector": "0x139e8099357fb09980dd5127a1ac4e26a59cabd3a6e84530af78aeffc29271"
+    },
+    {
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "owner",
+          "type": "core::starknet::contract_address::ContractAddress",
+          "key": false
+        },
+        {
+          "name": "death_block",
+          "type": "core::integer::u64",
+          "key": false
+        },
+        {
+          "name": "death_cause",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "inventory_lost_hash",
+          "type": "core::felt252",
+          "key": false
+        }
+      ],
+      "class_hash": "0xb308d70c2c4f03496f11a905183e9affe6e9df7c51b3af3436ae95fba1b6a2",
+      "tag": "dojo_starter-DeathRecord",
+      "selector": "0x73419ec0fecd439fc5ce0057c9a71c2afd165931167041d3cf4b18ccb006567"
+    },
+    {
+      "members": [
+        {
+          "name": "reservation_id",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "plant_key",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "reserved_amount",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "created_block",
+          "type": "core::integer::u64",
+          "key": false
+        },
+        {
+          "name": "expiry_block",
+          "type": "core::integer::u64",
+          "key": false
+        },
+        {
+          "name": "status",
+          "type": "dojo_starter::models::harvesting::HarvestReservationStatus",
+          "key": false
+        }
+      ],
+      "class_hash": "0x57af0c37083ab9e27918d1d36313080ba4bcda0f0aabf207bb11a280a66c75a",
+      "tag": "dojo_starter-HarvestReservation",
+      "selector": "0x4477371c6897e8528339f7105121af1d9838750df81e284c640cc9e566ba26a"
+    },
+    {
+      "members": [
+        {
+          "name": "coordinate",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "biome",
+          "type": "dojo_starter::models::world::Biome",
+          "key": false
+        },
+        {
+          "name": "is_discovered",
+          "type": "core::bool",
+          "key": false
+        },
+        {
+          "name": "discovery_block",
+          "type": "core::integer::u64",
+          "key": false
+        },
+        {
+          "name": "discoverer",
+          "type": "core::starknet::contract_address::ContractAddress",
+          "key": false
+        },
+        {
+          "name": "area_count",
+          "type": "core::integer::u8",
+          "key": false
+        }
+      ],
+      "class_hash": "0x1391ff78e624e20ce5645f61c5473ea2fc84b066dc2be25f44cf885a8a30b7a",
+      "tag": "dojo_starter-Hex",
+      "selector": "0x1b4f1be091a6febf3dfe50959108d0fdd25faea6a8294023dcfa10c0f92de3c"
+    },
+    {
+      "members": [
+        {
+          "name": "area_id",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "hex_coordinate",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "area_index",
+          "type": "core::integer::u8",
+          "key": false
+        },
+        {
+          "name": "area_type",
+          "type": "dojo_starter::models::world::AreaType",
+          "key": false
+        },
+        {
+          "name": "is_discovered",
+          "type": "core::bool",
+          "key": false
+        },
+        {
+          "name": "discoverer",
+          "type": "core::starknet::contract_address::ContractAddress",
+          "key": false
+        },
+        {
+          "name": "resource_quality",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "size_category",
+          "type": "dojo_starter::models::world::SizeCategory",
+          "key": false
+        }
+      ],
+      "class_hash": "0x1abcdce94f627157e0039beba3b629786343657caa3d644bc8a09a2d97ef246",
+      "tag": "dojo_starter-HexArea",
+      "selector": "0x12e4c7efe130ac2d1c74898285888cd1031903ab0de52a66ff6313edd4ec76f"
+    },
+    {
+      "members": [
+        {
+          "name": "hex_coordinate",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "owner_adventurer_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "current_energy_reserve",
+          "type": "core::integer::u32",
+          "key": false
+        },
+        {
+          "name": "last_energy_payment_block",
+          "type": "core::integer::u64",
+          "key": false
+        },
+        {
+          "name": "last_decay_processed_block",
+          "type": "core::integer::u64",
+          "key": false
+        },
+        {
+          "name": "decay_level",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "claimable_since_block",
+          "type": "core::integer::u64",
+          "key": false
+        }
+      ],
+      "class_hash": "0x5f0af105362146e27f983fb11a806fef93dddfc17e2cd6279fdd165f594e020",
+      "tag": "dojo_starter-HexDecayState",
+      "selector": "0xd1bb09a00546532ae2bf00192bf755cd92d9e748ba0b71fbdaad0582380c95"
+    },
+    {
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "current_weight",
+          "type": "core::integer::u32",
+          "key": false
+        },
+        {
+          "name": "max_weight",
+          "type": "core::integer::u32",
+          "key": false
+        }
+      ],
+      "class_hash": "0x630ce8c1836b3ba64c84de5bf81e0fea18a914cf1748c050909f0e1bebc1935",
+      "tag": "dojo_starter-Inventory",
+      "selector": "0x7807bae93f028e019b768dc3b086df4fe0116f543cf15db2c23b1ac837e9e89"
+    },
+    {
+      "members": [
+        {
+          "name": "plant_key",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "hex_coordinate",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "area_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "plant_id",
+          "type": "core::integer::u8",
+          "key": false
+        },
+        {
+          "name": "species",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "current_yield",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "reserved_yield",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "max_yield",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "regrowth_rate",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "health",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "stress_level",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "genetics_hash",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "last_harvest_block",
+          "type": "core::integer::u64",
+          "key": false
+        },
+        {
+          "name": "discoverer",
+          "type": "core::starknet::contract_address::ContractAddress",
+          "key": false
+        }
+      ],
+      "class_hash": "0x65f009607d0298caca549a2bb0a85d6cc79824fb84eaa93c852462ac5dc15c7",
+      "tag": "dojo_starter-PlantNode",
+      "selector": "0x14c95d40f9f6c9f8ad1ea5d1ef27adb35769dfba5572a3565e5a54bc00e7d73"
+    },
+    {
+      "members": [
+        {
+          "name": "generation_version",
+          "type": "core::integer::u16",
+          "key": true
+        },
+        {
+          "name": "global_seed",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "biome_scale_bp",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "area_scale_bp",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "plant_scale_bp",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "biome_octaves",
+          "type": "core::integer::u8",
+          "key": false
+        },
+        {
+          "name": "area_octaves",
+          "type": "core::integer::u8",
+          "key": false
+        },
+        {
+          "name": "plant_octaves",
+          "type": "core::integer::u8",
+          "key": false
+        }
+      ],
+      "class_hash": "0x653cc69635e4998d191cb7651940a1ab3af98f3d1c15277a8567f935e9efc94",
+      "tag": "dojo_starter-WorldGenConfig",
+      "selector": "0xca839cb716a14e30b852f6f879dc31818f24eb529eb030fff63dc1de973bfe"
     }
   ],
   "events": [
     {
       "members": [
         {
-          "name": "player",
-          "type": "core::starknet::contract_address::ContractAddress",
+          "name": "adventurer_id",
+          "type": "core::felt252",
           "key": true
         },
         {
-          "name": "direction",
-          "type": "dojo_starter::models::Direction",
+          "name": "owner",
+          "type": "core::starknet::contract_address::ContractAddress",
           "key": false
         }
       ],
-      "class_hash": "0x1dc24a2235f0735e79b159a1ec312001651aee14281446b703b76b17b5dcf0c",
-      "tag": "dojo_starter-Moved",
-      "selector": "0x504403e5c02b6442527721fc464d9ea5fc8f1ee600ab5ccd5c0845d36fd45f1"
+      "class_hash": "0x1393996775d91f6dcb1d4feed1e9a291fb4d251990ae176e91ddb0c40a874b7",
+      "tag": "dojo_starter-AdventurerCreated",
+      "selector": "0x1a12227bc6dd3016141890518d6514c713b075a181fa9e4ff4f9d7f98507605"
+    },
+    {
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "owner",
+          "type": "core::starknet::contract_address::ContractAddress",
+          "key": false
+        },
+        {
+          "name": "cause",
+          "type": "core::felt252",
+          "key": false
+        }
+      ],
+      "class_hash": "0x2ad2ce5736c70766a94183ac8a63f8de959d1f5edaaa71e80a42a4105b47c63",
+      "tag": "dojo_starter-AdventurerDied",
+      "selector": "0x21840d6d3a2044639f816a8d07d15e252e75c94ee9a82a8e0833dfbaba2d3da"
+    },
+    {
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "from",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "to",
+          "type": "core::felt252",
+          "key": false
+        }
+      ],
+      "class_hash": "0x65aac79b86b6b6d87e676a1738060ff592697ee292dfc45fb1ec43a2ebc9658",
+      "tag": "dojo_starter-AdventurerMoved",
+      "selector": "0x4a1a500217bda2afdcdf0fe14d48ea716525a2d6156d8e5afb89178e1cd96d8"
+    },
+    {
+      "members": [
+        {
+          "name": "area_id",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "hex",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "area_type",
+          "type": "dojo_starter::models::world::AreaType",
+          "key": false
+        },
+        {
+          "name": "discoverer",
+          "type": "core::starknet::contract_address::ContractAddress",
+          "key": false
+        }
+      ],
+      "class_hash": "0x1b404f51c2090d2c1d2121640543d10dc6ef3a8e0e74d4aea5328d7e2722a8f",
+      "tag": "dojo_starter-AreaDiscovered",
+      "selector": "0x302f2124f97b4ba78fb72898e85d576fe15aad3a47bad28f323437842e4266e"
+    },
+    {
+      "members": [
+        {
+          "name": "area_id",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "owner_adventurer_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "discoverer_adventurer_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "claim_block",
+          "type": "core::integer::u64",
+          "key": false
+        }
+      ],
+      "class_hash": "0x7dc73189b883dbb99cf470995852826e4950f07611bcf6ab45d2573f844433",
+      "tag": "dojo_starter-AreaOwnershipAssigned",
+      "selector": "0x398ed6353431801fb576618e9f236a0de7a6cd7bb109578ae439c7edfe136f6"
+    },
+    {
+      "members": [
+        {
+          "name": "hex",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "claim_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "claimant",
+          "type": "core::felt252",
+          "key": false
+        }
+      ],
+      "class_hash": "0x4a318465333fa951f91f55cdc55ad7add47fca0ec04973f96f05d18b0e36f78",
+      "tag": "dojo_starter-ClaimExpired",
+      "selector": "0x38c8e2802ff05db69a42c36cfe471e658f4f5d4546bdac00fbbe469a68ba78"
+    },
+    {
+      "members": [
+        {
+          "name": "hex",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "claimant",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "claim_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "energy_locked",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "expiry_block",
+          "type": "core::integer::u64",
+          "key": false
+        }
+      ],
+      "class_hash": "0x7d5c65a7b8f8e6daf0a5d336481ad9612c5b65a8f9a67e1a2c098d449698d35",
+      "tag": "dojo_starter-ClaimInitiated",
+      "selector": "0x313471bb25b3ca875e23c9bd62146bdd6be00cfca8047fbfb4cb7176d534998"
+    },
+    {
+      "members": [
+        {
+          "name": "hex",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "claim_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "claimant",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "amount",
+          "type": "core::integer::u16",
+          "key": false
+        }
+      ],
+      "class_hash": "0x4f9fc6e9ef9fe7b6c338c0d7946db659448e4624c7363ae3469e5e33338831c",
+      "tag": "dojo_starter-ClaimRefunded",
+      "selector": "0x4f5aed38b1c27ef2cc6eeeb3b2b55a4a15fb3b0adc09479c42d34d3cafca91"
+    },
+    {
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "partial_yield",
+          "type": "core::integer::u16",
+          "key": false
+        }
+      ],
+      "class_hash": "0x4ef96a4876d48c20f1176ac89b5d2b05057b84e65726f8eea3f5cbf780835db",
+      "tag": "dojo_starter-HarvestingCancelled",
+      "selector": "0x296d9c9b788b53720e78ee2231f3a6e6b535187198eefd963df0fc977b86004"
+    },
+    {
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "hex",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "area_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "plant_id",
+          "type": "core::integer::u8",
+          "key": false
+        },
+        {
+          "name": "actual_yield",
+          "type": "core::integer::u16",
+          "key": false
+        }
+      ],
+      "class_hash": "0x4c73798f1fc5d7447aaff5569e78c8c2fca9f8bf4fa8e17a431d98b20364d6",
+      "tag": "dojo_starter-HarvestingCompleted",
+      "selector": "0x74151adaf01bb24d095017bcff3306dde9b8223dabc188a40cfaf8c07e949e3"
+    },
+    {
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "hex",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "area_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "plant_id",
+          "type": "core::integer::u8",
+          "key": false
+        },
+        {
+          "name": "amount",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "eta",
+          "type": "core::integer::u64",
+          "key": false
+        }
+      ],
+      "class_hash": "0x74cc50cfe6820f71a0e8f98794c39f6b08d1e7edcf6eb15ad2574ff48a62c87",
+      "tag": "dojo_starter-HarvestingStarted",
+      "selector": "0x380c881e6e512f978f5c0a19677b6a4eee96783f55ebeb560ce6e98cbadb2a8"
+    },
+    {
+      "members": [
+        {
+          "name": "hex",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "min_energy_to_claim",
+          "type": "core::integer::u16",
+          "key": false
+        }
+      ],
+      "class_hash": "0x5bdb08d15631542f3429d5127d6e0be63e73b6d58c3105a23a0b0cad77e5b14",
+      "tag": "dojo_starter-HexBecameClaimable",
+      "selector": "0x701ce9f1800424181533c8473684879ef7d33a08db789a270bc3b6ab00b6766"
+    },
+    {
+      "members": [
+        {
+          "name": "hex",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "owner",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "energy",
+          "type": "core::integer::u16",
+          "key": false
+        }
+      ],
+      "class_hash": "0x15b03a837969c1a5d7cfbf25275ad99c07730807260344c03ab290a5e3a1a49",
+      "tag": "dojo_starter-HexDefended",
+      "selector": "0x91324137b6260db9cb3fa27152d0ac3c97ed93121e4ee7b0c832a570c4b11a"
+    },
+    {
+      "members": [
+        {
+          "name": "hex",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "biome",
+          "type": "dojo_starter::models::world::Biome",
+          "key": false
+        },
+        {
+          "name": "discoverer",
+          "type": "core::starknet::contract_address::ContractAddress",
+          "key": false
+        }
+      ],
+      "class_hash": "0xf2031242768bf510bf5a414dcd8cfd2dc3ca2060d85f0cff522259d63bdd42",
+      "tag": "dojo_starter-HexDiscovered",
+      "selector": "0x4f88d041cccb5e4b173721b59cc21055f8998ab0d761d2864b7a5ec4f45c84d"
+    },
+    {
+      "members": [
+        {
+          "name": "hex",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "payer",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "amount",
+          "type": "core::integer::u16",
+          "key": false
+        }
+      ],
+      "class_hash": "0x6f00e3de37d5395a19a8bfa1e749767f566bfe834694197edc24ba4b964a97e",
+      "tag": "dojo_starter-HexEnergyPaid",
+      "selector": "0x1ff74ef91e4b9b1c9b002f54622f3e1e3c950fc258f4a0d1bce6fac7fa32967"
+    },
+    {
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "item_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "quantity",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "energy_gained",
+          "type": "core::integer::u16",
+          "key": false
+        }
+      ],
+      "class_hash": "0x69d08440b8d63f706d6adf4fde673dac61a0511a0779800ab66526e936af5ce",
+      "tag": "dojo_starter-ItemsConverted",
+      "selector": "0x1f5e679b77437ae27ae0b280d72ee0f1cdf5c29dfdf7508cf9958083d945259"
+    },
+    {
+      "members": [
+        {
+          "name": "area_id",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "from_adventurer_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "to_adventurer_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "claim_block",
+          "type": "core::integer::u64",
+          "key": false
+        }
+      ],
+      "class_hash": "0x122c440a5197effa4c18486eaedc92e1669c6960cc0be6ca091ad0b182d25af",
+      "tag": "dojo_starter-OwnershipTransferred",
+      "selector": "0x7e40ee475bc8d78c7c8505a9f3f82d67df5be89ac9bc05b63ba6e21e709db6b"
+    },
+    {
+      "members": [
+        {
+          "name": "generation_version",
+          "type": "core::integer::u16",
+          "key": true
+        },
+        {
+          "name": "global_seed",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "biome_scale_bp",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "area_scale_bp",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "plant_scale_bp",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "biome_octaves",
+          "type": "core::integer::u8",
+          "key": false
+        },
+        {
+          "name": "area_octaves",
+          "type": "core::integer::u8",
+          "key": false
+        },
+        {
+          "name": "plant_octaves",
+          "type": "core::integer::u8",
+          "key": false
+        }
+      ],
+      "class_hash": "0x727c0bbf81eb43e684c48aa01db4c6af28c062c5bed35627da835ffa2b825b5",
+      "tag": "dojo_starter-WorldGenConfigInitialized",
+      "selector": "0x52687491406799d3a74c4694049168bfda565b84bdcb172e917b4df4c5e3387"
     }
   ],
   "external_contracts": [],
@@ -159,16 +1159,6 @@
         {
           "name": "snapshot",
           "type": "@core::array::Array::<(core::felt252, dojo::meta::introspect::Ty)>"
-        }
-      ]
-    },
-    {
-      "type": "struct",
-      "name": "core::array::Span::<(core::integer::u8, core::integer::u128)>",
-      "members": [
-        {
-          "name": "snapshot",
-          "type": "@core::array::Array::<(core::integer::u8, core::integer::u128)>"
         }
       ]
     },
@@ -291,20 +1281,6 @@
         {
           "name": "Some",
           "type": "core::integer::u32"
-        },
-        {
-          "name": "None",
-          "type": "()"
-        }
-      ]
-    },
-    {
-      "type": "enum",
-      "name": "core::option::Option::<dojo_starter::models::Direction>",
-      "variants": [
-        {
-          "name": "Some",
-          "type": "dojo_starter::models::Direction"
         },
         {
           "name": "None",
@@ -1987,205 +2963,1924 @@
       "state_mutability": "view"
     },
     {
+      "type": "struct",
+      "name": "dojo_starter::events::adventurer_events::AdventurerCreated",
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "owner",
+          "type": "core::starknet::contract_address::ContractAddress"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::adventurer_events::AdventurerCreatedValue",
+      "members": [
+        {
+          "name": "owner",
+          "type": "core::starknet::contract_address::ContractAddress"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::adventurer_events::AdventurerDied",
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "owner",
+          "type": "core::starknet::contract_address::ContractAddress"
+        },
+        {
+          "name": "cause",
+          "type": "core::felt252"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::adventurer_events::AdventurerDiedValue",
+      "members": [
+        {
+          "name": "owner",
+          "type": "core::starknet::contract_address::ContractAddress"
+        },
+        {
+          "name": "cause",
+          "type": "core::felt252"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::adventurer_events::AdventurerMoved",
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "from",
+          "type": "core::felt252"
+        },
+        {
+          "name": "to",
+          "type": "core::felt252"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::adventurer_events::AdventurerMovedValue",
+      "members": [
+        {
+          "name": "from",
+          "type": "core::felt252"
+        },
+        {
+          "name": "to",
+          "type": "core::felt252"
+        }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::events::adventurer_events::e_AdventurerCreated::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::events::adventurer_events::e_AdventurerDied::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::events::adventurer_events::e_AdventurerMoved::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::economic_events::ClaimExpired",
+      "members": [
+        {
+          "name": "hex",
+          "type": "core::felt252"
+        },
+        {
+          "name": "claim_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "claimant",
+          "type": "core::felt252"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::economic_events::ClaimExpiredValue",
+      "members": [
+        {
+          "name": "claim_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "claimant",
+          "type": "core::felt252"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::economic_events::ClaimInitiated",
+      "members": [
+        {
+          "name": "hex",
+          "type": "core::felt252"
+        },
+        {
+          "name": "claimant",
+          "type": "core::felt252"
+        },
+        {
+          "name": "claim_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "energy_locked",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "expiry_block",
+          "type": "core::integer::u64"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::economic_events::ClaimInitiatedValue",
+      "members": [
+        {
+          "name": "claim_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "energy_locked",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "expiry_block",
+          "type": "core::integer::u64"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::economic_events::ClaimRefunded",
+      "members": [
+        {
+          "name": "hex",
+          "type": "core::felt252"
+        },
+        {
+          "name": "claim_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "claimant",
+          "type": "core::felt252"
+        },
+        {
+          "name": "amount",
+          "type": "core::integer::u16"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::economic_events::ClaimRefundedValue",
+      "members": [
+        {
+          "name": "claim_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "claimant",
+          "type": "core::felt252"
+        },
+        {
+          "name": "amount",
+          "type": "core::integer::u16"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::economic_events::HexBecameClaimable",
+      "members": [
+        {
+          "name": "hex",
+          "type": "core::felt252"
+        },
+        {
+          "name": "min_energy_to_claim",
+          "type": "core::integer::u16"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::economic_events::HexBecameClaimableValue",
+      "members": [
+        {
+          "name": "min_energy_to_claim",
+          "type": "core::integer::u16"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::economic_events::HexDefended",
+      "members": [
+        {
+          "name": "hex",
+          "type": "core::felt252"
+        },
+        {
+          "name": "owner",
+          "type": "core::felt252"
+        },
+        {
+          "name": "energy",
+          "type": "core::integer::u16"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::economic_events::HexDefendedValue",
+      "members": [
+        {
+          "name": "owner",
+          "type": "core::felt252"
+        },
+        {
+          "name": "energy",
+          "type": "core::integer::u16"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::economic_events::HexEnergyPaid",
+      "members": [
+        {
+          "name": "hex",
+          "type": "core::felt252"
+        },
+        {
+          "name": "payer",
+          "type": "core::felt252"
+        },
+        {
+          "name": "amount",
+          "type": "core::integer::u16"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::economic_events::HexEnergyPaidValue",
+      "members": [
+        {
+          "name": "payer",
+          "type": "core::felt252"
+        },
+        {
+          "name": "amount",
+          "type": "core::integer::u16"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::economic_events::ItemsConverted",
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "item_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "quantity",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "energy_gained",
+          "type": "core::integer::u16"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::economic_events::ItemsConvertedValue",
+      "members": [
+        {
+          "name": "item_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "quantity",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "energy_gained",
+          "type": "core::integer::u16"
+        }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::events::economic_events::e_ClaimExpired::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::events::economic_events::e_ClaimInitiated::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::events::economic_events::e_ClaimRefunded::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::events::economic_events::e_HexBecameClaimable::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::events::economic_events::e_HexDefended::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::events::economic_events::e_HexEnergyPaid::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::events::economic_events::e_ItemsConverted::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::harvesting_events::HarvestingCancelled",
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "partial_yield",
+          "type": "core::integer::u16"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::harvesting_events::HarvestingCancelledValue",
+      "members": [
+        {
+          "name": "partial_yield",
+          "type": "core::integer::u16"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::harvesting_events::HarvestingCompleted",
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "hex",
+          "type": "core::felt252"
+        },
+        {
+          "name": "area_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "plant_id",
+          "type": "core::integer::u8"
+        },
+        {
+          "name": "actual_yield",
+          "type": "core::integer::u16"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::harvesting_events::HarvestingCompletedValue",
+      "members": [
+        {
+          "name": "hex",
+          "type": "core::felt252"
+        },
+        {
+          "name": "area_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "plant_id",
+          "type": "core::integer::u8"
+        },
+        {
+          "name": "actual_yield",
+          "type": "core::integer::u16"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::harvesting_events::HarvestingStarted",
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "hex",
+          "type": "core::felt252"
+        },
+        {
+          "name": "area_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "plant_id",
+          "type": "core::integer::u8"
+        },
+        {
+          "name": "amount",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "eta",
+          "type": "core::integer::u64"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::harvesting_events::HarvestingStartedValue",
+      "members": [
+        {
+          "name": "hex",
+          "type": "core::felt252"
+        },
+        {
+          "name": "area_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "plant_id",
+          "type": "core::integer::u8"
+        },
+        {
+          "name": "amount",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "eta",
+          "type": "core::integer::u64"
+        }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::events::harvesting_events::e_HarvestingCancelled::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::events::harvesting_events::e_HarvestingCompleted::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::events::harvesting_events::e_HarvestingStarted::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::ownership_events::AreaOwnershipAssigned",
+      "members": [
+        {
+          "name": "area_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "owner_adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "discoverer_adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "claim_block",
+          "type": "core::integer::u64"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::ownership_events::AreaOwnershipAssignedValue",
+      "members": [
+        {
+          "name": "owner_adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "discoverer_adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "claim_block",
+          "type": "core::integer::u64"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::ownership_events::OwnershipTransferred",
+      "members": [
+        {
+          "name": "area_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "from_adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "to_adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "claim_block",
+          "type": "core::integer::u64"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::ownership_events::OwnershipTransferredValue",
+      "members": [
+        {
+          "name": "from_adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "to_adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "claim_block",
+          "type": "core::integer::u64"
+        }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::events::ownership_events::e_AreaOwnershipAssigned::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::events::ownership_events::e_OwnershipTransferred::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::world_events::AreaDiscovered",
+      "members": [
+        {
+          "name": "area_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "hex",
+          "type": "core::felt252"
+        },
+        {
+          "name": "area_type",
+          "type": "dojo_starter::models::world::AreaType"
+        },
+        {
+          "name": "discoverer",
+          "type": "core::starknet::contract_address::ContractAddress"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::world_events::AreaDiscoveredValue",
+      "members": [
+        {
+          "name": "hex",
+          "type": "core::felt252"
+        },
+        {
+          "name": "area_type",
+          "type": "dojo_starter::models::world::AreaType"
+        },
+        {
+          "name": "discoverer",
+          "type": "core::starknet::contract_address::ContractAddress"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::world_events::HexDiscovered",
+      "members": [
+        {
+          "name": "hex",
+          "type": "core::felt252"
+        },
+        {
+          "name": "biome",
+          "type": "dojo_starter::models::world::Biome"
+        },
+        {
+          "name": "discoverer",
+          "type": "core::starknet::contract_address::ContractAddress"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::world_events::HexDiscoveredValue",
+      "members": [
+        {
+          "name": "biome",
+          "type": "dojo_starter::models::world::Biome"
+        },
+        {
+          "name": "discoverer",
+          "type": "core::starknet::contract_address::ContractAddress"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::world_events::WorldGenConfigInitialized",
+      "members": [
+        {
+          "name": "generation_version",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "global_seed",
+          "type": "core::felt252"
+        },
+        {
+          "name": "biome_scale_bp",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "area_scale_bp",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "plant_scale_bp",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "biome_octaves",
+          "type": "core::integer::u8"
+        },
+        {
+          "name": "area_octaves",
+          "type": "core::integer::u8"
+        },
+        {
+          "name": "plant_octaves",
+          "type": "core::integer::u8"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::world_events::WorldGenConfigInitializedValue",
+      "members": [
+        {
+          "name": "global_seed",
+          "type": "core::felt252"
+        },
+        {
+          "name": "biome_scale_bp",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "area_scale_bp",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "plant_scale_bp",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "biome_octaves",
+          "type": "core::integer::u8"
+        },
+        {
+          "name": "area_octaves",
+          "type": "core::integer::u8"
+        },
+        {
+          "name": "plant_octaves",
+          "type": "core::integer::u8"
+        }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::events::world_events::e_AreaDiscovered::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::events::world_events::e_HexDiscovered::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::events::world_events::e_WorldGenConfigInitialized::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::adventurer::Adventurer",
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "owner",
+          "type": "core::starknet::contract_address::ContractAddress"
+        },
+        {
+          "name": "name",
+          "type": "core::felt252"
+        },
+        {
+          "name": "energy",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "max_energy",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "current_hex",
+          "type": "core::felt252"
+        },
+        {
+          "name": "activity_locked_until",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "is_alive",
+          "type": "core::bool"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::adventurer::AdventurerValue",
+      "members": [
+        {
+          "name": "owner",
+          "type": "core::starknet::contract_address::ContractAddress"
+        },
+        {
+          "name": "name",
+          "type": "core::felt252"
+        },
+        {
+          "name": "energy",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "max_energy",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "current_hex",
+          "type": "core::felt252"
+        },
+        {
+          "name": "activity_locked_until",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "is_alive",
+          "type": "core::bool"
+        }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::models::adventurer::m_Adventurer::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::deaths::DeathRecord",
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "owner",
+          "type": "core::starknet::contract_address::ContractAddress"
+        },
+        {
+          "name": "death_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "death_cause",
+          "type": "core::felt252"
+        },
+        {
+          "name": "inventory_lost_hash",
+          "type": "core::felt252"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::deaths::DeathRecordValue",
+      "members": [
+        {
+          "name": "owner",
+          "type": "core::starknet::contract_address::ContractAddress"
+        },
+        {
+          "name": "death_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "death_cause",
+          "type": "core::felt252"
+        },
+        {
+          "name": "inventory_lost_hash",
+          "type": "core::felt252"
+        }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::models::deaths::m_DeathRecord::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::economics::AdventurerEconomics",
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "energy_balance",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "total_energy_spent",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "total_energy_earned",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "last_regen_block",
+          "type": "core::integer::u64"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::economics::AdventurerEconomicsValue",
+      "members": [
+        {
+          "name": "energy_balance",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "total_energy_spent",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "total_energy_earned",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "last_regen_block",
+          "type": "core::integer::u64"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::economics::ClaimEscrow",
+      "members": [
+        {
+          "name": "claim_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "hex_coordinate",
+          "type": "core::felt252"
+        },
+        {
+          "name": "claimant_adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "energy_locked",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "created_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "expiry_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "status",
+          "type": "dojo_starter::models::economics::ClaimEscrowStatus"
+        }
+      ]
+    },
+    {
       "type": "enum",
-      "name": "dojo_starter::models::Direction",
+      "name": "dojo_starter::models::economics::ClaimEscrowStatus",
       "variants": [
         {
-          "name": "Left",
+          "name": "Inactive",
           "type": "()"
         },
         {
-          "name": "Right",
+          "name": "Active",
           "type": "()"
         },
         {
-          "name": "Up",
+          "name": "Expired",
           "type": "()"
         },
         {
-          "name": "Down",
+          "name": "Resolved",
           "type": "()"
         }
       ]
     },
     {
       "type": "struct",
-      "name": "dojo_starter::models::DirectionsAvailable",
+      "name": "dojo_starter::models::economics::ClaimEscrowValue",
       "members": [
         {
-          "name": "player",
-          "type": "core::starknet::contract_address::ContractAddress"
+          "name": "hex_coordinate",
+          "type": "core::felt252"
         },
         {
-          "name": "directions",
-          "type": "core::array::Array::<dojo_starter::models::Direction>"
+          "name": "claimant_adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "energy_locked",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "created_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "expiry_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "status",
+          "type": "dojo_starter::models::economics::ClaimEscrowStatus"
         }
       ]
     },
     {
       "type": "struct",
-      "name": "dojo_starter::models::DirectionsAvailableValue",
+      "name": "dojo_starter::models::economics::ConversionRate",
       "members": [
         {
-          "name": "directions",
-          "type": "core::array::Array::<dojo_starter::models::Direction>"
-        }
-      ]
-    },
-    {
-      "type": "struct",
-      "name": "dojo_starter::models::Moves",
-      "members": [
-        {
-          "name": "player",
-          "type": "core::starknet::contract_address::ContractAddress"
+          "name": "item_type",
+          "type": "core::felt252"
         },
         {
-          "name": "remaining",
-          "type": "core::integer::u8"
+          "name": "current_rate",
+          "type": "core::integer::u16"
         },
         {
-          "name": "last_direction",
-          "type": "core::option::Option::<dojo_starter::models::Direction>"
+          "name": "base_rate",
+          "type": "core::integer::u16"
         },
         {
-          "name": "can_move",
-          "type": "core::bool"
-        }
-      ]
-    },
-    {
-      "type": "struct",
-      "name": "dojo_starter::models::MovesValue",
-      "members": [
-        {
-          "name": "remaining",
-          "type": "core::integer::u8"
+          "name": "last_update_block",
+          "type": "core::integer::u64"
         },
         {
-          "name": "last_direction",
-          "type": "core::option::Option::<dojo_starter::models::Direction>"
-        },
-        {
-          "name": "can_move",
-          "type": "core::bool"
-        }
-      ]
-    },
-    {
-      "type": "struct",
-      "name": "dojo_starter::models::Position",
-      "members": [
-        {
-          "name": "player",
-          "type": "core::starknet::contract_address::ContractAddress"
-        },
-        {
-          "name": "vec",
-          "type": "dojo_starter::models::Vec2"
-        }
-      ]
-    },
-    {
-      "type": "struct",
-      "name": "dojo_starter::models::PositionCount",
-      "members": [
-        {
-          "name": "identity",
-          "type": "core::starknet::contract_address::ContractAddress"
-        },
-        {
-          "name": "position",
-          "type": "core::array::Span::<(core::integer::u8, core::integer::u128)>"
-        }
-      ]
-    },
-    {
-      "type": "struct",
-      "name": "dojo_starter::models::PositionCountValue",
-      "members": [
-        {
-          "name": "position",
-          "type": "core::array::Span::<(core::integer::u8, core::integer::u128)>"
-        }
-      ]
-    },
-    {
-      "type": "struct",
-      "name": "dojo_starter::models::PositionValue",
-      "members": [
-        {
-          "name": "vec",
-          "type": "dojo_starter::models::Vec2"
-        }
-      ]
-    },
-    {
-      "type": "struct",
-      "name": "dojo_starter::models::Vec2",
-      "members": [
-        {
-          "name": "x",
-          "type": "core::integer::u32"
-        },
-        {
-          "name": "y",
+          "name": "units_converted_in_window",
           "type": "core::integer::u32"
         }
       ]
     },
     {
+      "type": "struct",
+      "name": "dojo_starter::models::economics::ConversionRateValue",
+      "members": [
+        {
+          "name": "current_rate",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "base_rate",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "last_update_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "units_converted_in_window",
+          "type": "core::integer::u32"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::economics::HexDecayState",
+      "members": [
+        {
+          "name": "hex_coordinate",
+          "type": "core::felt252"
+        },
+        {
+          "name": "owner_adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "current_energy_reserve",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "last_energy_payment_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "last_decay_processed_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "decay_level",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "claimable_since_block",
+          "type": "core::integer::u64"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::economics::HexDecayStateValue",
+      "members": [
+        {
+          "name": "owner_adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "current_energy_reserve",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "last_energy_payment_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "last_decay_processed_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "decay_level",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "claimable_since_block",
+          "type": "core::integer::u64"
+        }
+      ]
+    },
+    {
       "type": "event",
-      "name": "dojo_starter::models::m_DirectionsAvailable::Event",
+      "name": "dojo_starter::models::economics::m_AdventurerEconomics::Event",
       "kind": "enum",
       "variants": []
     },
     {
       "type": "event",
-      "name": "dojo_starter::models::m_Moves::Event",
+      "name": "dojo_starter::models::economics::m_ClaimEscrow::Event",
       "kind": "enum",
       "variants": []
     },
     {
       "type": "event",
-      "name": "dojo_starter::models::m_Position::Event",
+      "name": "dojo_starter::models::economics::m_ConversionRate::Event",
       "kind": "enum",
       "variants": []
     },
     {
       "type": "event",
-      "name": "dojo_starter::models::m_PositionCount::Event",
+      "name": "dojo_starter::models::economics::m_HexDecayState::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::harvesting::HarvestReservation",
+      "members": [
+        {
+          "name": "reservation_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "plant_key",
+          "type": "core::felt252"
+        },
+        {
+          "name": "reserved_amount",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "created_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "expiry_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "status",
+          "type": "dojo_starter::models::harvesting::HarvestReservationStatus"
+        }
+      ]
+    },
+    {
+      "type": "enum",
+      "name": "dojo_starter::models::harvesting::HarvestReservationStatus",
+      "variants": [
+        {
+          "name": "Inactive",
+          "type": "()"
+        },
+        {
+          "name": "Active",
+          "type": "()"
+        },
+        {
+          "name": "Completed",
+          "type": "()"
+        },
+        {
+          "name": "Canceled",
+          "type": "()"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::harvesting::HarvestReservationValue",
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "plant_key",
+          "type": "core::felt252"
+        },
+        {
+          "name": "reserved_amount",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "created_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "expiry_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "status",
+          "type": "dojo_starter::models::harvesting::HarvestReservationStatus"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::harvesting::PlantNode",
+      "members": [
+        {
+          "name": "plant_key",
+          "type": "core::felt252"
+        },
+        {
+          "name": "hex_coordinate",
+          "type": "core::felt252"
+        },
+        {
+          "name": "area_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "plant_id",
+          "type": "core::integer::u8"
+        },
+        {
+          "name": "species",
+          "type": "core::felt252"
+        },
+        {
+          "name": "current_yield",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "reserved_yield",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "max_yield",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "regrowth_rate",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "health",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "stress_level",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "genetics_hash",
+          "type": "core::felt252"
+        },
+        {
+          "name": "last_harvest_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "discoverer",
+          "type": "core::starknet::contract_address::ContractAddress"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::harvesting::PlantNodeValue",
+      "members": [
+        {
+          "name": "hex_coordinate",
+          "type": "core::felt252"
+        },
+        {
+          "name": "area_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "plant_id",
+          "type": "core::integer::u8"
+        },
+        {
+          "name": "species",
+          "type": "core::felt252"
+        },
+        {
+          "name": "current_yield",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "reserved_yield",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "max_yield",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "regrowth_rate",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "health",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "stress_level",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "genetics_hash",
+          "type": "core::felt252"
+        },
+        {
+          "name": "last_harvest_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "discoverer",
+          "type": "core::starknet::contract_address::ContractAddress"
+        }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::models::harvesting::m_HarvestReservation::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::models::harvesting::m_PlantNode::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::inventory::BackpackItem",
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "item_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "quantity",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "quality",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "weight_per_unit",
+          "type": "core::integer::u16"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::inventory::BackpackItemValue",
+      "members": [
+        {
+          "name": "quantity",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "quality",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "weight_per_unit",
+          "type": "core::integer::u16"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::inventory::Inventory",
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "current_weight",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "max_weight",
+          "type": "core::integer::u32"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::inventory::InventoryValue",
+      "members": [
+        {
+          "name": "current_weight",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "max_weight",
+          "type": "core::integer::u32"
+        }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::models::inventory::m_BackpackItem::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::models::inventory::m_Inventory::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::ownership::AreaOwnership",
+      "members": [
+        {
+          "name": "area_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "owner_adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "discoverer_adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "discovery_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "claim_block",
+          "type": "core::integer::u64"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::ownership::AreaOwnershipValue",
+      "members": [
+        {
+          "name": "owner_adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "discoverer_adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "discovery_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "claim_block",
+          "type": "core::integer::u64"
+        }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::models::ownership::m_AreaOwnership::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "enum",
+      "name": "dojo_starter::models::world::AreaType",
+      "variants": [
+        {
+          "name": "Wilderness",
+          "type": "()"
+        },
+        {
+          "name": "Control",
+          "type": "()"
+        },
+        {
+          "name": "PlantField",
+          "type": "()"
+        }
+      ]
+    },
+    {
+      "type": "enum",
+      "name": "dojo_starter::models::world::Biome",
+      "variants": [
+        {
+          "name": "Unknown",
+          "type": "()"
+        },
+        {
+          "name": "Plains",
+          "type": "()"
+        },
+        {
+          "name": "Forest",
+          "type": "()"
+        },
+        {
+          "name": "Mountain",
+          "type": "()"
+        },
+        {
+          "name": "Desert",
+          "type": "()"
+        },
+        {
+          "name": "Swamp",
+          "type": "()"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::world::Hex",
+      "members": [
+        {
+          "name": "coordinate",
+          "type": "core::felt252"
+        },
+        {
+          "name": "biome",
+          "type": "dojo_starter::models::world::Biome"
+        },
+        {
+          "name": "is_discovered",
+          "type": "core::bool"
+        },
+        {
+          "name": "discovery_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "discoverer",
+          "type": "core::starknet::contract_address::ContractAddress"
+        },
+        {
+          "name": "area_count",
+          "type": "core::integer::u8"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::world::HexArea",
+      "members": [
+        {
+          "name": "area_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "hex_coordinate",
+          "type": "core::felt252"
+        },
+        {
+          "name": "area_index",
+          "type": "core::integer::u8"
+        },
+        {
+          "name": "area_type",
+          "type": "dojo_starter::models::world::AreaType"
+        },
+        {
+          "name": "is_discovered",
+          "type": "core::bool"
+        },
+        {
+          "name": "discoverer",
+          "type": "core::starknet::contract_address::ContractAddress"
+        },
+        {
+          "name": "resource_quality",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "size_category",
+          "type": "dojo_starter::models::world::SizeCategory"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::world::HexAreaValue",
+      "members": [
+        {
+          "name": "hex_coordinate",
+          "type": "core::felt252"
+        },
+        {
+          "name": "area_index",
+          "type": "core::integer::u8"
+        },
+        {
+          "name": "area_type",
+          "type": "dojo_starter::models::world::AreaType"
+        },
+        {
+          "name": "is_discovered",
+          "type": "core::bool"
+        },
+        {
+          "name": "discoverer",
+          "type": "core::starknet::contract_address::ContractAddress"
+        },
+        {
+          "name": "resource_quality",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "size_category",
+          "type": "dojo_starter::models::world::SizeCategory"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::world::HexValue",
+      "members": [
+        {
+          "name": "biome",
+          "type": "dojo_starter::models::world::Biome"
+        },
+        {
+          "name": "is_discovered",
+          "type": "core::bool"
+        },
+        {
+          "name": "discovery_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "discoverer",
+          "type": "core::starknet::contract_address::ContractAddress"
+        },
+        {
+          "name": "area_count",
+          "type": "core::integer::u8"
+        }
+      ]
+    },
+    {
+      "type": "enum",
+      "name": "dojo_starter::models::world::SizeCategory",
+      "variants": [
+        {
+          "name": "Small",
+          "type": "()"
+        },
+        {
+          "name": "Medium",
+          "type": "()"
+        },
+        {
+          "name": "Large",
+          "type": "()"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::world::WorldGenConfig",
+      "members": [
+        {
+          "name": "generation_version",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "global_seed",
+          "type": "core::felt252"
+        },
+        {
+          "name": "biome_scale_bp",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "area_scale_bp",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "plant_scale_bp",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "biome_octaves",
+          "type": "core::integer::u8"
+        },
+        {
+          "name": "area_octaves",
+          "type": "core::integer::u8"
+        },
+        {
+          "name": "plant_octaves",
+          "type": "core::integer::u8"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::world::WorldGenConfigValue",
+      "members": [
+        {
+          "name": "global_seed",
+          "type": "core::felt252"
+        },
+        {
+          "name": "biome_scale_bp",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "area_scale_bp",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "plant_scale_bp",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "biome_octaves",
+          "type": "core::integer::u8"
+        },
+        {
+          "name": "area_octaves",
+          "type": "core::integer::u8"
+        },
+        {
+          "name": "plant_octaves",
+          "type": "core::integer::u8"
+        }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::models::world::m_Hex::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::models::world::m_HexArea::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::models::world::m_WorldGenConfig::Event",
       "kind": "enum",
       "variants": []
     },
     {
       "type": "interface",
-      "name": "dojo_starter::systems::actions::IActions",
+      "name": "dojo_starter::systems::adventurer_manager_contract::IAdventurerManager",
       "items": [
         {
           "type": "function",
-          "name": "spawn",
-          "inputs": [],
-          "outputs": [],
+          "name": "create_adventurer",
+          "inputs": [
+            {
+              "name": "name",
+              "type": "core::felt252"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "core::felt252"
+            }
+          ],
           "state_mutability": "external"
         },
         {
           "type": "function",
-          "name": "move",
+          "name": "consume_energy",
           "inputs": [
             {
-              "name": "direction",
-              "type": "dojo_starter::models::Direction"
+              "name": "adventurer_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "amount",
+              "type": "core::integer::u16"
             }
           ],
-          "outputs": [],
+          "outputs": [
+            {
+              "type": "core::bool"
+            }
+          ],
+          "state_mutability": "external"
+        },
+        {
+          "type": "function",
+          "name": "regenerate_energy",
+          "inputs": [
+            {
+              "name": "adventurer_id",
+              "type": "core::felt252"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "core::integer::u16"
+            }
+          ],
+          "state_mutability": "external"
+        },
+        {
+          "type": "function",
+          "name": "kill_adventurer",
+          "inputs": [
+            {
+              "name": "adventurer_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "cause",
+              "type": "core::felt252"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "core::bool"
+            }
+          ],
           "state_mutability": "external"
         }
       ]
     },
     {
       "type": "event",
-      "name": "dojo_starter::systems::actions::actions::Event",
+      "name": "dojo_starter::systems::adventurer_manager_contract::adventurer_manager::Event",
       "kind": "enum",
       "variants": [
         {
@@ -2201,34 +4896,506 @@
       ]
     },
     {
-      "type": "struct",
-      "name": "dojo_starter::systems::actions::actions::Moved",
-      "members": [
+      "type": "interface",
+      "name": "dojo_starter::systems::economic_manager_contract::IEconomicManager",
+      "items": [
         {
-          "name": "player",
-          "type": "core::starknet::contract_address::ContractAddress"
+          "type": "function",
+          "name": "convert_items_to_energy",
+          "inputs": [
+            {
+              "name": "adventurer_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "item_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "quantity",
+              "type": "core::integer::u16"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "core::integer::u16"
+            }
+          ],
+          "state_mutability": "external"
         },
         {
-          "name": "direction",
-          "type": "dojo_starter::models::Direction"
-        }
-      ]
-    },
-    {
-      "type": "struct",
-      "name": "dojo_starter::systems::actions::actions::MovedValue",
-      "members": [
+          "type": "function",
+          "name": "pay_hex_maintenance",
+          "inputs": [
+            {
+              "name": "adventurer_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "hex_coordinate",
+              "type": "core::felt252"
+            },
+            {
+              "name": "amount",
+              "type": "core::integer::u16"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "core::bool"
+            }
+          ],
+          "state_mutability": "external"
+        },
         {
-          "name": "direction",
-          "type": "dojo_starter::models::Direction"
+          "type": "function",
+          "name": "process_hex_decay",
+          "inputs": [
+            {
+              "name": "hex_coordinate",
+              "type": "core::felt252"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "core::integer::u16"
+            }
+          ],
+          "state_mutability": "external"
+        },
+        {
+          "type": "function",
+          "name": "initiate_hex_claim",
+          "inputs": [
+            {
+              "name": "adventurer_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "hex_coordinate",
+              "type": "core::felt252"
+            },
+            {
+              "name": "energy_offered",
+              "type": "core::integer::u16"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "core::bool"
+            }
+          ],
+          "state_mutability": "external"
+        },
+        {
+          "type": "function",
+          "name": "defend_hex_from_claim",
+          "inputs": [
+            {
+              "name": "adventurer_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "hex_coordinate",
+              "type": "core::felt252"
+            },
+            {
+              "name": "defense_energy",
+              "type": "core::integer::u16"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "core::bool"
+            }
+          ],
+          "state_mutability": "external"
         }
       ]
     },
     {
       "type": "event",
-      "name": "dojo_starter::systems::actions::actions::e_Moved::Event",
+      "name": "dojo_starter::systems::economic_manager_contract::economic_manager::Event",
       "kind": "enum",
-      "variants": []
+      "variants": [
+        {
+          "name": "UpgradeableEvent",
+          "type": "dojo::contract::components::upgradeable::upgradeable_cpt::Event",
+          "kind": "nested"
+        },
+        {
+          "name": "WorldProviderEvent",
+          "type": "dojo::contract::components::world_provider::world_provider_cpt::Event",
+          "kind": "nested"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "dojo_starter::systems::harvesting_manager_contract::IHarvestingManager",
+      "items": [
+        {
+          "type": "function",
+          "name": "init_harvesting",
+          "inputs": [
+            {
+              "name": "hex_coordinate",
+              "type": "core::felt252"
+            },
+            {
+              "name": "area_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "plant_id",
+              "type": "core::integer::u8"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "core::bool"
+            }
+          ],
+          "state_mutability": "external"
+        },
+        {
+          "type": "function",
+          "name": "start_harvesting",
+          "inputs": [
+            {
+              "name": "adventurer_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "hex_coordinate",
+              "type": "core::felt252"
+            },
+            {
+              "name": "area_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "plant_id",
+              "type": "core::integer::u8"
+            },
+            {
+              "name": "amount",
+              "type": "core::integer::u16"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "core::bool"
+            }
+          ],
+          "state_mutability": "external"
+        },
+        {
+          "type": "function",
+          "name": "complete_harvesting",
+          "inputs": [
+            {
+              "name": "adventurer_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "hex_coordinate",
+              "type": "core::felt252"
+            },
+            {
+              "name": "area_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "plant_id",
+              "type": "core::integer::u8"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "core::integer::u16"
+            }
+          ],
+          "state_mutability": "external"
+        },
+        {
+          "type": "function",
+          "name": "cancel_harvesting",
+          "inputs": [
+            {
+              "name": "adventurer_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "hex_coordinate",
+              "type": "core::felt252"
+            },
+            {
+              "name": "area_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "plant_id",
+              "type": "core::integer::u8"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "core::integer::u16"
+            }
+          ],
+          "state_mutability": "external"
+        },
+        {
+          "type": "function",
+          "name": "inspect_plant",
+          "inputs": [
+            {
+              "name": "hex_coordinate",
+              "type": "core::felt252"
+            },
+            {
+              "name": "area_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "plant_id",
+              "type": "core::integer::u8"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "dojo_starter::models::harvesting::PlantNode"
+            }
+          ],
+          "state_mutability": "view"
+        }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::systems::harvesting_manager_contract::harvesting_manager::Event",
+      "kind": "enum",
+      "variants": [
+        {
+          "name": "UpgradeableEvent",
+          "type": "dojo::contract::components::upgradeable::upgradeable_cpt::Event",
+          "kind": "nested"
+        },
+        {
+          "name": "WorldProviderEvent",
+          "type": "dojo::contract::components::world_provider::world_provider_cpt::Event",
+          "kind": "nested"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "dojo_starter::systems::ownership_manager_contract::IOwnershipManager",
+      "items": [
+        {
+          "type": "function",
+          "name": "get_owner",
+          "inputs": [
+            {
+              "name": "area_id",
+              "type": "core::felt252"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "core::felt252"
+            }
+          ],
+          "state_mutability": "view"
+        },
+        {
+          "type": "function",
+          "name": "transfer_ownership",
+          "inputs": [
+            {
+              "name": "area_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "to_adventurer_id",
+              "type": "core::felt252"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "core::bool"
+            }
+          ],
+          "state_mutability": "external"
+        }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::systems::ownership_manager_contract::ownership_manager::Event",
+      "kind": "enum",
+      "variants": [
+        {
+          "name": "UpgradeableEvent",
+          "type": "dojo::contract::components::upgradeable::upgradeable_cpt::Event",
+          "kind": "nested"
+        },
+        {
+          "name": "WorldProviderEvent",
+          "type": "dojo::contract::components::world_provider::world_provider_cpt::Event",
+          "kind": "nested"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "dojo_starter::systems::world_gen_manager_contract::IWorldGenManager",
+      "items": [
+        {
+          "type": "function",
+          "name": "initialize_active_world_gen_config",
+          "inputs": [
+            {
+              "name": "global_seed",
+              "type": "core::felt252"
+            },
+            {
+              "name": "biome_scale_bp",
+              "type": "core::integer::u16"
+            },
+            {
+              "name": "area_scale_bp",
+              "type": "core::integer::u16"
+            },
+            {
+              "name": "plant_scale_bp",
+              "type": "core::integer::u16"
+            },
+            {
+              "name": "biome_octaves",
+              "type": "core::integer::u8"
+            },
+            {
+              "name": "area_octaves",
+              "type": "core::integer::u8"
+            },
+            {
+              "name": "plant_octaves",
+              "type": "core::integer::u8"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "core::bool"
+            }
+          ],
+          "state_mutability": "external"
+        },
+        {
+          "type": "function",
+          "name": "get_active_world_gen_config",
+          "inputs": [],
+          "outputs": [
+            {
+              "type": "dojo_starter::models::world::WorldGenConfig"
+            }
+          ],
+          "state_mutability": "view"
+        }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::systems::world_gen_manager_contract::world_gen_manager::Event",
+      "kind": "enum",
+      "variants": [
+        {
+          "name": "UpgradeableEvent",
+          "type": "dojo::contract::components::upgradeable::upgradeable_cpt::Event",
+          "kind": "nested"
+        },
+        {
+          "name": "WorldProviderEvent",
+          "type": "dojo::contract::components::world_provider::world_provider_cpt::Event",
+          "kind": "nested"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "dojo_starter::systems::world_manager_contract::IWorldManager",
+      "items": [
+        {
+          "type": "function",
+          "name": "discover_hex",
+          "inputs": [
+            {
+              "name": "adventurer_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "hex_coordinate",
+              "type": "core::felt252"
+            }
+          ],
+          "outputs": [],
+          "state_mutability": "external"
+        },
+        {
+          "type": "function",
+          "name": "discover_area",
+          "inputs": [
+            {
+              "name": "adventurer_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "hex_coordinate",
+              "type": "core::felt252"
+            },
+            {
+              "name": "area_index",
+              "type": "core::integer::u8"
+            }
+          ],
+          "outputs": [],
+          "state_mutability": "external"
+        },
+        {
+          "type": "function",
+          "name": "move_adventurer",
+          "inputs": [
+            {
+              "name": "adventurer_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "to_hex_coordinate",
+              "type": "core::felt252"
+            }
+          ],
+          "outputs": [],
+          "state_mutability": "external"
+        }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::systems::world_manager_contract::world_manager::Event",
+      "kind": "enum",
+      "variants": [
+        {
+          "name": "UpgradeableEvent",
+          "type": "dojo::contract::components::upgradeable::upgradeable_cpt::Event",
+          "kind": "nested"
+        },
+        {
+          "name": "WorldProviderEvent",
+          "type": "dojo::contract::components::world_provider::world_provider_cpt::Event",
+          "kind": "nested"
+        }
+      ]
     },
     {
       "type": "function",
@@ -2236,7 +5403,7 @@
       "inputs": [
         {
           "name": "event",
-          "type": "dojo_starter::systems::actions::actions::Moved"
+          "type": "dojo_starter::events::world_events::WorldGenConfigInitialized"
         }
       ],
       "outputs": [],
@@ -2255,7 +5422,7 @@
       "inputs": [
         {
           "name": "value",
-          "type": "dojo_starter::systems::actions::actions::MovedValue"
+          "type": "dojo_starter::events::world_events::WorldGenConfigInitializedValue"
         }
       ],
       "outputs": [],

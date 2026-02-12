@@ -32,6 +32,7 @@ pub mod world_manager {
         derive_area_profile_with_config, derive_hex_profile_with_config,
     };
     use dojo_starter::models::adventurer::{Adventurer, can_be_controlled_by, spend_energy};
+    use dojo_starter::models::economics::HexDecayState;
     use dojo_starter::models::ownership::AreaOwnership;
     use dojo_starter::models::world::{
         DiscoveryWriteStatus, Hex, HexArea, WorldGenConfig, derive_area_id,
@@ -182,6 +183,15 @@ pub mod world_manager {
                             discoverer: caller,
                         },
                     );
+
+                    if area_index == 0_u8 {
+                        let mut decay_state: HexDecayState = world.read_model(hex_coordinate);
+                        decay_state.hex_coordinate = hex_coordinate;
+                        if decay_state.owner_adventurer_id == 0_felt252 {
+                            decay_state.owner_adventurer_id = controller_adventurer_id;
+                            world.write_model(@decay_state);
+                        }
+                    }
                 },
                 DiscoveryWriteStatus::Replay => {},
             }

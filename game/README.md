@@ -37,7 +37,7 @@ Manual init (if needed):
 
 ```bash
 sozo execute dojo_starter-world_gen_manager initialize_active_world_gen_config \
-  -c 0x574f524c445f47454e5f534545445f5631 2200 2200 2200 3 3 3 --wait
+  0x574f524c445f47454e5f534545445f5631 2200 2200 2200 3 3 3 --wait
 ```
 
 Verify active config:

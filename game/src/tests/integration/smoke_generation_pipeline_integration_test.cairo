@@ -46,6 +46,7 @@ mod tests {
                 TestResource::Model("WorldGenConfig"),
                 TestResource::Model("HexArea"),
                 TestResource::Model("AreaOwnership"),
+                TestResource::Model("HexDecayState"),
                 TestResource::Model("PlantNode"),
                 TestResource::Model("HarvestReservation"),
                 TestResource::Event("WorldGenConfigInitialized"),

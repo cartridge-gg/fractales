@@ -49,5 +49,6 @@ pub mod tests {
         mod e2e_permadeath_lockout;
         mod world_gen_manager_integration_test;
         mod smoke_generation_pipeline_integration_test;
+        mod world_economy_bridge_integration_test;
     }
 }

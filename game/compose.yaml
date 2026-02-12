@@ -31,7 +31,7 @@ services:
       [
         "/bin/sh",
         "-c",
-        "cd /app && /root/.dojo/bin/sozo build && /root/.dojo/bin/sozo migrate --rpc-url http://katana:5050 && /root/.dojo/bin/sozo execute dojo_starter-world_gen_manager initialize_active_world_gen_config -c 0x574f524c445f47454e5f534545445f5631 2200 2200 2200 3 3 3 --rpc-url http://katana:5050 --wait",
+        "cd /app && /root/.dojo/bin/sozo build && /root/.dojo/bin/sozo migrate --rpc-url http://katana:5050 && /root/.dojo/bin/sozo execute dojo_starter-world_gen_manager initialize_active_world_gen_config 0x574f524c445f47454e5f534545445f5631 2200 2200 2200 3 3 3 --rpc-url http://katana:5050 --wait",
       ]
     restart: on-failure
 

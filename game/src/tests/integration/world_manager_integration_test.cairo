@@ -24,6 +24,7 @@ mod tests {
                 TestResource::Model("WorldGenConfig"),
                 TestResource::Model("HexArea"),
                 TestResource::Model("AreaOwnership"),
+                TestResource::Model("HexDecayState"),
                 TestResource::Event("HexDiscovered"),
                 TestResource::Event("AreaDiscovered"),
                 TestResource::Event("AreaOwnershipAssigned"),
