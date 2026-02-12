@@ -62,6 +62,41 @@ mod tests {
     }
 
     #[test]
+    fn adventurer_manager_regen_preserves_block_remainder_when_gain_is_zero() {
+        let owner: ContractAddress = 88.try_into().unwrap();
+        let adventurer = Adventurer {
+            adventurer_id: 8800_felt252,
+            owner,
+            name: 'R'_felt252,
+            energy: 10_u16,
+            max_energy: 100_u16,
+            current_hex: 0_felt252,
+            activity_locked_until: 0_u64,
+            is_alive: true,
+        };
+        let economics = AdventurerEconomics {
+            adventurer_id: 8800_felt252,
+            energy_balance: 10_u16,
+            total_energy_spent: 0_u64,
+            total_energy_earned: 0_u64,
+            last_regen_block: 100_u64,
+        };
+
+        let under_threshold = regenerate_transition(adventurer, economics, owner, 104_u64, 20_u16);
+        assert(under_threshold.outcome == RegenOutcome::Applied, 'S2_REMAINDER_OK');
+        assert(under_threshold.regen_gained == 0_u16, 'S2_REMAINDER_GAIN0');
+        assert(under_threshold.adventurer.energy == 10_u16, 'S2_REMAINDER_ENE0');
+        assert(under_threshold.economics.last_regen_block == 100_u64, 'S2_REMAINDER_BLOCK');
+
+        let reaches_threshold = regenerate_transition(
+            under_threshold.adventurer, under_threshold.economics, owner, 105_u64, 20_u16,
+        );
+        assert(reaches_threshold.regen_gained == 1_u16, 'S2_REMAINDER_GAIN1');
+        assert(reaches_threshold.adventurer.energy == 11_u16, 'S2_REMAINDER_ENE1');
+        assert(reaches_threshold.economics.last_regen_block == 105_u64, 'S2_REMAINDER_BLOCK1');
+    }
+
+    #[test]
     fn adventurer_manager_consume_applies_regen_then_spend_and_guards() {
         let owner: ContractAddress = 13.try_into().unwrap();
         let stranger: ContractAddress = 14.try_into().unwrap();

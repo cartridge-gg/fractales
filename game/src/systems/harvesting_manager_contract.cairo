@@ -2,6 +2,10 @@ const HARVEST_ENERGY_PER_UNIT: u16 = 10_u16;
 const HARVEST_TIME_PER_UNIT: u16 = 2_u16;
 const ENERGY_REGEN_PER_100_BLOCKS: u16 = 20_u16;
 const WORLD_GEN_VERSION_ACTIVE: u16 = 1_u16;
+const PHASE_INIT: felt252 = 'INIT'_felt252;
+const PHASE_START: felt252 = 'START'_felt252;
+const PHASE_COMPLETE: felt252 = 'COMPLETE'_felt252;
+const PHASE_CANCEL: felt252 = 'CANCEL'_felt252;
 
 #[starknet::interface]
 pub trait IHarvestingManager<T> {
@@ -32,13 +36,14 @@ pub trait IHarvestingManager<T> {
 #[dojo::contract]
 pub mod harvesting_manager {
     use super::{
-        ENERGY_REGEN_PER_100_BLOCKS, HARVEST_ENERGY_PER_UNIT, HARVEST_TIME_PER_UNIT, IHarvestingManager,
-        WORLD_GEN_VERSION_ACTIVE,
+        ENERGY_REGEN_PER_100_BLOCKS, HARVEST_ENERGY_PER_UNIT,
+        HARVEST_TIME_PER_UNIT, IHarvestingManager, PHASE_CANCEL, PHASE_COMPLETE, PHASE_INIT,
+        PHASE_START, WORLD_GEN_VERSION_ACTIVE,
     };
     use dojo::event::EventStorage;
     use dojo::model::ModelStorage;
     use dojo_starter::events::harvesting_events::{
-        HarvestingCancelled, HarvestingCompleted, HarvestingStarted,
+        HarvestingCancelled, HarvestingCompleted, HarvestingRejected, HarvestingStarted,
     };
     use dojo_starter::libs::world_gen::derive_plant_profile_with_config;
     use dojo_starter::models::adventurer::Adventurer;
@@ -54,6 +59,54 @@ pub mod harvesting_manager {
         init_transition, start_transition,
     };
     use starknet::{get_block_info, get_caller_address};
+
+    fn init_outcome_reason(outcome: InitOutcome) -> felt252 {
+        match outcome {
+            InitOutcome::HexUndiscovered => 'HEX_UNDISC'_felt252,
+            InitOutcome::AlreadyInitialized => 'ALREADY_INIT'_felt252,
+            InitOutcome::InvalidConfig => 'BAD_CONFIG'_felt252,
+            InitOutcome::Applied => 'APPLIED'_felt252,
+        }
+    }
+
+    fn start_outcome_reason(outcome: StartOutcome) -> felt252 {
+        match outcome {
+            StartOutcome::Dead => 'DEAD'_felt252,
+            StartOutcome::NotOwner => 'NOT_OWNER'_felt252,
+            StartOutcome::WrongHex => 'WRONG_HEX'_felt252,
+            StartOutcome::Locked => 'LOCKED'_felt252,
+            StartOutcome::NotInitialized => 'NOT_INIT'_felt252,
+            StartOutcome::AlreadyActive => 'ACTIVE'_felt252,
+            StartOutcome::InvalidAmount => 'BAD_AMOUNT'_felt252,
+            StartOutcome::InvalidPlantState => 'BAD_PLANT'_felt252,
+            StartOutcome::InsufficientYield => 'LOW_YIELD'_felt252,
+            StartOutcome::InsufficientEnergy => 'LOW_ENERGY'_felt252,
+            StartOutcome::Applied => 'APPLIED'_felt252,
+        }
+    }
+
+    fn complete_outcome_reason(outcome: CompleteOutcome) -> felt252 {
+        match outcome {
+            CompleteOutcome::Dead => 'DEAD'_felt252,
+            CompleteOutcome::NotOwner => 'NOT_OWNER'_felt252,
+            CompleteOutcome::WrongHex => 'WRONG_HEX'_felt252,
+            CompleteOutcome::NoActiveReservation => 'NO_ACTIVE'_felt252,
+            CompleteOutcome::NotLinked => 'NOT_LINKED'_felt252,
+            CompleteOutcome::TooEarly => 'TOO_EARLY'_felt252,
+            CompleteOutcome::Applied => 'APPLIED'_felt252,
+        }
+    }
+
+    fn cancel_outcome_reason(outcome: CancelOutcome) -> felt252 {
+        match outcome {
+            CancelOutcome::Dead => 'DEAD'_felt252,
+            CancelOutcome::NotOwner => 'NOT_OWNER'_felt252,
+            CancelOutcome::WrongHex => 'WRONG_HEX'_felt252,
+            CancelOutcome::NoActiveReservation => 'NO_ACTIVE'_felt252,
+            CancelOutcome::NotLinked => 'NOT_LINKED'_felt252,
+            CancelOutcome::Applied => 'APPLIED'_felt252,
+        }
+    }
 
     #[abi(embed_v0)]
     impl HarvestingManagerImpl of IHarvestingManager<ContractState> {
@@ -95,7 +148,19 @@ pub mod harvesting_manager {
                     world.write_model(@initialized.plant);
                     true
                 },
-                _ => false,
+                _ => {
+                    world.emit_event(
+                        @HarvestingRejected {
+                            adventurer_id: 0_felt252,
+                            hex: hex_coordinate,
+                            area_id,
+                            plant_id,
+                            phase: PHASE_INIT,
+                            reason: init_outcome_reason(initialized.outcome),
+                        },
+                    );
+                    false
+                },
             }
         }
 
@@ -155,9 +220,31 @@ pub mod harvesting_manager {
                 StartOutcome::InsufficientEnergy => {
                     world.write_model(@started.adventurer);
                     world.write_model(@started.economics);
+                    world.emit_event(
+                        @HarvestingRejected {
+                            adventurer_id,
+                            hex: hex_coordinate,
+                            area_id,
+                            plant_id,
+                            phase: PHASE_START,
+                            reason: start_outcome_reason(started.outcome),
+                        },
+                    );
                     false
                 },
-                _ => false,
+                _ => {
+                    world.emit_event(
+                        @HarvestingRejected {
+                            adventurer_id,
+                            hex: hex_coordinate,
+                            area_id,
+                            plant_id,
+                            phase: PHASE_START,
+                            reason: start_outcome_reason(started.outcome),
+                        },
+                    );
+                    false
+                },
             }
         }
 
@@ -204,7 +291,19 @@ pub mod harvesting_manager {
                     );
                     completed.actual_yield
                 },
-                _ => 0_u16,
+                _ => {
+                    world.emit_event(
+                        @HarvestingRejected {
+                            adventurer_id,
+                            hex: hex_coordinate,
+                            area_id,
+                            plant_id,
+                            phase: PHASE_COMPLETE,
+                            reason: complete_outcome_reason(completed.outcome),
+                        },
+                    );
+                    0_u16
+                },
             }
         }
 
@@ -248,7 +347,19 @@ pub mod harvesting_manager {
                     );
                     canceled.partial_yield
                 },
-                _ => 0_u16,
+                _ => {
+                    world.emit_event(
+                        @HarvestingRejected {
+                            adventurer_id,
+                            hex: hex_coordinate,
+                            area_id,
+                            plant_id,
+                            phase: PHASE_CANCEL,
+                            reason: cancel_outcome_reason(canceled.outcome),
+                        },
+                    );
+                    0_u16
+                },
             }
         }
 

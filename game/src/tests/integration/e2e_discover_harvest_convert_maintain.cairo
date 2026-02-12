@@ -47,8 +47,11 @@ mod tests {
                 TestResource::Event("HexDiscovered"),
                 TestResource::Event("AreaDiscovered"),
                 TestResource::Event("AreaOwnershipAssigned"),
+                TestResource::Event("AdventurerMoved"),
+                TestResource::Event("WorldActionRejected"),
                 TestResource::Event("HarvestingStarted"),
                 TestResource::Event("HarvestingCompleted"),
+                TestResource::Event("HarvestingRejected"),
                 TestResource::Event("ItemsConverted"),
                 TestResource::Event("HexEnergyPaid"),
                 TestResource::Contract("world_manager"),
@@ -161,6 +164,7 @@ mod tests {
         world_manager.discover_hex(adventurer_id, target);
         let area_id = derive_area_id(target, 0_u8);
         world_manager.discover_area(adventurer_id, target, 0_u8);
+        world_manager.move_adventurer(adventurer_id, target);
 
         let inited = harvesting_manager.init_harvesting(target, area_id, 1_u8);
         assert(inited, 'S6_E2E1_INIT');
@@ -184,7 +188,7 @@ mod tests {
         let inv: Inventory = world.read_model(adventurer_id);
         let item: BackpackItem = world.read_model((adventurer_id, item_id));
         let state: HexDecayState = world.read_model(target);
-        assert(actor.energy == 151_u16, 'S6_E2E1_ENERGY');
+        assert(actor.energy == 136_u16, 'S6_E2E1_ENERGY');
         assert(inv.current_weight == 0_u32, 'S6_E2E1_INV');
         assert(item.quantity == 0_u32, 'S6_E2E1_ITEM0');
         assert(state.current_energy_reserve == 25_u32, 'S6_E2E1_RESV');
@@ -261,6 +265,7 @@ mod tests {
         world_manager.discover_hex(adventurer_id, target);
         let area_id = derive_area_id(target, 0_u8);
         world_manager.discover_area(adventurer_id, target, 0_u8);
+        world_manager.move_adventurer(adventurer_id, target);
 
         let inited = harvesting_manager.init_harvesting(target, area_id, 1_u8);
         assert(inited, 'S6_E2E3_INIT');

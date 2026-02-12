@@ -53,8 +53,11 @@ mod tests {
                 TestResource::Event("HexDiscovered"),
                 TestResource::Event("AreaDiscovered"),
                 TestResource::Event("AreaOwnershipAssigned"),
+                TestResource::Event("AdventurerMoved"),
+                TestResource::Event("WorldActionRejected"),
                 TestResource::Event("HarvestingStarted"),
                 TestResource::Event("HarvestingCompleted"),
+                TestResource::Event("HarvestingRejected"),
                 TestResource::Contract("world_gen_manager"),
                 TestResource::Contract("world_manager"),
                 TestResource::Contract("harvesting_manager"),
@@ -163,6 +166,7 @@ mod tests {
 
         world_manager.discover_area(adventurer_id, target, 0_u8);
         world_manager.discover_area(adventurer_id, target, 1_u8);
+        world_manager.move_adventurer(adventurer_id, target);
 
         let area_id = derive_area_id(target, 1_u8);
         let expected_area = derive_area_profile_with_config(target, 1_u8, discovered_hex.biome, config);
@@ -203,7 +207,7 @@ mod tests {
         let actor: Adventurer = world.read_model(adventurer_id);
         assert(item.quantity == 2_u32, 'SMOKE_ITEM_Q');
         assert(inventory.current_weight == 2_u32, 'SMOKE_INV_W');
-        assert(actor.energy == 157_u16, 'SMOKE_ACTOR_ENERGY');
+        assert(actor.energy == 142_u16, 'SMOKE_ACTOR_ENERGY');
 
         let events = spy.get_events().emitted_by(world.dispatcher.contract_address);
         let world_gen_selector = Event::<WorldGenConfigInitialized>::selector(world.namespace_hash);

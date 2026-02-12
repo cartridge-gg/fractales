@@ -1,11 +1,15 @@
 #[cfg(test)]
 mod tests {
+    use dojo::event::Event;
     use dojo::model::{ModelStorage, ModelStorageTest};
+    use dojo::world::world;
     use dojo::world::WorldStorageTrait;
     use dojo_snf_test::{
         ContractDef, ContractDefTrait, NamespaceDef, TestResource, WorldStorageTestTrait,
         get_default_caller_address, spawn_test_world,
     };
+    use snforge_std::{EventSpyAssertionsTrait, spy_events};
+    use dojo_starter::events::world_events::WorldActionRejected;
     use dojo_starter::libs::coord_codec::{CubeCoord, encode_cube};
     use dojo_starter::libs::world_gen::{derive_area_profile, derive_hex_profile};
     use dojo_starter::models::adventurer::Adventurer;
@@ -29,6 +33,7 @@ mod tests {
                 TestResource::Event("AreaDiscovered"),
                 TestResource::Event("AreaOwnershipAssigned"),
                 TestResource::Event("AdventurerMoved"),
+                TestResource::Event("WorldActionRejected"),
                 TestResource::Contract("world_manager"),
             ]
                 .span(),
@@ -158,5 +163,42 @@ mod tests {
         assert(replay_area.area_type == expected_area.area_type, 'INT_AREA_REPLAY_TYPE');
         assert(replay_area.resource_quality == expected_area.resource_quality, 'INT_AREA_REPLAY_QUALITY');
         assert(replay_area.size_category == expected_area.size_category, 'INT_AREA_REPLAY_SIZE');
+    }
+
+    #[test]
+    fn world_manager_integration_emits_rejection_event_on_invalid_move() {
+        let caller = get_default_caller_address();
+        let mut world = spawn_test_world([namespace_def()].span());
+        world.sync_perms_and_inits(contract_defs());
+
+        let adventurer_id: felt252 = 7004;
+        let origin = encoded_cube(CubeCoord { x: 0, y: 0, z: 0 });
+        let non_adjacent = encoded_cube(CubeCoord { x: 2, y: -2, z: 0 });
+        setup_adventurer(ref world, adventurer_id, caller, origin, 100_u16);
+
+        let (contract_address, _) = world.dns(@"world_manager").unwrap();
+        let system = IWorldManagerDispatcher { contract_address };
+        let mut spy = spy_events();
+        system.move_adventurer(adventurer_id, non_adjacent);
+
+        let unchanged: Adventurer = world.read_model(adventurer_id);
+        assert(unchanged.current_hex == origin, 'INT_REJECT_HEX');
+        assert(unchanged.energy == 100_u16, 'INT_REJECT_ENERGY');
+
+        spy.assert_emitted(
+            @array![
+                (
+                    world.dispatcher.contract_address,
+                    world::Event::EventEmitted(
+                        world::EventEmitted {
+                            selector: Event::<WorldActionRejected>::selector(world.namespace_hash),
+                            system_address: contract_address,
+                            keys: [adventurer_id].span(),
+                            values: ['MOVE'_felt252, non_adjacent, 'NOT_ADJ'_felt252].span(),
+                        },
+                    ),
+                ),
+            ],
+        );
     }
 }

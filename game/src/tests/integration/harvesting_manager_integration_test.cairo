@@ -12,7 +12,7 @@ mod tests {
         EventSpyAssertionsTrait, EventSpyTrait, EventsFilterTrait, spy_events,
     };
     use dojo_starter::events::harvesting_events::{
-        HarvestingCancelled, HarvestingCompleted, HarvestingStarted,
+        HarvestingCancelled, HarvestingCompleted, HarvestingRejected, HarvestingStarted,
     };
     use dojo_starter::libs::world_gen::derive_plant_profile;
     use dojo_starter::models::adventurer::Adventurer;
@@ -42,6 +42,7 @@ mod tests {
                 TestResource::Event("HarvestingStarted"),
                 TestResource::Event("HarvestingCompleted"),
                 TestResource::Event("HarvestingCancelled"),
+                TestResource::Event("HarvestingRejected"),
                 TestResource::Contract("harvesting_manager"),
             ]
                 .span(),
@@ -264,6 +265,7 @@ mod tests {
 
         let (contract_address, _) = world.dns(@"harvesting_manager").unwrap();
         let manager = IHarvestingManagerDispatcher { contract_address };
+        let mut spy = spy_events();
 
         let adventurer_id = 8810_felt252;
         let hex_coordinate = 910_felt252;
@@ -350,10 +352,79 @@ mod tests {
             },
         );
 
+        world.write_model_test(
+            @Adventurer {
+                adventurer_id,
+                owner: caller,
+                name: 'AWAY'_felt252,
+                energy: 100_u16,
+                max_energy: 100_u16,
+                current_hex: 9999_felt252,
+                activity_locked_until: 0_u64,
+                is_alive: true,
+            },
+        );
+        let start_wrong_hex = manager.start_harvesting(
+            adventurer_id, hex_coordinate, area_id, plant_id, 2_u16,
+        );
+        assert(!start_wrong_hex, 'H_INT_START_WRONG_HEX');
+        spy.assert_emitted(
+            @array![
+                (
+                    world.dispatcher.contract_address,
+                    world::Event::EventEmitted(
+                        world::EventEmitted {
+                            selector: Event::<HarvestingRejected>::selector(world.namespace_hash),
+                            system_address: contract_address,
+                            keys: [adventurer_id].span(),
+                            values: [
+                                hex_coordinate,
+                                area_id,
+                                plant_id.into(),
+                                'START'_felt252,
+                                'WRONG_HEX'_felt252,
+                            ]
+                                .span(),
+                        },
+                    ),
+                ),
+            ],
+        );
+
+        world.write_model_test(
+            @Adventurer {
+                adventurer_id,
+                owner: caller,
+                name: 'FULL'_felt252,
+                energy: 100_u16,
+                max_energy: 100_u16,
+                current_hex: hex_coordinate,
+                activity_locked_until: 0_u64,
+                is_alive: true,
+            },
+        );
         let started = manager.start_harvesting(adventurer_id, hex_coordinate, area_id, plant_id, 2_u16);
         assert(started, 'H_INT_START_OK2');
         let too_early = manager.complete_harvesting(adventurer_id, hex_coordinate, area_id, plant_id);
         assert(too_early == 0_u16, 'H_INT_COMPLETE_EARLY_0');
+
+        set_block_number(4_u64);
+        world.write_model_test(
+            @Adventurer {
+                adventurer_id,
+                owner: caller,
+                name: 'AWAY'_felt252,
+                energy: 100_u16,
+                max_energy: 100_u16,
+                current_hex: 9999_felt252,
+                activity_locked_until: 4_u64,
+                is_alive: true,
+            },
+        );
+        let wrong_hex_complete = manager.complete_harvesting(adventurer_id, hex_coordinate, area_id, plant_id);
+        assert(wrong_hex_complete == 0_u16, 'H_INT_COMPLETE_WRONG_HEX');
+        let wrong_hex_cancel = manager.cancel_harvesting(adventurer_id, hex_coordinate, area_id, plant_id);
+        assert(wrong_hex_cancel == 0_u16, 'H_INT_CANCEL_WRONG_HEX');
 
         let foreign_owner: starknet::ContractAddress = 0x1234.try_into().unwrap();
         world.write_model_test(

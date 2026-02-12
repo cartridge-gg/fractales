@@ -23,6 +23,7 @@ pub enum StartOutcome {
     #[default]
     Dead,
     NotOwner,
+    WrongHex,
     Locked,
     NotInitialized,
     AlreadyActive,
@@ -38,6 +39,7 @@ pub enum CompleteOutcome {
     #[default]
     Dead,
     NotOwner,
+    WrongHex,
     NoActiveReservation,
     NotLinked,
     TooEarly,
@@ -49,6 +51,7 @@ pub enum CancelOutcome {
     #[default]
     Dead,
     NotOwner,
+    WrongHex,
     NoActiveReservation,
     NotLinked,
     Applied,
@@ -159,6 +162,17 @@ pub fn start_transition(
             plant,
             reservation,
             outcome: StartOutcome::NotOwner,
+            eta: 0_u64,
+            energy_cost: 0_u16,
+        };
+    }
+    if adventurer.current_hex != plant.hex_coordinate {
+        return StartResult {
+            adventurer,
+            economics,
+            plant,
+            reservation,
+            outcome: StartOutcome::WrongHex,
             eta: 0_u64,
             energy_cost: 0_u16,
         };
@@ -435,6 +449,18 @@ pub fn complete_transition(
             minted_yield: 0_u16,
         };
     }
+    if adventurer.current_hex != plant.hex_coordinate {
+        return CompleteResult {
+            adventurer,
+            plant,
+            reservation,
+            inventory,
+            item,
+            outcome: CompleteOutcome::WrongHex,
+            actual_yield: 0_u16,
+            minted_yield: 0_u16,
+        };
+    }
     if reservation.status != HarvestReservationStatus::Active {
         return CompleteResult {
             adventurer,
@@ -530,6 +556,18 @@ pub fn cancel_transition(
             inventory,
             item,
             outcome: CancelOutcome::NotOwner,
+            partial_yield: 0_u16,
+            minted_yield: 0_u16,
+        };
+    }
+    if adventurer.current_hex != plant.hex_coordinate {
+        return CancelResult {
+            adventurer,
+            plant,
+            reservation,
+            inventory,
+            item,
+            outcome: CancelOutcome::WrongHex,
             partial_yield: 0_u16,
             minted_yield: 0_u16,
         };

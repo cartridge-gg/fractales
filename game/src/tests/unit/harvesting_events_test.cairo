@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use dojo_starter::events::harvesting_events::{
-        HarvestingCancelled, HarvestingCompleted, HarvestingStarted,
+        HarvestingCancelled, HarvestingCompleted, HarvestingRejected, HarvestingStarted,
     };
 
     #[test]
@@ -49,5 +49,24 @@ mod tests {
 
         assert(event.adventurer_id == 1003_felt252, 'H_EVT_CANCEL_ID');
         assert(event.partial_yield == 4_u16, 'H_EVT_CANCEL_PART');
+    }
+
+    #[test]
+    fn harvesting_events_rejected_payload_shape() {
+        let event = HarvestingRejected {
+            adventurer_id: 1004_felt252,
+            hex: 800_felt252,
+            area_id: 801_felt252,
+            plant_id: 2_u8,
+            phase: 'START'_felt252,
+            reason: 'WRONG_HEX'_felt252,
+        };
+
+        assert(event.adventurer_id == 1004_felt252, 'H_EVT_REJ_ID');
+        assert(event.hex == 800_felt252, 'H_EVT_REJ_HEX');
+        assert(event.area_id == 801_felt252, 'H_EVT_REJ_AREA');
+        assert(event.plant_id == 2_u8, 'H_EVT_REJ_PLANT');
+        assert(event.phase == 'START'_felt252, 'H_EVT_REJ_PHASE');
+        assert(event.reason == 'WRONG_HEX'_felt252, 'H_EVT_REJ_REASON');
     }
 }

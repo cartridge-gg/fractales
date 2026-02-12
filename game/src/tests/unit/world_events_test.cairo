@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use dojo_starter::events::world_events::{
-        AreaDiscovered, HexDiscovered, WorldGenConfigInitialized,
+        AreaDiscovered, HexDiscovered, WorldActionRejected, WorldGenConfigInitialized,
     };
     use dojo_starter::models::world::{AreaType, Biome};
     use starknet::ContractAddress;
@@ -52,5 +52,20 @@ mod tests {
         assert(event.generation_version == 1_u16, 'GEN_EVENT_VERSION');
         assert(event.global_seed == 'WORLD_GEN_SEED_V1'_felt252, 'GEN_EVENT_SEED');
         assert(event.plant_octaves == 5_u8, 'GEN_EVENT_OCT');
+    }
+
+    #[test]
+    fn world_events_action_rejected_payload_shape() {
+        let event = WorldActionRejected {
+            adventurer_id: 7004_felt252,
+            action: 'MOVE'_felt252,
+            target: 4242_felt252,
+            reason: 'NOT_ADJ'_felt252,
+        };
+
+        assert(event.adventurer_id == 7004_felt252, 'REJ_EVENT_ADV');
+        assert(event.action == 'MOVE'_felt252, 'REJ_EVENT_ACTION');
+        assert(event.target == 4242_felt252, 'REJ_EVENT_TARGET');
+        assert(event.reason == 'NOT_ADJ'_felt252, 'REJ_EVENT_REASON');
     }
 }

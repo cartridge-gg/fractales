@@ -46,6 +46,8 @@ mod tests {
                 TestResource::Model("ConversionRate"),
                 TestResource::Event("AreaDiscovered"),
                 TestResource::Event("AreaOwnershipAssigned"),
+                TestResource::Event("WorldActionRejected"),
+                TestResource::Event("HarvestingRejected"),
                 TestResource::Event("AdventurerDied"),
                 TestResource::Contract("adventurer_manager"),
                 TestResource::Contract("world_manager"),

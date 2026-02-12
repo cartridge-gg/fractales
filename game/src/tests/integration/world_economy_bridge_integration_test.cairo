@@ -33,6 +33,7 @@ mod tests {
                 TestResource::Event("HexDiscovered"),
                 TestResource::Event("AreaDiscovered"),
                 TestResource::Event("AreaOwnershipAssigned"),
+                TestResource::Event("WorldActionRejected"),
                 TestResource::Event("HexEnergyPaid"),
                 TestResource::Contract("world_manager"),
                 TestResource::Contract("economic_manager"),

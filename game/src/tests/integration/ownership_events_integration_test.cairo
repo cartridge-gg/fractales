@@ -34,6 +34,7 @@ mod tests {
                 TestResource::Model("AreaOwnership"),
                 TestResource::Event("AreaDiscovered"),
                 TestResource::Event("AreaOwnershipAssigned"),
+                TestResource::Event("WorldActionRejected"),
                 TestResource::Event("ClaimInitiated"),
                 TestResource::Event("OwnershipTransferred"),
                 TestResource::Contract("world_manager"),

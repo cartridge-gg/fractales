@@ -33,3 +33,13 @@ pub struct WorldGenConfigInitialized {
     pub area_octaves: u8,
     pub plant_octaves: u8,
 }
+
+#[derive(Copy, Drop, Serde)]
+#[dojo::event]
+pub struct WorldActionRejected {
+    #[key]
+    pub adventurer_id: felt252,
+    pub action: felt252,
+    pub target: felt252,
+    pub reason: felt252,
+}

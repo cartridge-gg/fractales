@@ -221,9 +221,10 @@ mod tests {
     #[test]
     fn harvesting_manager_start_reports_reserve_failures() {
         let (adventurer, economics, _inventory, owner) = setup_actor();
+        let aligned_actor = Adventurer { current_hex: 510_felt252, ..adventurer };
         let plant_key = derive_plant_key(510_felt252, 511_felt252, 1_u8);
         let reservation = HarvestReservation {
-            reservation_id: derive_harvest_reservation_id(adventurer.adventurer_id, plant_key),
+            reservation_id: derive_harvest_reservation_id(aligned_actor.adventurer_id, plant_key),
             adventurer_id: 0_felt252,
             plant_key,
             reserved_amount: 0_u16,
@@ -249,7 +250,7 @@ mod tests {
         };
 
         let insufficient = start_transition(
-            adventurer,
+            aligned_actor,
             economics,
             owner,
             base_plant,
@@ -264,7 +265,7 @@ mod tests {
 
         let invalid_plant = PlantNode { reserved_yield: 3_u16, ..base_plant };
         let invalid_state = start_transition(
-            adventurer,
+            aligned_actor,
             economics,
             owner,
             invalid_plant,
@@ -276,6 +277,71 @@ mod tests {
             2_u16,
         );
         assert(invalid_state.outcome == StartOutcome::InvalidPlantState, 'H_START_BAD_STATE');
+    }
+
+    #[test]
+    fn harvesting_manager_requires_actor_on_plant_hex_for_start_and_complete() {
+        let (adventurer, economics, inventory, owner) = setup_actor();
+        let plant_key = derive_plant_key(530_felt252, 531_felt252, 1_u8);
+        let plant = PlantNode {
+            plant_key,
+            hex_coordinate: 530_felt252,
+            area_id: 531_felt252,
+            plant_id: 1_u8,
+            species: 'ROOT'_felt252,
+            current_yield: 10_u16,
+            reserved_yield: 0_u16,
+            max_yield: 10_u16,
+            regrowth_rate: 1_u16,
+            health: 100_u16,
+            stress_level: 0_u16,
+            genetics_hash: 1_felt252,
+            last_harvest_block: 0_u64,
+            discoverer: owner,
+        };
+        let reservation = HarvestReservation {
+            reservation_id: derive_harvest_reservation_id(adventurer.adventurer_id, plant_key),
+            adventurer_id: 0_felt252,
+            plant_key,
+            reserved_amount: 0_u16,
+            created_block: 0_u64,
+            expiry_block: 0_u64,
+            status: HarvestReservationStatus::Inactive,
+        };
+
+        let aligned_actor = Adventurer { current_hex: 530_felt252, ..adventurer };
+        let wrong_hex_actor = Adventurer { current_hex: 777_felt252, ..aligned_actor };
+        let wrong_hex_start = start_transition(
+            wrong_hex_actor,
+            economics,
+            owner,
+            plant,
+            reservation,
+            2_u16,
+            100_u64,
+            20_u16,
+            10_u16,
+            2_u16,
+        );
+        assert(wrong_hex_start.outcome == StartOutcome::WrongHex, 'H_START_WRONG_HEX');
+
+        let started = start_transition(
+            aligned_actor, economics, owner, plant, reservation, 2_u16, 100_u64, 20_u16, 10_u16, 2_u16,
+        );
+        assert(started.outcome == StartOutcome::Applied, 'H_START_APPLY_FOR_COMPLETE');
+        let relocated = Adventurer { current_hex: 999_felt252, ..started.adventurer };
+        let base_item = BackpackItem {
+            adventurer_id: started.adventurer.adventurer_id,
+            item_id: derive_harvest_item_id(plant_key),
+            quantity: 0_u32,
+            quality: 0_u16,
+            weight_per_unit: 0_u16,
+        };
+
+        let wrong_hex_complete = complete_transition(
+            relocated, owner, started.plant, started.reservation, inventory, base_item, 104_u64,
+        );
+        assert(wrong_hex_complete.outcome == CompleteOutcome::WrongHex, 'H_COMPLETE_WRONG_HEX');
     }
 
     #[test]

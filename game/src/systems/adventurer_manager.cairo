@@ -124,20 +124,34 @@ fn apply_lazy_regen(
     let mut gained = 0_u16;
 
     if now_block > economics.last_regen_block && adventurer.energy < adventurer.max_energy {
+        if regen_per_100_blocks == 0_u16 {
+            economics.last_regen_block = now_block;
+            economics.energy_balance = adventurer.energy;
+            return RegenApplyResult { adventurer, economics, gained };
+        }
+
         let block_delta = now_block - economics.last_regen_block;
         let raw_gain_u128: u128 = (block_delta.into() * regen_per_100_blocks.into()) / 100_u128;
-        let max_gain = adventurer.max_energy - adventurer.energy;
-        gained = if raw_gain_u128 > max_gain.into() {
-            max_gain
-        } else {
-            raw_gain_u128.try_into().unwrap()
-        };
+        if raw_gain_u128 > 0_u128 {
+            let max_gain = adventurer.max_energy - adventurer.energy;
+            gained = if raw_gain_u128 > max_gain.into() {
+                max_gain
+            } else {
+                raw_gain_u128.try_into().unwrap()
+            };
 
-        adventurer.energy += gained;
-        economics.total_energy_earned += gained.into();
-    }
+            adventurer.energy += gained;
+            economics.total_energy_earned += gained.into();
 
-    if now_block > economics.last_regen_block {
+            if adventurer.energy == adventurer.max_energy {
+                economics.last_regen_block = now_block;
+            } else {
+                let used_blocks_u128: u128 = (gained.into() * 100_u128) / regen_per_100_blocks.into();
+                let used_blocks: u64 = used_blocks_u128.try_into().unwrap();
+                economics.last_regen_block += used_blocks;
+            }
+        }
+    } else if adventurer.energy == adventurer.max_energy && now_block > economics.last_regen_block {
         economics.last_regen_block = now_block;
     }
     economics.energy_balance = adventurer.energy;
