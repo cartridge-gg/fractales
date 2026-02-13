@@ -4,7 +4,7 @@
 
 - Core loop: discover hex → discover area → mint ownership (NFT model parity) → initialize harvesting module → start/complete time-locked harvest → convert to energy → pay hex maintenance → decay → claim/defend.
 - Adventurer basics: create, move (adjacent only), energy spend/regenerate, activity time-locks, backpack capacity, and true permadeath.
-- World gen: deterministic hex/area/plant generation from `(global_seed, coordinate/id)` using Cubit noise, materialized lazily on first discover/init and immutable on replay.
+- World gen: deterministic hex/area/plant generation from `(global_seed, coordinate/id)` using Cubit noise, materialized lazily on first discover/init and immutable on replay. Active rollout uses generation version `2` for runtime derivations.
 - Coordinates: gameplay uses cube coordinates centered at `(0,0,0)`; storage uses felt encoding via deterministic codec.
 - Economics: energy balances, universal conversion (plants → energy), territorial maintenance and decay, claim/defend.
 - Events: HexDiscovered, AreaDiscovered, AdventurerCreated, AdventurerMoved, HarvestingStarted/Completed, ItemsConverted, HexEnergyPaid, HexBecameClaimable, HexClaimed/Defended, AdventurerDied.
@@ -21,7 +21,7 @@
 
 - Models (storage schema)
   - World.Hex { coordinate, biome, is_discovered, discovery_block, discoverer, area_count }
-  - World.HexArea { area_id, hex_coordinate, area_index, area_type, is_discovered, discoverer, resource_quality, size_category }
+  - World.HexArea { area_id, hex_coordinate, area_index, area_type, is_discovered, discoverer, resource_quality, size_category, plant_slot_count }
   - World.WorldGenConfig { generation_version, global_seed, biome_scale_bp, area_scale_bp, plant_scale_bp, biome_octaves, area_octaves, plant_octaves }
   - Adventurer.Adventurer { adventurer_id, owner, name, energy, max_energy, current_hex, activity_locked_until, is_alive }
   - Adventurer.Inventory { adventurer_id, current_weight, max_weight }
@@ -37,12 +37,14 @@
 
 Note: NFT parity modeled by `Ownership.AreaOwnership`; ERC-721 can be added post-MVP.
 
+Canonical playable biome list (20): Plains, Forest, Mountain, Desert, Swamp, Tundra, Taiga, Jungle, Savanna, Grassland, Canyon, Badlands, Volcanic, Glacier, Wetlands, Steppe, Oasis, Mire, Highlands, Coast.
+
 ## 2. System APIs (External)
 
 WorldManager
 
 - discover_hex(adventurer_id, hex) → Hex; Pre: adjacent to current; Behavior: derive `biome` and `area_count` from deterministic Cubit noise; idempotent replay; Cost: ENERGY_PER_EXPLORE only on first discovery; Events: HexDiscovered on first discovery only
-- discover_area(adventurer_id, hex, area_index) → AreaId; Pre: hex discovered; area_index valid; deterministic `AreaId = hash(hex, area_index)`; Behavior: derive `area_type`, `resource_quality`, and `size_category` from deterministic generation keyed by `(hex, area_index)`; Events: AreaDiscovered
+- discover_area(adventurer_id, hex, area_index) → AreaId; Pre: hex discovered; area_index valid; deterministic `AreaId = hash(hex, area_index)`; Behavior: derive `area_type`, `resource_quality`, `size_category`, and `plant_slot_count` from deterministic generation keyed by `(hex, area_index)`; Events: AreaDiscovered
 - move_adventurer(adventurer_id, to_hex) → ok; Pre: adjacent; Effects: energy spend, position update; Events: AdventurerMoved
 
 AdventurerManager
@@ -54,7 +56,7 @@ AdventurerManager
 
 Harvesting
 
-- init_harvesting(hex, area_id, plant_id) → instance_ok; Pre: hex discovered; Behavior: derive `species`, `max_yield`, `regrowth_rate`, and `genetics_hash` from deterministic generation keyed by `(hex, area_id, plant_id)`
+- init_harvesting(hex, area_id, plant_id) → instance_ok; Pre: hex discovered and `0 <= plant_id < HexArea.plant_slot_count`; Behavior: derive `species`, `max_yield`, `regrowth_rate`, and `genetics_hash` from deterministic generation keyed by `(hex, area_id, plant_id)`
 - start_harvesting(adventurer_id, hex, area_id, plant_id, amount) → activity; Pre: IDLE, `available_yield = current_yield - reserved_yield ≥ amount`, energy≥cost; Effects: create reservation + time-lock; Events: HarvestingStarted
 - complete_harvesting(adventurer_id) → {actual_yield, quality}; Effects: settle reservation, mint items, update plant yield/stress; Events: HarvestingCompleted
 - cancel_harvesting(adventurer_id) → {partial_yield}; Effects: settle reservation with partial/zero yield; Events: HarvestingCancelled
@@ -85,7 +87,7 @@ AreaOwnership
 - discover_area
 
   - Pre: hex.discovered; `area_index < hex.area_count`; area not discovered
-  - Effects: create HexArea with deterministic `AreaId = hash(hex, area_index)` and deterministic generated `area_type`, `resource_quality`, `size_category`
+  - Effects: create HexArea with deterministic `AreaId = hash(hex, area_index)` and deterministic generated `area_type`, `resource_quality`, `size_category`, `plant_slot_count`
   - Ownership rule: MVP uses single-controller-per-hex semantics. Controller is the owner of control area `area_index = 0`. All `Ownership.AreaOwnership` rows in a hex must share the current controller as `owner_adventurer_id`.
   - First control-area discoverer becomes controller.
   - Non-control area discoveries set `discoverer_adventurer_id` to caller, but `owner_adventurer_id` to current controller.
@@ -93,7 +95,7 @@ AreaOwnership
 
 - init_harvesting
 
-  - Pre: hex.discovered; area discovered; plant not yet initialized
+  - Pre: hex.discovered; area discovered; plant not yet initialized; `0 <= plant_id < area.plant_slot_count`
   - Effects: initialize `PlantNode` from deterministic generated profile (`species`, `max_yield`, `regrowth_rate`, `genetics_hash`) using `(hex, area_id, plant_id)` domain-separated seed derivation
   - Events: none
 
@@ -158,7 +160,7 @@ AreaOwnership
 - CONVERSION_BASE_RATE (plant): 10 energy/unit; supply/demand multiplier 0.5–1.5
 - CONVERSION_VOLUME_WINDOW_BLOCKS: 100 (rolling)
 - CONVERSION_VOLUME_PENALTY: per item_type, `penalty_bp = min(5000, floor(units_converted_in_window / 10) * 100)` (1% per 10 units, max 50%)
-- HEX_BASE_UPKEEP/100 blocks by biome: plains 25, forest 35, mountain 45, desert 55, swamp 65
+- HEX_BASE_UPKEEP/100 blocks is biome-profile-driven across the canonical 20 biomes (representative tiers: plains 25, highlands 52, volcanic 90)
 - CLAIMABLE_DECAY_THRESHOLD: 80; CLAIM_GRACE_BLOCKS: 500
 - BACKPACK_CAPACITY_RULE: weight-only in MVP (`current_weight <= max_weight`), no slot cap in MVP
 - CLAIM_ATTEMPT_TIMEOUT_BLOCKS: 100
@@ -169,6 +171,8 @@ AreaOwnership
 - No double discovery: hex/area idempotent
 - `discover_hex` replay path is read-only (no write, no energy spend, no event)
 - `AreaId` is deterministic (`hash(hex, area_index)`)
+- `0 <= plant_id < area.plant_slot_count` is enforced on `init_harvesting`
+- Area generation produces bounded slot counts (`plant_slot_count` in `[5, 8]` for current profile table).
 - Generated hex/area/plant attributes are deterministic for fixed `(generation_version, global_seed, coordinate/id)`.
 - Generation outputs are independent of caller address and block number.
 - Domain-separated generation derivation is enforced (`HEX_V1`, `AREA_V1`, `PLANT_V1`, `GENE_V1` tags).

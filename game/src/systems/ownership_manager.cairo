@@ -24,6 +24,7 @@ pub fn get_owner_transition(ownership: AreaOwnership) -> felt252 {
 pub fn transfer_transition(
     mut ownership: AreaOwnership,
     owner_adventurer: Adventurer,
+    to_adventurer: Adventurer,
     caller: ContractAddress,
     to_adventurer_id: felt252,
     claim_block: u64,
@@ -35,6 +36,11 @@ pub fn transfer_transition(
     }
 
     if to_adventurer_id == 0_felt252 || to_adventurer_id == ownership.owner_adventurer_id {
+        return OwnershipTransferResult {
+            ownership, outcome: OwnershipTransferOutcome::InvalidTarget,
+        };
+    }
+    if to_adventurer.adventurer_id != to_adventurer_id || !to_adventurer.is_alive {
         return OwnershipTransferResult {
             ownership, outcome: OwnershipTransferOutcome::InvalidTarget,
         };

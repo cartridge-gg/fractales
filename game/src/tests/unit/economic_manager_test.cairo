@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod tests {
+    use dojo_starter::libs::decay_math::upkeep_for_biome;
     use dojo_starter::models::adventurer::Adventurer;
     use dojo_starter::models::economics::{
         AdventurerEconomics, ClaimEscrow, ClaimEscrowStatus, ConversionRate, HexDecayState,
@@ -12,6 +13,66 @@ mod tests {
         convert_transition, defend_claim_transition, initiate_claim_transition, pay_maintenance_transition,
         process_decay_transition,
     };
+
+    #[test]
+    fn economic_manager_upkeep_tiers_cover_low_mid_high_new_biomes() {
+        let low = upkeep_for_biome(Biome::Plains);
+        let mid = upkeep_for_biome(Biome::Highlands);
+        let high = upkeep_for_biome(Biome::Volcanic);
+
+        let low_lt_mid = low < mid;
+        let mid_lt_high = mid < high;
+
+        assert(low == 25_u32, 'S4_UPKEEP_LOW');
+        assert(mid == 52_u32, 'S4_UPKEEP_MID');
+        assert(high == 90_u32, 'S4_UPKEEP_HIGH');
+        assert(low_lt_mid, 'S4_UPKEEP_ORDER_1');
+        assert(mid_lt_high, 'S4_UPKEEP_ORDER_2');
+    }
+
+    #[test]
+    fn economic_manager_maintenance_recovery_differs_between_low_and_high_upkeep_biomes() {
+        let owner = 0x223.try_into().unwrap();
+        let adventurer = Adventurer {
+            adventurer_id: 6002_felt252,
+            owner,
+            name: 'TIER'_felt252,
+            energy: 100_u16,
+            max_energy: 100_u16,
+            current_hex: 910_felt252,
+            activity_locked_until: 0_u64,
+            is_alive: true,
+        };
+        let economics = AdventurerEconomics {
+            adventurer_id: 6002_felt252,
+            energy_balance: 100_u16,
+            total_energy_spent: 0_u64,
+            total_energy_earned: 0_u64,
+            last_regen_block: 0_u64,
+        };
+        let state = HexDecayState {
+            hex_coordinate: 910_felt252,
+            owner_adventurer_id: 6002_felt252,
+            current_energy_reserve: 0_u32,
+            last_energy_payment_block: 0_u64,
+            last_decay_processed_block: 0_u64,
+            decay_level: 80_u16,
+            claimable_since_block: 10_u64,
+        };
+
+        let low_upkeep = upkeep_for_biome(Biome::Plains);
+        let high_upkeep = upkeep_for_biome(Biome::Volcanic);
+        let low_paid = pay_maintenance_transition(
+            adventurer, economics, owner, state, 90_u16, low_upkeep, 100_u64, 20_u16, 80_u16,
+        );
+        let high_paid = pay_maintenance_transition(
+            adventurer, economics, owner, state, 90_u16, high_upkeep, 100_u64, 20_u16, 80_u16,
+        );
+
+        assert(low_paid.outcome == PayOutcome::Applied, 'S4_UPKEEP_LOW_PAY');
+        assert(high_paid.outcome == PayOutcome::Applied, 'S4_UPKEEP_HIGH_PAY');
+        assert(low_paid.state.decay_level < high_paid.state.decay_level, 'S4_UPKEEP_TIER_EFFECT');
+    }
 
     #[test]
     fn economic_manager_convert_burns_items_and_mints_energy() {
@@ -123,6 +184,25 @@ mod tests {
         assert(processed.became_claimable, 'S4_DECAY_CLAIMABLE');
         assert(processed.state.claimable_since_block == 200_u64, 'S4_DECAY_CLAIM_SINCE');
         assert(processed.min_energy_to_claim > 0_u16, 'S4_DECAY_MIN');
+    }
+
+    #[test]
+    fn economic_manager_process_decay_caps_surface_claim_minimum() {
+        let state = HexDecayState {
+            hex_coordinate: 9011_felt252,
+            owner_adventurer_id: 7011_felt252,
+            current_energy_reserve: 0_u32,
+            last_energy_payment_block: 0_u64,
+            last_decay_processed_block: 0_u64,
+            decay_level: 79_u16,
+            claimable_since_block: 0_u64,
+        };
+
+        let processed = process_decay_transition(state, Biome::Desert, 200_u64, 100_u64, 80_u16);
+
+        assert(processed.outcome == DecayOutcome::Applied, 'S4_DECAY_CAP_OUT');
+        assert(processed.became_claimable, 'S4_DECAY_CAP_CLAIMABLE');
+        assert(processed.min_energy_to_claim == 100_u16, 'S4_DECAY_CAP_MIN');
     }
 
     #[test]
@@ -292,6 +372,68 @@ mod tests {
         assert(initiated.state.claimable_since_block == 0_u64, 'S4_CLAIM_IMM_CLAIM');
         assert(initiated.escrow.status == ClaimEscrowStatus::Resolved, 'S4_CLAIM_IMM_ESCROW');
         assert(initiated.escrow.energy_locked == 0_u16, 'S4_CLAIM_IMM_LOCK');
+    }
+
+    #[test]
+    fn economic_manager_claim_minimum_caps_to_adventurer_max_energy() {
+        let claimant_owner = 0x556.try_into().unwrap();
+        let claimant = Adventurer {
+            adventurer_id: 8103_felt252,
+            owner: claimant_owner,
+            name: 'CAPMIN'_felt252,
+            energy: 100_u16,
+            max_energy: 100_u16,
+            current_hex: 907_felt252,
+            activity_locked_until: 0_u64,
+            is_alive: true,
+        };
+        let claimant_econ = AdventurerEconomics {
+            adventurer_id: 8103_felt252,
+            energy_balance: 100_u16,
+            total_energy_spent: 0_u64,
+            total_energy_earned: 0_u64,
+            last_regen_block: 0_u64,
+        };
+        let state = HexDecayState {
+            hex_coordinate: 907_felt252,
+            owner_adventurer_id: 8104_felt252,
+            current_energy_reserve: 0_u32,
+            last_energy_payment_block: 0_u64,
+            last_decay_processed_block: 0_u64,
+            decay_level: 80_u16,
+            claimable_since_block: 100_u64,
+        };
+        let escrow = ClaimEscrow {
+            claim_id: derive_hex_claim_id(907_felt252),
+            hex_coordinate: 907_felt252,
+            claimant_adventurer_id: 0_felt252,
+            energy_locked: 0_u16,
+            created_block: 0_u64,
+            expiry_block: 0_u64,
+            status: ClaimEscrowStatus::Inactive,
+        };
+
+        // Simulate a high minimum (e.g. swamp/desert) that exceeds max energy.
+        let initiated = initiate_claim_transition(
+            claimant,
+            claimant_econ,
+            claimant_owner,
+            state,
+            escrow,
+            100_u16,
+            150_u64,
+            100_u64,
+            500_u64,
+            130_u32,
+            20_u16,
+            80_u16,
+        );
+
+        assert(initiated.outcome == ClaimInitOutcome::AppliedPending, 'S4_CLAIM_CAP_OUT');
+        assert(initiated.min_energy_to_claim == 100_u16, 'S4_CLAIM_CAP_MIN');
+        assert(initiated.claimant.energy == 0_u16, 'S4_CLAIM_CAP_LOCK');
+        assert(initiated.escrow.status == ClaimEscrowStatus::Active, 'S4_CLAIM_CAP_ESC');
+        assert(initiated.escrow.energy_locked == 100_u16, 'S4_CLAIM_CAP_ENE');
     }
 
     #[test]

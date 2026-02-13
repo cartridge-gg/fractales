@@ -9,6 +9,21 @@ pub enum Biome {
     Mountain,
     Desert,
     Swamp,
+    Tundra,
+    Taiga,
+    Jungle,
+    Savanna,
+    Grassland,
+    Canyon,
+    Badlands,
+    Volcanic,
+    Glacier,
+    Wetlands,
+    Steppe,
+    Oasis,
+    Mire,
+    Highlands,
+    Coast,
 }
 
 #[derive(Serde, Copy, Drop, Introspect, PartialEq, Debug, DojoStore, Default)]
@@ -17,6 +32,7 @@ pub enum AreaType {
     Wilderness,
     Control,
     PlantField,
+    MineField,
 }
 
 #[derive(Serde, Copy, Drop, Introspect, PartialEq, Debug, DojoStore, Default)]
@@ -51,6 +67,7 @@ pub struct HexArea {
     pub discoverer: ContractAddress,
     pub resource_quality: u16,
     pub size_category: SizeCategory,
+    pub plant_slot_count: u8,
 }
 
 #[derive(Copy, Drop, Serde, Debug)]
@@ -128,6 +145,7 @@ pub fn discover_area_once_with_status(
     area_type: AreaType,
     resource_quality: u16,
     size_category: SizeCategory,
+    plant_slot_count: u8,
 ) -> AreaDiscoveryResult {
     if area.is_discovered {
         return AreaDiscoveryResult { value: area, status: DiscoveryWriteStatus::Replay };
@@ -138,6 +156,7 @@ pub fn discover_area_once_with_status(
     area.area_type = area_type;
     area.resource_quality = resource_quality;
     area.size_category = size_category;
+    area.plant_slot_count = plant_slot_count;
 
     AreaDiscoveryResult { value: area, status: DiscoveryWriteStatus::Applied }
 }
@@ -158,6 +177,10 @@ pub fn discover_area_once(
     area_type: AreaType,
     resource_quality: u16,
     size_category: SizeCategory,
+    plant_slot_count: u8,
 ) -> HexArea {
-    discover_area_once_with_status(area, discoverer, area_type, resource_quality, size_category).value
+    discover_area_once_with_status(
+        area, discoverer, area_type, resource_quality, size_category, plant_slot_count,
+    )
+        .value
 }

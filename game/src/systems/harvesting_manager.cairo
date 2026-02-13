@@ -13,6 +13,9 @@ use starknet::ContractAddress;
 pub enum InitOutcome {
     #[default]
     HexUndiscovered,
+    AreaUndiscovered,
+    AreaNotPlantField,
+    PlantIdOutOfRange,
     AlreadyInitialized,
     InvalidConfig,
     Applied,
@@ -102,6 +105,9 @@ pub fn init_transition(
     mut plant: PlantNode,
     discoverer: ContractAddress,
     is_hex_discovered: bool,
+    is_area_discovered: bool,
+    is_area_plant_field: bool,
+    is_plant_id_in_range: bool,
     species: felt252,
     max_yield: u16,
     regrowth_rate: u16,
@@ -110,6 +116,15 @@ pub fn init_transition(
 ) -> InitResult {
     if !is_hex_discovered {
         return InitResult { plant, outcome: InitOutcome::HexUndiscovered };
+    }
+    if !is_area_discovered {
+        return InitResult { plant, outcome: InitOutcome::AreaUndiscovered };
+    }
+    if !is_area_plant_field {
+        return InitResult { plant, outcome: InitOutcome::AreaNotPlantField };
+    }
+    if !is_plant_id_in_range {
+        return InitResult { plant, outcome: InitOutcome::PlantIdOutOfRange };
     }
     if plant.max_yield > 0_u16 {
         return InitResult { plant, outcome: InitOutcome::AlreadyInitialized };

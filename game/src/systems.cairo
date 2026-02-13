@@ -10,3 +10,5 @@ pub mod ownership_manager;
 pub mod ownership_manager_contract;
 pub mod world_gen_manager;
 pub mod world_gen_manager_contract;
+pub mod mining_manager;
+pub mod mining_manager_contract;

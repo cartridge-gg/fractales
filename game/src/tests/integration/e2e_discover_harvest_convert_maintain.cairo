@@ -17,7 +17,7 @@ mod tests {
     use dojo_starter::models::economics::{AdventurerEconomics, HexDecayState};
     use dojo_starter::models::harvesting::{PlantNode, derive_harvest_item_id, derive_plant_key};
     use dojo_starter::models::inventory::{BackpackItem, Inventory};
-    use dojo_starter::models::world::{Biome, Hex, derive_area_id};
+    use dojo_starter::models::world::{AreaType, Biome, Hex, HexArea, derive_area_id};
     use dojo_starter::systems::economic_manager_contract::{
         IEconomicManagerDispatcher, IEconomicManagerDispatcherTrait,
     };
@@ -162,9 +162,12 @@ mod tests {
         );
 
         world_manager.discover_hex(adventurer_id, target);
-        let area_id = derive_area_id(target, 0_u8);
-        world_manager.discover_area(adventurer_id, target, 0_u8);
         world_manager.move_adventurer(adventurer_id, target);
+        world_manager.discover_area(adventurer_id, target, 0_u8);
+        world_manager.discover_area(adventurer_id, target, 1_u8);
+        let area_id = derive_area_id(target, 1_u8);
+        let area: HexArea = world.read_model(area_id);
+        world.write_model_test(@HexArea { area_type: AreaType::PlantField, ..area });
 
         let inited = harvesting_manager.init_harvesting(target, area_id, 1_u8);
         assert(inited, 'S6_E2E1_INIT');
@@ -236,8 +239,8 @@ mod tests {
         };
 
         assert(discovered_count == 1_usize, 'S6_E2E1_EVT_HEX');
-        assert(area_count == 1_usize, 'S6_E2E1_EVT_AREA');
-        assert(assign_count == 1_usize, 'S6_E2E1_EVT_ASSIGN');
+        assert(area_count == 2_usize, 'S6_E2E1_EVT_AREA');
+        assert(assign_count == 2_usize, 'S6_E2E1_EVT_ASSIGN');
         assert(start_count == 1_usize, 'S6_E2E1_EVT_START');
         assert(complete_count == 1_usize, 'S6_E2E1_EVT_DONE');
         assert(converted_count == 1_usize, 'S6_E2E1_EVT_CONV');
@@ -263,9 +266,12 @@ mod tests {
         setup_hex(ref world, target, caller);
 
         world_manager.discover_hex(adventurer_id, target);
-        let area_id = derive_area_id(target, 0_u8);
-        world_manager.discover_area(adventurer_id, target, 0_u8);
         world_manager.move_adventurer(adventurer_id, target);
+        world_manager.discover_area(adventurer_id, target, 0_u8);
+        world_manager.discover_area(adventurer_id, target, 1_u8);
+        let area_id = derive_area_id(target, 1_u8);
+        let area: HexArea = world.read_model(area_id);
+        world.write_model_test(@HexArea { area_type: AreaType::PlantField, ..area });
 
         let inited = harvesting_manager.init_harvesting(target, area_id, 1_u8);
         assert(inited, 'S6_E2E3_INIT');

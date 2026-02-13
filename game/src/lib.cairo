@@ -5,9 +5,13 @@ pub mod libs {
     pub mod coord_codec;
     pub mod math_bp;
     pub mod adjacency;
+    pub mod biome_profiles;
     pub mod world_rng;
     pub mod world_noise;
     pub mod world_gen;
+    pub mod mining_rng;
+    pub mod mining_gen;
+    pub mod mining_math;
     pub mod conversion_math;
     pub mod decay_math;
 }
@@ -18,9 +22,12 @@ pub mod tests {
         mod coord_codec_test;
         mod math_bp_test;
         mod adjacency_test;
+        mod biome_profiles_test;
         mod world_rng_test;
         mod world_noise_test;
         mod world_gen_test;
+        mod mining_gen_test;
+        mod mining_math_test;
         mod conversion_math_test;
         mod decay_math_test;
         mod world_models_test;
@@ -50,5 +57,6 @@ pub mod tests {
         mod world_gen_manager_integration_test;
         mod smoke_generation_pipeline_integration_test;
         mod world_economy_bridge_integration_test;
+        mod mining_manager_integration_test;
     }
 }

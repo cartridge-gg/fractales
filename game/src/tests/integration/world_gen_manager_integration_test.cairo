@@ -55,8 +55,8 @@ mod tests {
         );
         assert(first_ok, 'GEN_CFG_INIT_FIRST');
 
-        let stored: WorldGenConfig = world.read_model(1_u16);
-        assert(stored.generation_version == 1_u16, 'GEN_CFG_STORED_VERSION');
+        let stored: WorldGenConfig = world.read_model(2_u16);
+        assert(stored.generation_version == 2_u16, 'GEN_CFG_STORED_VERSION');
         assert(stored.global_seed == 'G5_INIT_SEED'_felt252, 'GEN_CFG_STORED_SEED');
         assert(stored.biome_scale_bp == 3500_u16, 'GEN_CFG_STORED_BIOME_SCALE');
 
@@ -65,7 +65,7 @@ mod tests {
         );
         assert(!second_ok, 'GEN_CFG_INIT_REPLAY_FALSE');
 
-        let replayed: WorldGenConfig = world.read_model(1_u16);
+        let replayed: WorldGenConfig = world.read_model(2_u16);
         assert(replayed.global_seed == 'G5_INIT_SEED'_felt252, 'GEN_CFG_REPLAY_IMMUTABLE_SEED');
 
         let current = manager.get_active_world_gen_config();

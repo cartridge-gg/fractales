@@ -218,3 +218,39 @@ Decision lock date: 2026-02-11
 1. Reuse a shared seed derivation path across hex/area/plant generation.
 2. Use versioned domain-separated derivations per generation stage.
 - Locked decision: Option 2. Generation uses domain tags (`HEX_V1`, `AREA_V1`, `PLANT_V1`, `GENE_V1`) over deterministic hash derivation.
+
+## DD-024 - Canonical Biome Count and Roster
+- Status: `locked`
+- Context: Earlier deterministic generation shipped with a smaller biome surface; expansion requires a single canonical roster for balancing and test determinism.
+- References: `docs/02-spec/mvp-functional-spec.md`, `docs/07-delivery/biome-20-expansion-checklist.md`
+- Options:
+1. Keep the original 5-biome MVP surface.
+2. Expand MVP deterministic generation to 20 playable biomes with a canonical roster.
+- Locked decision: Option 2. Canonical playable biome roster is 20 biomes: Plains, Forest, Mountain, Desert, Swamp, Tundra, Taiga, Jungle, Savanna, Grassland, Canyon, Badlands, Volcanic, Glacier, Wetlands, Steppe, Oasis, Mire, Highlands, Coast.
+
+## DD-025 - Deterministic Plant Slot Bounds and `plant_id` Guard
+- Status: `locked`
+- Context: Harvest init must be bounded per discovered area to prevent invalid plant addressing and profile drift.
+- References: `docs/02-spec/mvp-functional-spec.md`, `docs/07-delivery/biome-20-expansion-checklist.md`
+- Options:
+1. Allow unbounded `plant_id` on init and rely on best-effort generation.
+2. Persist deterministic per-area slot count and enforce `plant_id` bounds at init.
+- Locked decision: Option 2. `HexArea.plant_slot_count` is deterministic from area generation and `init_harvesting` enforces `0 <= plant_id < plant_slot_count`.
+
+## DD-026 - Data-Driven Biome Profile Source of Truth
+- Status: `locked`
+- Context: Duplicated biome behavior tables (upkeep, plant-field thresholds, species rolls) create drift risk.
+- References: `docs/02-spec/mvp-functional-spec.md`, `docs/07-delivery/biome-20-expansion-checklist.md`
+- Options:
+1. Keep per-system hardcoded biome mappings.
+2. Centralize biome behavior in a single profile source consumed by generation and decay logic.
+- Locked decision: Option 2. Biome upkeep/threshold/species behavior must come from one shared profile table.
+
+## DD-027 - Generation Version 2 Rollout Rule
+- Status: `locked`
+- Context: Biome expansion and slot-bound rules change generation semantics; rollout needs version isolation for deterministic replay safety.
+- References: `docs/02-spec/mvp-functional-spec.md`, `docs/07-delivery/biome-20-expansion-checklist.md`
+- Options:
+1. Mutate generation semantics in-place under version 1.
+2. Activate generation version 2 and enforce v2-only runtime behavior on generation-dependent entrypoints.
+- Locked decision: Option 2. Active generation key is version `2`; harvesting initialization requires persisted v2 area slot data (`plant_slot_count`) and does not fallback to legacy zero-slot rows.

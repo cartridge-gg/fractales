@@ -106,6 +106,7 @@ pub fn discover_area_transition(
     area_type: AreaType,
     resource_quality: u16,
     size_category: SizeCategory,
+    plant_slot_count: u8,
     area_count: u8,
 ) -> DiscoverAreaResult {
     if !is_valid_area_index(area.area_index, area_count) {
@@ -124,7 +125,7 @@ pub fn discover_area_transition(
     }
 
     let discovered = discover_area_once_with_status(
-        area, discoverer, area_type, resource_quality, size_category,
+        area, discoverer, area_type, resource_quality, size_category, plant_slot_count,
     );
 
     match discovered.status {

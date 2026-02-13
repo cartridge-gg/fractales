@@ -1,4 +1,4 @@
-const WORLD_GEN_VERSION_ACTIVE: u16 = 1_u16;
+const WORLD_GEN_VERSION_ACTIVE: u16 = 2_u16;
 
 #[starknet::interface]
 pub trait IWorldGenManager<T> {

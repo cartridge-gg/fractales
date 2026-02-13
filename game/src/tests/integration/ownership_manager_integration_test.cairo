@@ -137,4 +137,46 @@ mod tests {
         assert(row.owner_adventurer_id == 9501_felt252, 'OWN_INT_KEEP_OWNER');
         assert(row.claim_block == 0_u64, 'OWN_INT_KEEP_BLOCK');
     }
+
+    #[test]
+    fn ownership_manager_integration_transfer_rejects_dead_target() {
+        let caller = get_default_caller_address();
+        set_block_number(152_u64);
+        let mut world = spawn_test_world([namespace_def()].span());
+        world.sync_perms_and_inits(contract_defs());
+
+        let (contract_address, _) = world.dns(@"ownership_manager").unwrap();
+        let manager = IOwnershipManagerDispatcher { contract_address };
+
+        let area_id = 9903_felt252;
+        setup_adventurer(ref world, 9601_felt252, caller);
+        world.write_model_test(
+            @Adventurer {
+                adventurer_id: 9602_felt252,
+                owner: caller,
+                name: 'DEAD'_felt252,
+                energy: 0_u16,
+                max_energy: 100_u16,
+                current_hex: 0_felt252,
+                activity_locked_until: 0_u64,
+                is_alive: false,
+            },
+        );
+        world.write_model_test(
+            @AreaOwnership {
+                area_id,
+                owner_adventurer_id: 9601_felt252,
+                discoverer_adventurer_id: 9601_felt252,
+                discovery_block: 20_u64,
+                claim_block: 0_u64,
+            },
+        );
+
+        let transferred = manager.transfer_ownership(area_id, 9602_felt252);
+        assert(!transferred, 'OWN_INT_REJECT_DEAD_TARGET');
+
+        let row: AreaOwnership = world.read_model(area_id);
+        assert(row.owner_adventurer_id == 9601_felt252, 'OWN_INT_DEAD_TARGET_KEEP');
+        assert(row.claim_block == 0_u64, 'OWN_INT_DEAD_TARGET_BLOCK');
+    }
 }

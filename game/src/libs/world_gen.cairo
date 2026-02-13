@@ -1,4 +1,8 @@
 use core::traits::TryInto;
+use dojo_starter::libs::biome_profiles::{
+    mine_field_threshold_for_biome, plant_field_threshold_for_biome, species_for_biome_roll,
+    weighted_biome_from_roll,
+};
 use dojo_starter::libs::world_noise::{
     noise_percentile_roll, sanitize_octaves, sanitize_scale_bp,
 };
@@ -7,7 +11,7 @@ use dojo_starter::libs::world_rng::{
 };
 use dojo_starter::models::world::{AreaType, Biome, SizeCategory, WorldGenConfig};
 
-const DEFAULT_GENERATION_VERSION: u16 = 1_u16;
+const DEFAULT_GENERATION_VERSION: u16 = 2_u16;
 const WORLD_GLOBAL_SEED_V1: felt252 = 'WORLD_GEN_SEED_V1'_felt252;
 const DEFAULT_BIOME_SCALE_BP: u16 = 2_200_u16;
 const DEFAULT_AREA_SCALE_BP: u16 = 2_800_u16;
@@ -21,6 +25,7 @@ const ENTROPY_HEX_AREA_COUNT_ROLL: felt252 = 'HEX_AREA_COUNT_ROL'_felt252;
 const ENTROPY_AREA_TYPE_ROLL: felt252 = 'AREA_TYPE_ROLL_V1'_felt252;
 const ENTROPY_AREA_QUALITY_ROLL: felt252 = 'AREA_QUALITY_ROLL'_felt252;
 const ENTROPY_AREA_SIZE_ROLL: felt252 = 'AREA_SIZE_ROLL_V1'_felt252;
+const ENTROPY_AREA_PLANT_SLOT_ROLL: felt252 = 'AREA_PLANT_SLOT_RL'_felt252;
 const ENTROPY_PLANT_SPECIES_ROLL: felt252 = 'PLANT_SPECIES_ROL'_felt252;
 const ENTROPY_PLANT_MAX_YIELD_ROLL: felt252 = 'PLANT_MAX_YIELDR'_felt252;
 const ENTROPY_PLANT_REGROWTH_ROLL: felt252 = 'PLANT_REGROWTH_RL'_felt252;
@@ -36,6 +41,7 @@ pub struct AreaProfile {
     pub area_type: AreaType,
     pub resource_quality: u16,
     pub size_category: SizeCategory,
+    pub plant_slot_count: u8,
 }
 
 #[derive(Copy, Drop, Serde, Debug, PartialEq)]
@@ -135,11 +141,15 @@ pub fn derive_area_profile_with_config(
     let size_roll = noise_percentile_roll(
         area_seed, ENTROPY_AREA_SIZE_ROLL, cfg.area_scale_bp, cfg.area_octaves,
     );
+    let plant_slot_roll = noise_percentile_roll(
+        area_seed, ENTROPY_AREA_PLANT_SLOT_ROLL, cfg.area_scale_bp, cfg.area_octaves,
+    );
 
     AreaProfile {
         area_type,
         resource_quality: quality_from_roll(quality_roll),
         size_category: size_from_roll(size_roll),
+        plant_slot_count: plant_slot_count_from_roll(plant_slot_roll),
     }
 }
 
@@ -183,17 +193,7 @@ pub fn derive_plant_profile_with_config(
 }
 
 fn biome_from_roll(roll: u32) -> Biome {
-    if roll < 20_u32 {
-        Biome::Plains
-    } else if roll < 40_u32 {
-        Biome::Forest
-    } else if roll < 60_u32 {
-        Biome::Mountain
-    } else if roll < 80_u32 {
-        Biome::Desert
-    } else {
-        Biome::Swamp
-    }
+    weighted_biome_from_roll(roll)
 }
 
 fn area_count_from_roll(roll: u32) -> u8 {
@@ -209,17 +209,13 @@ fn area_count_from_roll(roll: u32) -> u8 {
 }
 
 fn area_type_from_roll(biome: Biome, roll: u32) -> AreaType {
-    let plant_threshold = match biome {
-        Biome::Plains => 60_u32,
-        Biome::Forest => 70_u32,
-        Biome::Mountain => 25_u32,
-        Biome::Desert => 30_u32,
-        Biome::Swamp => 55_u32,
-        Biome::Unknown => 45_u32,
-    };
+    let plant_threshold = plant_field_threshold_for_biome(biome);
+    let mine_threshold = mine_field_threshold_for_biome(biome);
 
     if roll < plant_threshold {
         AreaType::PlantField
+    } else if roll >= mine_threshold {
+        AreaType::MineField
     } else {
         AreaType::Wilderness
     }
@@ -248,25 +244,18 @@ fn regrowth_from_roll(roll: u32) -> u32 {
     1_u32 + (roll * 3_u32) / 100_u32
 }
 
-fn species_from_roll(biome: Biome, roll: u32) -> felt252 {
-    match biome {
-        Biome::Plains => {
-            if roll < 65_u32 { 'GRAIN'_felt252 } else { 'CLOVR'_felt252 }
-        },
-        Biome::Forest => {
-            if roll < 65_u32 { 'HERB'_felt252 } else { 'MUSHR'_felt252 }
-        },
-        Biome::Mountain => {
-            if roll < 65_u32 { 'MOSS'_felt252 } else { 'LICHN'_felt252 }
-        },
-        Biome::Desert => {
-            if roll < 65_u32 { 'CACTS'_felt252 } else { 'AGAVE'_felt252 }
-        },
-        Biome::Swamp => {
-            if roll < 65_u32 { 'REED'_felt252 } else { 'LOTUS'_felt252 }
-        },
-        Biome::Unknown => {
-            if roll < 65_u32 { 'FERN'_felt252 } else { 'BRIAR'_felt252 }
-        },
+fn plant_slot_count_from_roll(roll: u32) -> u8 {
+    if roll < 25_u32 {
+        5_u8
+    } else if roll < 50_u32 {
+        6_u8
+    } else if roll < 75_u32 {
+        7_u8
+    } else {
+        8_u8
     }
+}
+
+fn species_from_roll(biome: Biome, roll: u32) -> felt252 {
+    species_for_biome_roll(biome, roll)
 }

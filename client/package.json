@@ -1,0 +1,19 @@
+{
+  "name": "@gen-dungeon/client-workspace",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "typecheck": "tsc -b packages/*",
+    "test": "npm run test:torii-views && npm run test:explorer-data && npm run test:proxy",
+    "test:torii-views": "npm --workspace @gen-dungeon/torii-views run test",
+    "test:explorer-data": "npm --workspace @gen-dungeon/explorer-data run test",
+    "test:proxy": "npm --workspace @gen-dungeon/explorer-proxy-node run test"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.8"
+  }
+}

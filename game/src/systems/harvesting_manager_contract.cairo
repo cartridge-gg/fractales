@@ -1,7 +1,7 @@
 const HARVEST_ENERGY_PER_UNIT: u16 = 10_u16;
 const HARVEST_TIME_PER_UNIT: u16 = 2_u16;
 const ENERGY_REGEN_PER_100_BLOCKS: u16 = 20_u16;
-const WORLD_GEN_VERSION_ACTIVE: u16 = 1_u16;
+const WORLD_GEN_VERSION_ACTIVE: u16 = 2_u16;
 const PHASE_INIT: felt252 = 'INIT'_felt252;
 const PHASE_START: felt252 = 'START'_felt252;
 const PHASE_COMPLETE: felt252 = 'COMPLETE'_felt252;
@@ -53,7 +53,7 @@ pub mod harvesting_manager {
         derive_plant_key,
     };
     use dojo_starter::models::inventory::{BackpackItem, Inventory};
-    use dojo_starter::models::world::{Hex, WorldGenConfig};
+    use dojo_starter::models::world::{AreaType, Hex, HexArea, WorldGenConfig};
     use dojo_starter::systems::harvesting_manager::{
         CancelOutcome, CompleteOutcome, InitOutcome, StartOutcome, cancel_transition, complete_transition,
         init_transition, start_transition,
@@ -63,6 +63,9 @@ pub mod harvesting_manager {
     fn init_outcome_reason(outcome: InitOutcome) -> felt252 {
         match outcome {
             InitOutcome::HexUndiscovered => 'HEX_UNDISC'_felt252,
+            InitOutcome::AreaUndiscovered => 'AREA_UNDISC'_felt252,
+            InitOutcome::AreaNotPlantField => 'NOT_PLANT'_felt252,
+            InitOutcome::PlantIdOutOfRange => 'PLANT_RANGE'_felt252,
             InitOutcome::AlreadyInitialized => 'ALREADY_INIT'_felt252,
             InitOutcome::InvalidConfig => 'BAD_CONFIG'_felt252,
             InitOutcome::Applied => 'APPLIED'_felt252,
@@ -121,6 +124,10 @@ pub mod harvesting_manager {
             let block_number = get_block_info().unbox().block_number;
 
             let hex: Hex = world.read_model(hex_coordinate);
+            let area: HexArea = world.read_model(area_id);
+            let area_is_discovered = area.area_id == area_id && area.hex_coordinate == hex_coordinate
+                && area.is_discovered;
+            let area_is_plant_field = area.area_type == AreaType::PlantField;
             let plant_key = derive_plant_key(hex_coordinate, area_id, plant_id);
             let mut plant: PlantNode = world.read_model(plant_key);
             plant.plant_key = plant_key;
@@ -128,6 +135,12 @@ pub mod harvesting_manager {
             plant.area_id = area_id;
             plant.plant_id = plant_id;
             let world_gen_config: WorldGenConfig = world.read_model(WORLD_GEN_VERSION_ACTIVE);
+            let plant_id_in_range = if hex.is_discovered && area_is_discovered && area_is_plant_field {
+                plant_id < area.plant_slot_count
+            } else {
+                true
+            };
+
             let generated = derive_plant_profile_with_config(
                 hex_coordinate, area_id, plant_id, hex.biome, world_gen_config,
             );
@@ -136,6 +149,9 @@ pub mod harvesting_manager {
                 plant,
                 caller,
                 hex.is_discovered,
+                area_is_discovered,
+                area_is_plant_field,
+                plant_id_in_range,
                 generated.species,
                 generated.max_yield,
                 generated.regrowth_rate,

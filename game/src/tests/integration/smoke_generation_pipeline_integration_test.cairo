@@ -23,7 +23,7 @@ mod tests {
     use dojo_starter::models::harvesting::{PlantNode, derive_harvest_item_id, derive_plant_key};
     use dojo_starter::models::inventory::{BackpackItem, Inventory};
     use dojo_starter::models::ownership::AreaOwnership;
-    use dojo_starter::models::world::{Hex, HexArea, WorldGenConfig, derive_area_id};
+    use dojo_starter::models::world::{AreaType, Hex, HexArea, WorldGenConfig, derive_area_id};
     use dojo_starter::systems::harvesting_manager_contract::{
         IHarvestingManagerDispatcher, IHarvestingManagerDispatcherTrait,
     };
@@ -146,7 +146,7 @@ mod tests {
         assert(initialized, 'SMOKE_CFG_INIT');
 
         let config: WorldGenConfig = world_gen_manager.get_active_world_gen_config();
-        assert(config.generation_version == 1_u16, 'SMOKE_CFG_VER');
+        assert(config.generation_version == 2_u16, 'SMOKE_CFG_VER');
         assert(config.global_seed == 'SMOKE_SEED_G5'_felt252, 'SMOKE_CFG_SEED');
         assert(config.biome_scale_bp == 19000_u16, 'SMOKE_CFG_B');
         assert(config.area_scale_bp == 17300_u16, 'SMOKE_CFG_A');
@@ -164,23 +164,49 @@ mod tests {
         assert(discovered_hex.biome == expected_hex.biome, 'SMOKE_HEX_BIOME');
         assert(discovered_hex.area_count == expected_hex.area_count, 'SMOKE_HEX_AREAS');
 
-        world_manager.discover_area(adventurer_id, target, 0_u8);
-        world_manager.discover_area(adventurer_id, target, 1_u8);
         world_manager.move_adventurer(adventurer_id, target);
+        world_manager.discover_area(adventurer_id, target, 0_u8);
 
-        let area_id = derive_area_id(target, 1_u8);
-        let expected_area = derive_area_profile_with_config(target, 1_u8, discovered_hex.biome, config);
+        let mut selected_area_index: u8 = 1_u8;
+        let mut found_plant_area = false;
+        let mut area_index: u8 = 1_u8;
+        loop {
+            if area_index >= discovered_hex.area_count {
+                break;
+            };
+            world_manager.discover_area(adventurer_id, target, area_index);
+
+            let profile = derive_area_profile_with_config(
+                target, area_index, discovered_hex.biome, config,
+            );
+            if !found_plant_area && profile.area_type == AreaType::PlantField {
+                selected_area_index = area_index;
+                found_plant_area = true;
+            }
+            area_index += 1_u8;
+        };
+        assert(found_plant_area, 'SMOKE_PLANT_AREA');
+
+        let area_id = derive_area_id(target, selected_area_index);
+        let expected_area = derive_area_profile_with_config(
+            target, selected_area_index, discovered_hex.biome, config,
+        );
         let area: HexArea = world.read_model(area_id);
         let ownership: AreaOwnership = world.read_model(area_id);
         assert(area.is_discovered, 'SMOKE_AREA_DISC');
         assert(area.area_type == expected_area.area_type, 'SMOKE_AREA_TYPE');
         assert(area.resource_quality == expected_area.resource_quality, 'SMOKE_AREA_QUAL');
         assert(area.size_category == expected_area.size_category, 'SMOKE_AREA_SIZE');
+        assert(area.plant_slot_count == expected_area.plant_slot_count, 'SMOKE_AREA_SLOTS');
         assert(ownership.owner_adventurer_id == adventurer_id, 'SMOKE_AREA_OWNER');
 
         let plant_id = 2_u8;
         let inited = harvesting_manager.init_harvesting(target, area_id, plant_id);
         assert(inited, 'SMOKE_PLANT_INIT');
+        let out_of_range_inited = harvesting_manager.init_harvesting(
+            target, area_id, expected_area.plant_slot_count,
+        );
+        assert(!out_of_range_inited, 'SMOKE_PLANT_RANGE');
 
         let plant_key = derive_plant_key(target, area_id, plant_id);
         let plant: PlantNode = world.read_model(plant_key);
@@ -249,8 +275,9 @@ mod tests {
 
         assert(world_gen_count == 1_usize, 'SMOKE_EVT_CFG');
         assert(hex_count == 1_usize, 'SMOKE_EVT_HEX');
-        assert(area_count == 2_usize, 'SMOKE_EVT_AREA');
-        assert(owner_count == 2_usize, 'SMOKE_EVT_OWNER');
+        let expected_area_events: usize = discovered_hex.area_count.into();
+        assert(area_count == expected_area_events, 'SMOKE_EVT_AREA');
+        assert(owner_count == expected_area_events, 'SMOKE_EVT_OWNER');
         assert(started_count == 1_usize, 'SMOKE_EVT_START');
         assert(completed_count == 1_usize, 'SMOKE_EVT_DONE');
     }

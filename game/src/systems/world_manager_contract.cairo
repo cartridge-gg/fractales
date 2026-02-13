@@ -1,6 +1,6 @@
 const ENERGY_PER_HEX_MOVE: u16 = 15_u16;
 const ENERGY_PER_EXPLORE: u16 = 25_u16;
-const WORLD_GEN_VERSION_ACTIVE: u16 = 1_u16;
+const WORLD_GEN_VERSION_ACTIVE: u16 = 2_u16;
 const ACTION_DISCOVER_HEX: felt252 = 'DISC_HEX'_felt252;
 const ACTION_DISCOVER_AREA: felt252 = 'DISC_AREA'_felt252;
 const ACTION_MOVE: felt252 = 'MOVE'_felt252;
@@ -164,6 +164,12 @@ pub mod world_manager {
                 );
                 return;
             }
+            if adventurer.current_hex != hex_coordinate {
+                emit_rejection(
+                    ref world, adventurer_id, ACTION_DISCOVER_AREA, hex_coordinate, 'WRONG_HEX'_felt252,
+                );
+                return;
+            }
 
             let hex: Hex = world.read_model(hex_coordinate);
             if !hex.is_discovered {
@@ -218,6 +224,7 @@ pub mod world_manager {
                 area_profile.area_type,
                 area_profile.resource_quality,
                 area_profile.size_category,
+                area_profile.plant_slot_count,
             );
 
             match discovered.status {

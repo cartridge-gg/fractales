@@ -40,8 +40,18 @@ mod tests {
             discovery_block: 10_u64,
             claim_block: 0_u64,
         };
+        let target = Adventurer {
+            adventurer_id: 8102_felt252,
+            owner: caller,
+            name: 'OWN_TGT'_felt252,
+            energy: 100_u16,
+            max_energy: 100_u16,
+            current_hex: 0_felt252,
+            activity_locked_until: 0_u64,
+            is_alive: true,
+        };
 
-        let transferred = transfer_transition(ownership, owner, caller, 8102_felt252, 200_u64);
+        let transferred = transfer_transition(ownership, owner, target, caller, 8102_felt252, 200_u64);
         assert(transferred.outcome == OwnershipTransferOutcome::Applied, 'OWN_TR_OUT');
         assert(transferred.ownership.owner_adventurer_id == 8102_felt252, 'OWN_TR_OWNER');
         assert(transferred.ownership.claim_block == 200_u64, 'OWN_TR_BLOCK');
@@ -69,12 +79,26 @@ mod tests {
             discovery_block: 10_u64,
             claim_block: 0_u64,
         };
+        let target = Adventurer {
+            adventurer_id: 8202_felt252,
+            owner: owner_addr,
+            name: 'OWN2_TGT'_felt252,
+            energy: 100_u16,
+            max_energy: 100_u16,
+            current_hex: 0_felt252,
+            activity_locked_until: 0_u64,
+            is_alive: true,
+        };
 
-        let wrong_caller = transfer_transition(ownership, owner, wrong_addr, 8202_felt252, 201_u64);
+        let wrong_caller = transfer_transition(
+            ownership, owner, target, wrong_addr, 8202_felt252, 201_u64,
+        );
         assert(wrong_caller.outcome == OwnershipTransferOutcome::NotOwner, 'OWN_TR_NOT_OWNER');
         assert(wrong_caller.ownership.owner_adventurer_id == 8201_felt252, 'OWN_TR_NOT_OWNER_KEEP');
 
-        let invalid_target = transfer_transition(ownership, owner, owner_addr, 0_felt252, 201_u64);
+        let invalid_target = transfer_transition(
+            ownership, owner, target, owner_addr, 0_felt252, 201_u64,
+        );
         assert(
             invalid_target.outcome == OwnershipTransferOutcome::InvalidTarget,
             'OWN_TR_BAD_TARGET',
@@ -83,5 +107,43 @@ mod tests {
             invalid_target.ownership.owner_adventurer_id == 8201_felt252,
             'OWN_TR_BAD_TARGET_KEEP',
         );
+    }
+
+    #[test]
+    fn ownership_manager_transfer_rejects_dead_target_adventurer() {
+        let owner_addr = 0x422.try_into().unwrap();
+        let owner = Adventurer {
+            adventurer_id: 8301_felt252,
+            owner: owner_addr,
+            name: 'OWN3'_felt252,
+            energy: 100_u16,
+            max_energy: 100_u16,
+            current_hex: 0_felt252,
+            activity_locked_until: 0_u64,
+            is_alive: true,
+        };
+        let dead_target = Adventurer {
+            adventurer_id: 8302_felt252,
+            owner: owner_addr,
+            name: 'OWN3_TGT'_felt252,
+            energy: 0_u16,
+            max_energy: 100_u16,
+            current_hex: 0_felt252,
+            activity_locked_until: 0_u64,
+            is_alive: false,
+        };
+        let ownership = AreaOwnership {
+            area_id: 703_felt252,
+            owner_adventurer_id: 8301_felt252,
+            discoverer_adventurer_id: 8300_felt252,
+            discovery_block: 10_u64,
+            claim_block: 0_u64,
+        };
+
+        let invalid_target = transfer_transition(
+            ownership, owner, dead_target, owner_addr, 8302_felt252, 202_u64,
+        );
+        assert(invalid_target.outcome == OwnershipTransferOutcome::InvalidTarget, 'OWN_TR_DEAD_TARGET');
+        assert(invalid_target.ownership.owner_adventurer_id == 8301_felt252, 'OWN_TR_DEAD_KEEP');
     }
 }

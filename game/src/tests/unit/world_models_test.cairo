@@ -59,6 +59,7 @@ mod tests {
             discoverer: 0.try_into().unwrap(),
             resource_quality: 0_u16,
             size_category: SizeCategory::Small,
+            plant_slot_count: 0_u8,
         };
 
         let invalid_area = HexArea { area_id: derive_area_id(hex, 2_u8), ..valid_area };
@@ -112,6 +113,7 @@ mod tests {
             discoverer: 0.try_into().unwrap(),
             resource_quality: 0_u16,
             size_category: SizeCategory::Small,
+            plant_slot_count: 0_u8,
         };
 
         let first_discoverer: ContractAddress = 333.try_into().unwrap();
@@ -123,12 +125,14 @@ mod tests {
             AreaType::PlantField,
             77_u16,
             SizeCategory::Large,
+            6_u8,
         );
         assert(first.is_discovered, 'AREA_DISCOVERED_FALSE');
         assert(first.discoverer == first_discoverer, 'AREA_DISCOVERER_FIRST');
         assert(first.area_type == AreaType::PlantField, 'AREA_TYPE_FIRST');
         assert(first.resource_quality == 77_u16, 'AREA_QUALITY_FIRST');
         assert(first.size_category == SizeCategory::Large, 'AREA_SIZE_FIRST');
+        assert(first.plant_slot_count == 6_u8, 'AREA_SLOTS_FIRST');
 
         let replay = discover_area_once(
             first,
@@ -136,12 +140,14 @@ mod tests {
             AreaType::Wilderness,
             1_u16,
             SizeCategory::Medium,
+            1_u8,
         );
         assert(replay.is_discovered, 'AREA_REPLAY_DISCOVERED_FALSE');
         assert(replay.discoverer == first_discoverer, 'AREA_REPLAY_DISCOVERER_MUT');
         assert(replay.area_type == AreaType::PlantField, 'AREA_REPLAY_TYPE_MUT');
         assert(replay.resource_quality == 77_u16, 'AREA_REPLAY_QUALITY_MUT');
         assert(replay.size_category == SizeCategory::Large, 'AREA_REPLAY_SIZE_MUT');
+        assert(replay.plant_slot_count == 6_u8, 'AREA_REPLAY_SLOTS_MUT');
     }
 
     #[test]
@@ -173,9 +179,10 @@ mod tests {
             discoverer: 0.try_into().unwrap(),
             resource_quality: 0_u16,
             size_category: SizeCategory::Small,
+            plant_slot_count: 0_u8,
         };
         let first_area = discover_area_once_with_status(
-            area, discoverer, AreaType::PlantField, 55_u16, SizeCategory::Medium,
+            area, discoverer, AreaType::PlantField, 55_u16, SizeCategory::Medium, 5_u8,
         );
         assert(first_area.status == DiscoveryWriteStatus::Applied, 'AREA_STATUS_FIRST');
         let replay_area = discover_area_once_with_status(
@@ -184,6 +191,7 @@ mod tests {
             AreaType::Wilderness,
             1_u16,
             SizeCategory::Large,
+            1_u8,
         );
         assert(replay_area.status == DiscoveryWriteStatus::Replay, 'AREA_STATUS_REPLAY');
     }

@@ -1,15 +1,9 @@
 use core::traits::TryInto;
+use dojo_starter::libs::biome_profiles::upkeep_for_biome_profile;
 use dojo_starter::models::world::Biome;
 
 pub fn upkeep_for_biome(biome: Biome) -> u32 {
-    match biome {
-        Biome::Plains => 25_u32,
-        Biome::Forest => 35_u32,
-        Biome::Mountain => 45_u32,
-        Biome::Desert => 55_u32,
-        Biome::Swamp => 65_u32,
-        Biome::Unknown => 35_u32,
-    }
+    upkeep_for_biome_profile(biome)
 }
 
 pub fn maintenance_decay_recovery(energy_paid: u16, upkeep_per_period: u32, recovery_bp: u16) -> u16 {

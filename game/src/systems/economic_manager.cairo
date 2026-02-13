@@ -15,6 +15,7 @@ use dojo_starter::systems::adventurer_manager::{ConsumeOutcome, consume_transiti
 use starknet::ContractAddress;
 
 const ENERGY_REGEN_PER_100_BLOCKS: u16 = 20_u16;
+const CLAIM_SURFACE_MIN_ENERGY_CAP: u16 = 100_u16;
 const U16_MAX_U128: u128 = 65535_u128;
 const U32_MAX_U128: u128 = 4_294_967_295_u128;
 const U64_MAX_U128: u128 = 18_446_744_073_709_551_615_u128;
@@ -391,7 +392,12 @@ pub fn process_decay_transition(
     );
 
     let min_energy = if processed.state.decay_level >= claimable_threshold {
-        min_claim_energy(upkeep, processed.state.decay_level, claimable_threshold)
+        let computed = min_claim_energy(upkeep, processed.state.decay_level, claimable_threshold);
+        if computed > CLAIM_SURFACE_MIN_ENERGY_CAP {
+            CLAIM_SURFACE_MIN_ENERGY_CAP
+        } else {
+            computed
+        }
     } else {
         0_u16
     };
@@ -430,6 +436,11 @@ pub fn initiate_claim_transition(
     } else {
         min_energy_required.try_into().unwrap()
     };
+    let effective_min_required_u16 = if min_required_u16 > claimant.max_energy {
+        claimant.max_energy
+    } else {
+        min_required_u16
+    };
 
     if !claimant.is_alive {
         return ClaimInitResult {
@@ -438,7 +449,7 @@ pub fn initiate_claim_transition(
             state,
             escrow,
             outcome: ClaimInitOutcome::Dead,
-            min_energy_to_claim: min_required_u16,
+            min_energy_to_claim: effective_min_required_u16,
         };
     }
     if !can_be_controlled_by(claimant, caller) {
@@ -448,7 +459,7 @@ pub fn initiate_claim_transition(
             state,
             escrow,
             outcome: ClaimInitOutcome::NotOwner,
-            min_energy_to_claim: min_required_u16,
+            min_energy_to_claim: effective_min_required_u16,
         };
     }
 
@@ -459,7 +470,7 @@ pub fn initiate_claim_transition(
             state,
             escrow,
             outcome: ClaimInitOutcome::NotClaimable,
-            min_energy_to_claim: min_required_u16,
+            min_energy_to_claim: effective_min_required_u16,
         };
     }
 
@@ -470,18 +481,18 @@ pub fn initiate_claim_transition(
             state,
             escrow,
             outcome: ClaimInitOutcome::InvalidAmount,
-            min_energy_to_claim: min_required_u16,
+            min_energy_to_claim: effective_min_required_u16,
         };
     }
 
-    if energy_offered < min_required_u16 {
+    if energy_offered < effective_min_required_u16 {
         return ClaimInitResult {
             claimant,
             claimant_economics,
             state,
             escrow,
             outcome: ClaimInitOutcome::BelowMinimum,
-            min_energy_to_claim: min_required_u16,
+            min_energy_to_claim: effective_min_required_u16,
         };
     }
 
@@ -536,7 +547,7 @@ pub fn initiate_claim_transition(
         state,
         escrow: next_escrow,
         outcome,
-        min_energy_to_claim: min_required_u16,
+        min_energy_to_claim: effective_min_required_u16,
     }
 }
 

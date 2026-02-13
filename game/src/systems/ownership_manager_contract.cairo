@@ -35,9 +35,10 @@ pub mod ownership_manager {
             ownership.area_id = area_id;
             let from_adventurer_id = ownership.owner_adventurer_id;
             let owner: Adventurer = world.read_model(from_adventurer_id);
+            let target: Adventurer = world.read_model(to_adventurer_id);
 
             let transferred = transfer_transition(
-                ownership, owner, caller, to_adventurer_id, block_number,
+                ownership, owner, target, caller, to_adventurer_id, block_number,
             );
             match transferred.outcome {
                 OwnershipTransferOutcome::Applied => {

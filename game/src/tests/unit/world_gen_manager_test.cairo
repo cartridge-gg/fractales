@@ -8,7 +8,7 @@ mod tests {
 
     fn candidate_config() -> WorldGenConfig {
         WorldGenConfig {
-            generation_version: 1_u16,
+            generation_version: 2_u16,
             global_seed: 'G5_CFG_SEED'_felt252,
             biome_scale_bp: 0_u16,
             area_scale_bp: 27_500_u16,
@@ -54,7 +54,7 @@ mod tests {
 
         let result = initialize_active_world_gen_config_transition(existing, candidate_config(), true);
         assert(result.outcome == WorldGenConfigInitOutcome::Applied, 'GEN_CFG_APPLIED');
-        assert(result.config.generation_version == 1_u16, 'GEN_CFG_VERSION');
+        assert(result.config.generation_version == 2_u16, 'GEN_CFG_VERSION');
         assert(result.config.global_seed == 'G5_CFG_SEED'_felt252, 'GEN_CFG_SEED');
         assert(result.config.biome_scale_bp > 0_u16, 'GEN_CFG_BIOME_SCALE_NONZERO');
         assert(result.config.area_scale_bp <= 20_000_u16, 'GEN_CFG_AREA_SCALE_CLAMP');

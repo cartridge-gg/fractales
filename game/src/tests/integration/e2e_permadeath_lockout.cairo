@@ -11,7 +11,7 @@ mod tests {
     use dojo_starter::models::economics::{AdventurerEconomics, HexDecayState};
     use dojo_starter::models::harvesting::PlantNode;
     use dojo_starter::models::inventory::{BackpackItem, Inventory};
-    use dojo_starter::models::world::{Biome, Hex, derive_area_id};
+    use dojo_starter::models::world::{AreaType, Biome, Hex, HexArea, SizeCategory, derive_area_id};
     use dojo_starter::systems::adventurer_manager_contract::{
         IAdventurerManagerDispatcher, IAdventurerManagerDispatcherTrait,
     };
@@ -46,6 +46,7 @@ mod tests {
                 TestResource::Model("ConversionRate"),
                 TestResource::Event("AreaDiscovered"),
                 TestResource::Event("AreaOwnershipAssigned"),
+                TestResource::Event("AdventurerMoved"),
                 TestResource::Event("WorldActionRejected"),
                 TestResource::Event("HarvestingRejected"),
                 TestResource::Event("AdventurerDied"),
@@ -166,8 +167,22 @@ mod tests {
             },
         );
 
-        let area_id = derive_area_id(target, 0_u8);
+        world_manager.move_adventurer(adventurer_id, target);
         world_manager.discover_area(adventurer_id, target, 0_u8);
+        let area_id = derive_area_id(target, 1_u8);
+        world.write_model_test(
+            @HexArea {
+                area_id,
+                hex_coordinate: target,
+                area_index: 1_u8,
+                area_type: AreaType::PlantField,
+                is_discovered: true,
+                discoverer: caller,
+                resource_quality: 70_u16,
+                size_category: SizeCategory::Medium,
+                plant_slot_count: 8_u8,
+            },
+        );
         let inited = harvesting_manager.init_harvesting(target, area_id, 1_u8);
         assert(inited, 'S6_E2E4_INIT');
 
@@ -184,7 +199,7 @@ mod tests {
         world_manager.move_adventurer(adventurer_id, target);
         world_manager.discover_hex(adventurer_id, target);
         let after_world: Adventurer = world.read_model(adventurer_id);
-        assert(after_world.current_hex == origin, 'S6_E2E4_MOVE_BLOCK');
+        assert(after_world.current_hex == target, 'S6_E2E4_MOVE_BLOCK');
 
         let started = harvesting_manager.start_harvesting(adventurer_id, target, area_id, 1_u8, 2_u16);
         assert(!started, 'S6_E2E4_START_BLOCK');

@@ -33,6 +33,7 @@ mod tests {
                 TestResource::Event("HexDiscovered"),
                 TestResource::Event("AreaDiscovered"),
                 TestResource::Event("AreaOwnershipAssigned"),
+                TestResource::Event("AdventurerMoved"),
                 TestResource::Event("WorldActionRejected"),
                 TestResource::Event("HexEnergyPaid"),
                 TestResource::Contract("world_manager"),
@@ -111,6 +112,7 @@ mod tests {
         setup_actor(ref world, adventurer_id, caller, 100_u16, origin);
 
         world_manager.discover_hex(adventurer_id, target);
+        world_manager.move_adventurer(adventurer_id, target);
         world_manager.discover_area(adventurer_id, target, 0_u8);
 
         let state_before_pay: HexDecayState = world.read_model(target);
@@ -123,7 +125,7 @@ mod tests {
 
         let actor_after_pay: Adventurer = world.read_model(adventurer_id);
         let state_after_pay: HexDecayState = world.read_model(target);
-        assert(actor_after_pay.energy == 65_u16, 'W_ECO_PAY_ENERGY');
+        assert(actor_after_pay.energy == 50_u16, 'W_ECO_PAY_ENERGY');
         assert(state_after_pay.owner_adventurer_id == adventurer_id, 'W_ECO_PAY_OWNER');
         assert(state_after_pay.current_energy_reserve == 10_u32, 'W_ECO_PAY_RESV');
         assert(state_after_pay.last_energy_payment_block == 0_u64, 'W_ECO_PAY_BLOCK');

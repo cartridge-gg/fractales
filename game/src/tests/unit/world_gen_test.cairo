@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod tests {
+    use dojo_starter::libs::decay_math::upkeep_for_biome;
     use dojo_starter::libs::world_gen::{
         default_world_gen_config, derive_area_profile, derive_area_profile_with_config,
         derive_hex_profile, derive_hex_profile_with_config, derive_plant_profile,
@@ -29,6 +30,139 @@ mod tests {
     }
 
     #[test]
+    fn world_gen_hex_profile_exposes_extended_biome_space() {
+        let mut found_extended = false;
+        let mut idx: u32 = 0_u32;
+        loop {
+            if idx == 500_u32 {
+                break;
+            };
+
+            let coordinate: felt252 = (10_000_u32 + idx).into();
+            let profile = derive_hex_profile(coordinate);
+            match profile.biome {
+                Biome::Plains => {},
+                Biome::Forest => {},
+                Biome::Mountain => {},
+                Biome::Desert => {},
+                Biome::Swamp => {},
+                Biome::Unknown => {},
+                _ => {
+                    found_extended = true;
+                    break;
+                },
+            }
+
+            idx += 1_u32;
+        };
+
+        assert(found_extended, 'GEN_HEX_EXT_SPACE');
+    }
+
+    #[test]
+    fn world_gen_hex_profile_surfaces_high_upkeep_biomes() {
+        let mut found_high_upkeep = false;
+        let mut idx: u32 = 0_u32;
+        loop {
+            if idx == 500_u32 {
+                break;
+            };
+
+            let coordinate: felt252 = (20_000_u32 + idx).into();
+            let profile = derive_hex_profile(coordinate);
+            let upkeep = upkeep_for_biome(profile.biome);
+            if upkeep > 65_u32 {
+                found_high_upkeep = true;
+                break;
+            }
+
+            idx += 1_u32;
+        };
+
+        assert(found_high_upkeep, 'GEN_HEX_HIGH_UPKEEP');
+    }
+
+    #[test]
+    fn world_gen_hex_profile_sample_covers_all_20_biomes() {
+        let mut plains: u32 = 0_u32;
+        let mut forest: u32 = 0_u32;
+        let mut mountain: u32 = 0_u32;
+        let mut desert: u32 = 0_u32;
+        let mut swamp: u32 = 0_u32;
+        let mut tundra: u32 = 0_u32;
+        let mut taiga: u32 = 0_u32;
+        let mut jungle: u32 = 0_u32;
+        let mut savanna: u32 = 0_u32;
+        let mut grassland: u32 = 0_u32;
+        let mut canyon: u32 = 0_u32;
+        let mut badlands: u32 = 0_u32;
+        let mut volcanic: u32 = 0_u32;
+        let mut glacier: u32 = 0_u32;
+        let mut wetlands: u32 = 0_u32;
+        let mut steppe: u32 = 0_u32;
+        let mut oasis: u32 = 0_u32;
+        let mut mire: u32 = 0_u32;
+        let mut highlands: u32 = 0_u32;
+        let mut coast: u32 = 0_u32;
+
+        let mut idx: u32 = 0_u32;
+        loop {
+            if idx == 600_u32 {
+                break;
+            };
+
+            let coordinate: felt252 = (30_000_u32 + idx).into();
+            let profile = derive_hex_profile(coordinate);
+            match profile.biome {
+                Biome::Plains => plains += 1_u32,
+                Biome::Forest => forest += 1_u32,
+                Biome::Mountain => mountain += 1_u32,
+                Biome::Desert => desert += 1_u32,
+                Biome::Swamp => swamp += 1_u32,
+                Biome::Tundra => tundra += 1_u32,
+                Biome::Taiga => taiga += 1_u32,
+                Biome::Jungle => jungle += 1_u32,
+                Biome::Savanna => savanna += 1_u32,
+                Biome::Grassland => grassland += 1_u32,
+                Biome::Canyon => canyon += 1_u32,
+                Biome::Badlands => badlands += 1_u32,
+                Biome::Volcanic => volcanic += 1_u32,
+                Biome::Glacier => glacier += 1_u32,
+                Biome::Wetlands => wetlands += 1_u32,
+                Biome::Steppe => steppe += 1_u32,
+                Biome::Oasis => oasis += 1_u32,
+                Biome::Mire => mire += 1_u32,
+                Biome::Highlands => highlands += 1_u32,
+                Biome::Coast => coast += 1_u32,
+                Biome::Unknown => {},
+            }
+
+            idx += 1_u32;
+        };
+
+        assert(plains > 0_u32, 'GEN_DIST_PLAINS');
+        assert(forest > 0_u32, 'GEN_DIST_FOREST');
+        assert(mountain > 0_u32, 'GEN_DIST_MTN');
+        assert(desert > 0_u32, 'GEN_DIST_DESERT');
+        assert(swamp > 0_u32, 'GEN_DIST_SWAMP');
+        assert(tundra > 0_u32, 'GEN_DIST_TUNDRA');
+        assert(taiga > 0_u32, 'GEN_DIST_TAIGA');
+        assert(jungle > 0_u32, 'GEN_DIST_JUNGLE');
+        assert(savanna > 0_u32, 'GEN_DIST_SAVANNA');
+        assert(grassland > 0_u32, 'GEN_DIST_GRASS');
+        assert(canyon > 0_u32, 'GEN_DIST_CANYON');
+        assert(badlands > 0_u32, 'GEN_DIST_BADLAND');
+        assert(volcanic > 0_u32, 'GEN_DIST_VOLC');
+        assert(glacier > 0_u32, 'GEN_DIST_GLACIER');
+        assert(wetlands > 0_u32, 'GEN_DIST_WET');
+        assert(steppe > 0_u32, 'GEN_DIST_STEPPE');
+        assert(oasis > 0_u32, 'GEN_DIST_OASIS');
+        assert(mire > 0_u32, 'GEN_DIST_MIRE');
+        assert(highlands > 0_u32, 'GEN_DIST_HIGH');
+        assert(coast > 0_u32, 'GEN_DIST_COAST');
+    }
+
+    #[test]
     fn world_gen_area_control_index_forces_control_type() {
         let profile = derive_area_profile(555_felt252, 0_u8, Biome::Forest);
         assert(profile.area_type == AreaType::Control, 'GEN_AREA_CTRL');
@@ -44,6 +178,16 @@ mod tests {
         assert(first.size_category == second.size_category, 'GEN_AREA_SIZE_DET');
         assert(first.resource_quality >= 30_u16, 'GEN_AREA_QUAL_LOW');
         assert(first.resource_quality <= 100_u16, 'GEN_AREA_QUAL_HIGH');
+    }
+
+    #[test]
+    fn world_gen_area_profile_reports_deterministic_plant_slot_bounds() {
+        let first = derive_area_profile(778_felt252, 3_u8, Biome::Wetlands);
+        let second = derive_area_profile(778_felt252, 3_u8, Biome::Wetlands);
+
+        let slots_in_range = first.plant_slot_count >= 5_u8 && first.plant_slot_count <= 8_u8;
+        assert(first.plant_slot_count == second.plant_slot_count, 'GEN_AREA_SLOTS_DET');
+        assert(slots_in_range, 'GEN_AREA_SLOTS_RANGE');
     }
 
     #[test]
@@ -114,7 +258,7 @@ mod tests {
     fn world_gen_with_config_changes_output_when_tuning_changes() {
         let base = default_world_gen_config();
         let tuned = WorldGenConfig {
-            generation_version: 1_u16,
+            generation_version: 2_u16,
             global_seed: 'WORLD_GEN_SEED_V1'_felt252,
             biome_scale_bp: 4000_u16,
             area_scale_bp: 9000_u16,

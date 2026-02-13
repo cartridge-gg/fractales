@@ -67,10 +67,11 @@ mod tests {
             discoverer: 0.try_into().unwrap(),
             resource_quality: 0_u16,
             size_category: SizeCategory::Small,
+            plant_slot_count: 0_u8,
         };
 
         let result: DiscoverAreaResult = discover_area_transition(
-            area, discoverer, AreaType::PlantField, 55_u16, SizeCategory::Large, 6_u8,
+            area, discoverer, AreaType::PlantField, 55_u16, SizeCategory::Large, 5_u8, 6_u8,
         );
 
         assert(result.outcome == AreaDiscoverOutcome::InvalidAreaIndex, 'AREA_OUTCOME_INVALID');
@@ -89,11 +90,12 @@ mod tests {
             discoverer: 0.try_into().unwrap(),
             resource_quality: 0_u16,
             size_category: SizeCategory::Small,
+            plant_slot_count: 0_u8,
         };
 
         let discoverer: ContractAddress = 77.try_into().unwrap();
         let result: DiscoverAreaResult = discover_area_transition(
-            area, discoverer, AreaType::PlantField, 88_u16, SizeCategory::Medium, 6_u8,
+            area, discoverer, AreaType::PlantField, 88_u16, SizeCategory::Medium, 6_u8, 6_u8,
         );
 
         assert(result.outcome == AreaDiscoverOutcome::Applied, 'AREA_OUTCOME_FIRST');
@@ -115,10 +117,11 @@ mod tests {
             discoverer: 0.try_into().unwrap(),
             resource_quality: 0_u16,
             size_category: SizeCategory::Small,
+            plant_slot_count: 0_u8,
         };
 
         let result: DiscoverAreaResult = discover_area_transition(
-            area, discoverer, AreaType::PlantField, 33_u16, SizeCategory::Medium, 6_u8,
+            area, discoverer, AreaType::PlantField, 33_u16, SizeCategory::Medium, 4_u8, 6_u8,
         );
 
         assert(

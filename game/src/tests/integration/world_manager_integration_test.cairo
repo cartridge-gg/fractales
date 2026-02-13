@@ -133,6 +133,9 @@ mod tests {
         assert(replay_hex.area_count == expected_hex.area_count, 'INT_REPLAY_HEX_AREAS');
         assert(replay_actor.energy == 75_u16, 'INT_REPLAY_HEX_ENERGY');
 
+        system.move_adventurer(adventurer_id, target);
+        system.move_adventurer(second_adventurer_id, target);
+
         let expected_control = derive_area_profile(target, 0_u8, replay_hex.biome);
         system.discover_area(adventurer_id, target, 0_u8);
         let control_area_id = derive_area_id(target, 0_u8);
@@ -142,6 +145,7 @@ mod tests {
         assert(control_area.area_type == expected_control.area_type, 'INT_CTRL_TYPE');
         assert(control_area.resource_quality == expected_control.resource_quality, 'INT_CTRL_QUALITY');
         assert(control_area.size_category == expected_control.size_category, 'INT_CTRL_SIZE');
+        assert(control_area.plant_slot_count == expected_control.plant_slot_count, 'INT_CTRL_SLOTS');
         assert(control_ownership.owner_adventurer_id == adventurer_id, 'INT_CTRL_OWNER');
         assert(control_ownership.discoverer_adventurer_id == adventurer_id, 'INT_CTRL_DISCOVERER');
 
@@ -155,6 +159,7 @@ mod tests {
         assert(area.area_type == expected_area.area_type, 'INT_AREA_TYPE');
         assert(area.resource_quality == expected_area.resource_quality, 'INT_AREA_QUALITY');
         assert(area.size_category == expected_area.size_category, 'INT_AREA_SIZE');
+        assert(area.plant_slot_count == expected_area.plant_slot_count, 'INT_AREA_SLOTS');
         assert(ownership.owner_adventurer_id == adventurer_id, 'INT_AREA_CTRL_OWNER');
         assert(ownership.discoverer_adventurer_id == second_adventurer_id, 'INT_AREA_DISC_ADV');
 
@@ -163,6 +168,7 @@ mod tests {
         assert(replay_area.area_type == expected_area.area_type, 'INT_AREA_REPLAY_TYPE');
         assert(replay_area.resource_quality == expected_area.resource_quality, 'INT_AREA_REPLAY_QUALITY');
         assert(replay_area.size_category == expected_area.size_category, 'INT_AREA_REPLAY_SIZE');
+        assert(replay_area.plant_slot_count == expected_area.plant_slot_count, 'INT_AREA_REPLAY_SLOTS');
     }
 
     #[test]
@@ -200,5 +206,102 @@ mod tests {
                 ),
             ],
         );
+    }
+
+    #[test]
+    fn world_manager_integration_discover_current_hex_after_move_rejects_not_adjacent() {
+        let caller = get_default_caller_address();
+        let mut world = spawn_test_world([namespace_def()].span());
+        world.sync_perms_and_inits(contract_defs());
+
+        let adventurer_id: felt252 = 7005;
+        let origin = encoded_cube(CubeCoord { x: 0, y: 0, z: 0 });
+        let target = encoded_cube(CubeCoord { x: 1, y: -1, z: 0 });
+        setup_adventurer(ref world, adventurer_id, caller, origin, 100_u16);
+
+        let (contract_address, _) = world.dns(@"world_manager").unwrap();
+        let system = IWorldManagerDispatcher { contract_address };
+        system.discover_hex(adventurer_id, target);
+        system.move_adventurer(adventurer_id, target);
+
+        let mut spy = spy_events();
+        system.discover_hex(adventurer_id, target);
+
+        let unchanged: Adventurer = world.read_model(adventurer_id);
+        assert(unchanged.current_hex == target, 'INT_DISC_CURR_HEX');
+        assert(unchanged.energy == 60_u16, 'INT_DISC_CURR_ENERGY');
+
+        spy.assert_emitted(
+            @array![
+                (
+                    world.dispatcher.contract_address,
+                    world::Event::EventEmitted(
+                        world::EventEmitted {
+                            selector: Event::<WorldActionRejected>::selector(world.namespace_hash),
+                            system_address: contract_address,
+                            keys: [adventurer_id].span(),
+                            values: ['DISC_HEX'_felt252, target, 'NOT_ADJ'_felt252].span(),
+                        },
+                    ),
+                ),
+            ],
+        );
+    }
+
+    #[test]
+    fn world_manager_integration_outward_discovery_after_move_targets_next_adjacent_hex() {
+        let caller = get_default_caller_address();
+        let mut world = spawn_test_world([namespace_def()].span());
+        world.sync_perms_and_inits(contract_defs());
+
+        let adventurer_id: felt252 = 7006;
+        let origin = encoded_cube(CubeCoord { x: 0, y: 0, z: 0 });
+        let first = encoded_cube(CubeCoord { x: 1, y: -1, z: 0 });
+        let second = encoded_cube(CubeCoord { x: 2, y: -2, z: 0 });
+        setup_adventurer(ref world, adventurer_id, caller, origin, 100_u16);
+
+        let (contract_address, _) = world.dns(@"world_manager").unwrap();
+        let system = IWorldManagerDispatcher { contract_address };
+
+        system.discover_hex(adventurer_id, first);
+        system.move_adventurer(adventurer_id, first);
+        system.discover_hex(adventurer_id, second);
+
+        let first_hex: Hex = world.read_model(first);
+        let second_hex: Hex = world.read_model(second);
+        let actor: Adventurer = world.read_model(adventurer_id);
+        let expected_second = derive_hex_profile(second);
+
+        assert(first_hex.is_discovered, 'INT_OUTWARD_FIRST');
+        assert(second_hex.is_discovered, 'INT_OUTWARD_SECOND');
+        assert(second_hex.biome == expected_second.biome, 'INT_OUTWARD_BIOME');
+        assert(second_hex.area_count == expected_second.area_count, 'INT_OUTWARD_AREAS');
+        assert(actor.current_hex == first, 'INT_OUTWARD_POS');
+        assert(actor.energy == 35_u16, 'INT_OUTWARD_ENERGY');
+    }
+
+    #[test]
+    fn world_manager_integration_discover_area_requires_actor_on_target_hex() {
+        let caller = get_default_caller_address();
+        let mut world = spawn_test_world([namespace_def()].span());
+        world.sync_perms_and_inits(contract_defs());
+
+        let adventurer_id: felt252 = 7007;
+        let origin = encoded_cube(CubeCoord { x: 0, y: 0, z: 0 });
+        let target = encoded_cube(CubeCoord { x: 1, y: -1, z: 0 });
+        setup_adventurer(ref world, adventurer_id, caller, origin, 100_u16);
+
+        let (contract_address, _) = world.dns(@"world_manager").unwrap();
+        let system = IWorldManagerDispatcher { contract_address };
+
+        system.discover_hex(adventurer_id, target);
+        system.discover_area(adventurer_id, target, 0_u8);
+
+        let control_area_id = derive_area_id(target, 0_u8);
+        let control_area: HexArea = world.read_model(control_area_id);
+        let control_ownership: AreaOwnership = world.read_model(control_area_id);
+
+        assert(!control_area.is_discovered, 'INT_DISC_AREA_REQUIRES_ON_HEX');
+        assert(control_ownership.owner_adventurer_id == 0_felt252, 'INT_DISC_AREA_NO_OWNER');
     }
 }

@@ -1,0 +1,16 @@
+{
+  "name": "@gen-dungeon/explorer-app",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@gen-dungeon/explorer-data": "workspace:*",
+    "@gen-dungeon/explorer-renderer-webgl": "workspace:*",
+    "@gen-dungeon/explorer-types": "workspace:*"
+  }
+}

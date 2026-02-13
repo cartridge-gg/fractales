@@ -22,7 +22,7 @@ mod tests {
         derive_plant_key,
     };
     use dojo_starter::models::inventory::Inventory;
-    use dojo_starter::models::world::{Biome, Hex};
+    use dojo_starter::models::world::{AreaType, Biome, Hex, HexArea, SizeCategory};
     use dojo_starter::systems::harvesting_manager_contract::{
         IHarvestingManagerDispatcher, IHarvestingManagerDispatcherTrait,
     };
@@ -36,6 +36,7 @@ mod tests {
                 TestResource::Model("Inventory"),
                 TestResource::Model("BackpackItem"),
                 TestResource::Model("Hex"),
+                TestResource::Model("HexArea"),
                 TestResource::Model("WorldGenConfig"),
                 TestResource::Model("PlantNode"),
                 TestResource::Model("HarvestReservation"),
@@ -95,6 +96,37 @@ mod tests {
         );
     }
 
+    fn setup_discovered_plant_field_area(
+        ref world: dojo::world::WorldStorage,
+        area_id: felt252,
+        hex_coordinate: felt252,
+        owner: starknet::ContractAddress,
+    ) {
+        setup_discovered_plant_field_area_with_slots(ref world, area_id, hex_coordinate, owner, 8_u8);
+    }
+
+    fn setup_discovered_plant_field_area_with_slots(
+        ref world: dojo::world::WorldStorage,
+        area_id: felt252,
+        hex_coordinate: felt252,
+        owner: starknet::ContractAddress,
+        plant_slot_count: u8,
+    ) {
+        world.write_model_test(
+            @HexArea {
+                area_id,
+                hex_coordinate,
+                area_index: 1_u8,
+                area_type: AreaType::PlantField,
+                is_discovered: true,
+                discoverer: owner,
+                resource_quality: 70_u16,
+                size_category: SizeCategory::Medium,
+                plant_slot_count,
+            },
+        );
+    }
+
     #[test]
     fn harvesting_manager_integration_init_start_complete_cancel() {
         let caller = get_default_caller_address();
@@ -112,6 +144,7 @@ mod tests {
         let plant_id = 1_u8;
         let plant_key = derive_plant_key(hex_coordinate, area_id, plant_id);
         setup_actor_and_hex(ref world, adventurer_id, caller, hex_coordinate);
+        setup_discovered_plant_field_area(ref world, area_id, hex_coordinate, caller);
 
         let inited = manager.init_harvesting(hex_coordinate, area_id, plant_id);
         assert(inited, 'H_INT_INIT');
@@ -272,6 +305,7 @@ mod tests {
         let area_id = 911_felt252;
         let plant_id = 2_u8;
         setup_actor_and_hex(ref world, adventurer_id, caller, hex_coordinate);
+        setup_discovered_plant_field_area(ref world, area_id, hex_coordinate, caller);
 
         world.write_model_test(
             @Hex {
@@ -476,6 +510,7 @@ mod tests {
         let plant_id = 3_u8;
         setup_actor_and_hex(ref world, actor_a, caller, hex_coordinate);
         setup_actor_and_hex(ref world, actor_b, caller, hex_coordinate);
+        setup_discovered_plant_field_area(ref world, area_id, hex_coordinate, caller);
 
         let initialized = manager.init_harvesting(hex_coordinate, area_id, plant_id);
         assert(initialized, 'H_INT_OVER_INIT');
@@ -511,5 +546,87 @@ mod tests {
         let reservation_b: HarvestReservation = world.read_model(reservation_b_id);
         assert(reservation_a.status == HarvestReservationStatus::Completed, 'H_INT_OVER_A_ST');
         assert(reservation_b.status == HarvestReservationStatus::Inactive, 'H_INT_OVER_B_ST');
+    }
+
+    #[test]
+    fn harvesting_manager_integration_init_requires_discovered_plantfield_area() {
+        let caller = get_default_caller_address();
+        set_block_number(15_u64);
+        let mut world = spawn_test_world([namespace_def()].span());
+        world.sync_perms_and_inits(contract_defs());
+
+        let (contract_address, _) = world.dns(@"harvesting_manager").unwrap();
+        let manager = IHarvestingManagerDispatcher { contract_address };
+
+        let adventurer_id = 8831_felt252;
+        let hex_coordinate = 930_felt252;
+        let area_id = 931_felt252;
+        let plant_id = 4_u8;
+        setup_actor_and_hex(ref world, adventurer_id, caller, hex_coordinate);
+
+        let missing_area = manager.init_harvesting(hex_coordinate, area_id, plant_id);
+        assert(!missing_area, 'H_INT_INIT_REQ_DISC_AREA');
+
+        world.write_model_test(
+            @HexArea {
+                area_id,
+                hex_coordinate,
+                area_index: 1_u8,
+                area_type: AreaType::Wilderness,
+                is_discovered: true,
+                discoverer: caller,
+                resource_quality: 50_u16,
+                size_category: SizeCategory::Medium,
+                plant_slot_count: 8_u8,
+            },
+        );
+
+        let non_plant_field = manager.init_harvesting(hex_coordinate, area_id, plant_id);
+        assert(!non_plant_field, 'H_INT_INIT_REQ_PLANT_FIELD');
+    }
+
+    #[test]
+    fn harvesting_manager_integration_init_rejects_out_of_range_plant_id() {
+        let caller = get_default_caller_address();
+        set_block_number(16_u64);
+        let mut world = spawn_test_world([namespace_def()].span());
+        world.sync_perms_and_inits(contract_defs());
+
+        let (contract_address, _) = world.dns(@"harvesting_manager").unwrap();
+        let manager = IHarvestingManagerDispatcher { contract_address };
+
+        let adventurer_id = 8832_felt252;
+        let hex_coordinate = 932_felt252;
+        let area_id = 933_felt252;
+        setup_actor_and_hex(ref world, adventurer_id, caller, hex_coordinate);
+        setup_discovered_plant_field_area(ref world, area_id, hex_coordinate, caller);
+
+        let rejected = manager.init_harvesting(hex_coordinate, area_id, 250_u8);
+        assert(!rejected, 'H_INT_INIT_RANGE');
+    }
+
+    #[test]
+    fn harvesting_manager_integration_init_rejects_legacy_zero_slot_area() {
+        let caller = get_default_caller_address();
+        set_block_number(17_u64);
+        let mut world = spawn_test_world([namespace_def()].span());
+        world.sync_perms_and_inits(contract_defs());
+
+        let (contract_address, _) = world.dns(@"harvesting_manager").unwrap();
+        let manager = IHarvestingManagerDispatcher { contract_address };
+
+        let adventurer_id = 8833_felt252;
+        let hex_coordinate = 934_felt252;
+        let area_id = 935_felt252;
+        let plant_id = 0_u8;
+        let plant_key = derive_plant_key(hex_coordinate, area_id, plant_id);
+        setup_actor_and_hex(ref world, adventurer_id, caller, hex_coordinate);
+        setup_discovered_plant_field_area_with_slots(ref world, area_id, hex_coordinate, caller, 0_u8);
+
+        let rejected = manager.init_harvesting(hex_coordinate, area_id, plant_id);
+        assert(!rejected, 'H_INT_INIT_V2_ONLY');
+
+        let plant: PlantNode = world.read_model(plant_key);
+        assert(plant.max_yield == 0_u16, 'H_INT_V2_ONLY_NO_WRITE');
     }
 }

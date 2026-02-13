@@ -33,8 +33,8 @@
   },
   "contracts": [
     {
-      "address": "0x4b8f54f8d2eb75a59798003328548115cc5a5f19e2fb93ef9eb0e726676d17d",
-      "class_hash": "0x541ee820312e20b63395f63a197c42ee89081c67801775eb3931d401f562fc9",
+      "address": "0xa9f637bc26917afae1c6f6dd666b9a5adbf432f464acd407628bbe5ffa3998",
+      "class_hash": "0x38439720acb81fc08d46e6e4242f49dbf63e0cca336d4ca6c8464f0416b6abb",
       "init_calldata": [],
       "tag": "dojo_starter-adventurer_manager",
       "selector": "0x12ce62b2f7f6b7485752e140223644852fd0f421a20ed850caf6284b4e48ea1",
@@ -47,8 +47,8 @@
       ]
     },
     {
-      "address": "0x3354e109e85a192e8acde41c0f1ada3ef8bb9cead72b3d59853e82b45473f69",
-      "class_hash": "0x4a5624ebc75f9d68fa5ca52de624483a2cf4ac73f6b014393f7c9b7c9dec24",
+      "address": "0x3e5d844c1feddeb0e7c97e6000ce6dfd212e9b9e7518a271986873c265f63d9",
+      "class_hash": "0x64e4aeffa10c6a0ac43e145d493e030f8fd9c252b97a5760d48d36e20e9f8e3",
       "init_calldata": [],
       "tag": "dojo_starter-economic_manager",
       "selector": "0x34e2f6884d3544bc490b7deefc712e20eef6bf1c3760fb385c29f4837d887ed",
@@ -62,8 +62,8 @@
       ]
     },
     {
-      "address": "0x21b6f71d28085d6f151fe02c0ffa872658499d4f45ffeaeae2a2bf915b142f0",
-      "class_hash": "0x23666b9b659519a313c84724962471d17a809b4b65bd36a58c409f9bad0caac",
+      "address": "0x7b982c47be048493d1f9775869a05ca20e9dbe152895cdeec689e5dc35a647b",
+      "class_hash": "0x415292862665fd05aac6a3a044a1d1f40ec7e504a10fe584083125168606656",
       "init_calldata": [],
       "tag": "dojo_starter-harvesting_manager",
       "selector": "0x5f56bcb882f243efad398fe12f7a6e8b58289fd0232b912822a529f7467c5d5",
@@ -76,8 +76,26 @@
       ]
     },
     {
-      "address": "0x5ef085b348b24eefa13302a77fd1b335861358c3d1ea448013c5a2f38ef273c",
-      "class_hash": "0x45db1cad61d6a4bb132041d93f094833d054ccc3c62d6dbd53d6b47b5bc04bf",
+      "address": "0x7cb1c9e0f81e4e9de4a7ea3d56ed94d9ac6c0d42718869d2390552019d9706d",
+      "class_hash": "0x657afe8068112876e7e1fabb527f97f7914e6a5aadfada7842e017c8b1deabc",
+      "init_calldata": [],
+      "tag": "dojo_starter-mining_manager",
+      "selector": "0x78875e581bef3573e0bddb454c1eb8368402b3f807d3d98800c21086d54d2fe",
+      "systems": [
+        "init_mining",
+        "grant_mine_access",
+        "revoke_mine_access",
+        "start_mining",
+        "continue_mining",
+        "stabilize_mine",
+        "exit_mining",
+        "repair_mine",
+        "upgrade"
+      ]
+    },
+    {
+      "address": "0x62406b3ad47f1e526351989d0e7593bfd2414a5ab34bea454497007df1d1e2d",
+      "class_hash": "0x74eef080ec5496d9013d5d914f7cdd01104f91e95b64ce88d963d7fd33c6fc",
       "init_calldata": [],
       "tag": "dojo_starter-ownership_manager",
       "selector": "0x138393bbcb4747e667866d23300016c720a6fcd095cdd88f9553c0fd7dec8c0",
@@ -87,8 +105,8 @@
       ]
     },
     {
-      "address": "0x3f635f3585fdf88cb43cfadf2b3bc9e6d8f37d5b0266f1bdc70f2b4ed971231",
-      "class_hash": "0x330e6e3e3a6974159fa345c9da50f8be89fbd39adc22b4809e03cf37ef6de0d",
+      "address": "0x77c351dae51e19b36f3ea7a9aa98bdf80bbe9a86dcdadcaec3756785bacc39c",
+      "class_hash": "0x10dbb58e0e2004bafff7c1d592c038bdee1c1e428b61bd306df37c05dd18c6b",
       "init_calldata": [],
       "tag": "dojo_starter-world_gen_manager",
       "selector": "0x87bca3d0478449a8d605462936aa02a5759f8383e44445dea159bece2b2b5",
@@ -98,8 +116,8 @@
       ]
     },
     {
-      "address": "0xe85af42d5e9cfff05a39d9d44dfa99a07b2e9e87336912009d5cd034bc12cb",
-      "class_hash": "0x7c761448ccca62a947a3f4666ff12404927338de5150ca875257595604c93eb",
+      "address": "0x8b86d7d1dc9380880a89650135e20aae0933048383978d48690960e4dd907b",
+      "class_hash": "0x671e404321677973d43627a1fc290d48f6d70bdb18260b6e00c13105cb927b3",
       "init_calldata": [],
       "tag": "dojo_starter-world_manager",
       "selector": "0x3529aafb255fef9bfb8407459e4cda7a5ce89c445627ceabba0f245a45c033c",
@@ -437,7 +455,7 @@
           "key": false
         }
       ],
-      "class_hash": "0x1391ff78e624e20ce5645f61c5473ea2fc84b066dc2be25f44cf885a8a30b7a",
+      "class_hash": "0x61f5a53152bb34fb6bc980925b220efb08c90507bf16e70159e2db3611c0caf",
       "tag": "dojo_starter-Hex",
       "selector": "0x1b4f1be091a6febf3dfe50959108d0fdd25faea6a8294023dcfa10c0f92de3c"
     },
@@ -482,9 +500,14 @@
           "name": "size_category",
           "type": "dojo_starter::models::world::SizeCategory",
           "key": false
+        },
+        {
+          "name": "plant_slot_count",
+          "type": "core::integer::u8",
+          "key": false
         }
       ],
-      "class_hash": "0x1abcdce94f627157e0039beba3b629786343657caa3d644bc8a09a2d97ef246",
+      "class_hash": "0x45ba451c5ed4a817b6f7a5baeadcfb8f9cd10e53b82af087513aa8de3e121b2",
       "tag": "dojo_starter-HexArea",
       "selector": "0x12e4c7efe130ac2d1c74898285888cd1031903ab0de52a66ff6313edd4ec76f"
     },
@@ -551,6 +574,264 @@
       "class_hash": "0x630ce8c1836b3ba64c84de5bf81e0fea18a914cf1748c050909f0e1bebc1935",
       "tag": "dojo_starter-Inventory",
       "selector": "0x7807bae93f028e019b768dc3b086df4fe0116f543cf15db2c23b1ac837e9e89"
+    },
+    {
+      "members": [
+        {
+          "name": "mine_key",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "grantee_adventurer_id",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "is_allowed",
+          "type": "core::bool",
+          "key": false
+        },
+        {
+          "name": "granted_by_adventurer_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "grant_block",
+          "type": "core::integer::u64",
+          "key": false
+        },
+        {
+          "name": "revoked_block",
+          "type": "core::integer::u64",
+          "key": false
+        }
+      ],
+      "class_hash": "0x677789bf43b968932d05674e8993dba09e37cbbb0ea6d9640814ab670700418",
+      "tag": "dojo_starter-MineAccessGrant",
+      "selector": "0x976ad27b86ac9b89c29ec0dbfcf84c3c1303bb6d07c0888f13def88208520f"
+    },
+    {
+      "members": [
+        {
+          "name": "mine_key",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "collapse_count",
+          "type": "core::integer::u32",
+          "key": false
+        },
+        {
+          "name": "last_collapse_block",
+          "type": "core::integer::u64",
+          "key": false
+        },
+        {
+          "name": "trigger_stress",
+          "type": "core::integer::u32",
+          "key": false
+        },
+        {
+          "name": "trigger_active_miners",
+          "type": "core::integer::u16",
+          "key": false
+        }
+      ],
+      "class_hash": "0x5f0d9740e370e97e277c64292ef5a409b9e36529c1fd6e6392d04c4b26427b0",
+      "tag": "dojo_starter-MineCollapseRecord",
+      "selector": "0x73686af34d62672964864fe1fd74eb7388189b63fbbcf760032776de8205035"
+    },
+    {
+      "members": [
+        {
+          "name": "mine_key",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "hex_coordinate",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "area_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "mine_id",
+          "type": "core::integer::u8",
+          "key": false
+        },
+        {
+          "name": "ore_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "rarity_tier",
+          "type": "core::integer::u8",
+          "key": false
+        },
+        {
+          "name": "depth_tier",
+          "type": "core::integer::u8",
+          "key": false
+        },
+        {
+          "name": "richness_bp",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "remaining_reserve",
+          "type": "core::integer::u32",
+          "key": false
+        },
+        {
+          "name": "base_stress_per_block",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "collapse_threshold",
+          "type": "core::integer::u32",
+          "key": false
+        },
+        {
+          "name": "mine_stress",
+          "type": "core::integer::u32",
+          "key": false
+        },
+        {
+          "name": "safe_shift_blocks",
+          "type": "core::integer::u64",
+          "key": false
+        },
+        {
+          "name": "active_miners",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "last_update_block",
+          "type": "core::integer::u64",
+          "key": false
+        },
+        {
+          "name": "collapsed_until_block",
+          "type": "core::integer::u64",
+          "key": false
+        },
+        {
+          "name": "repair_energy_needed",
+          "type": "core::integer::u32",
+          "key": false
+        },
+        {
+          "name": "is_depleted",
+          "type": "core::bool",
+          "key": false
+        },
+        {
+          "name": "active_head_shift_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "active_tail_shift_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "biome_risk_bp",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "rarity_risk_bp",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "base_tick_energy",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "ore_energy_weight",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "conversion_energy_per_unit",
+          "type": "core::integer::u16",
+          "key": false
+        }
+      ],
+      "class_hash": "0x56995d3376255b653b66ffa908b79ec9627a7117f763f22c2d8f2f19fe50658",
+      "tag": "dojo_starter-MineNode",
+      "selector": "0x60f743767705d9a0d25f91b7d5c2945d5b3690670f8689fc6a96e4386685b92"
+    },
+    {
+      "members": [
+        {
+          "name": "shift_id",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "mine_key",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "status",
+          "type": "dojo_starter::models::mining::MiningShiftStatus",
+          "key": false
+        },
+        {
+          "name": "start_block",
+          "type": "core::integer::u64",
+          "key": false
+        },
+        {
+          "name": "last_settle_block",
+          "type": "core::integer::u64",
+          "key": false
+        },
+        {
+          "name": "accrued_ore_unbanked",
+          "type": "core::integer::u32",
+          "key": false
+        },
+        {
+          "name": "accrued_stabilization_work",
+          "type": "core::integer::u32",
+          "key": false
+        },
+        {
+          "name": "prev_active_shift_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "next_active_shift_id",
+          "type": "core::felt252",
+          "key": false
+        }
+      ],
+      "class_hash": "0xb5bf19a71f5c2f4c6388a9a76566edb986a2f75597c4bbb9980c57c36b66a5",
+      "tag": "dojo_starter-MiningShift",
+      "selector": "0x666d9a22ce8d9146d784e977b84dba832948a6fe6ee13e0caa6c60800cd55c2"
     },
     {
       "members": [
@@ -762,7 +1043,7 @@
           "key": false
         }
       ],
-      "class_hash": "0x1b404f51c2090d2c1d2121640543d10dc6ef3a8e0e74d4aea5328d7e2722a8f",
+      "class_hash": "0x66058c5fef4ffbf7293384f1b931591e19e21a120c9ed6776b9ae063a5dfd72",
       "tag": "dojo_starter-AreaDiscovered",
       "selector": "0x302f2124f97b4ba78fb72898e85d576fe15aad3a47bad28f323437842e4266e"
     },
@@ -946,6 +1227,43 @@
           "key": false
         },
         {
+          "name": "phase",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "reason",
+          "type": "core::felt252",
+          "key": false
+        }
+      ],
+      "class_hash": "0x353626a16c46bd60e8df838f6b5ff04dc3d291083b1aae07efe649c2185db7",
+      "tag": "dojo_starter-HarvestingRejected",
+      "selector": "0x53b91c93fc7daa3201eb960c06ef90ace2adf8ff306aa76b136bbc7c30587d2"
+    },
+    {
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "hex",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "area_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "plant_id",
+          "type": "core::integer::u8",
+          "key": false
+        },
+        {
           "name": "amount",
           "type": "core::integer::u16",
           "key": false
@@ -1017,7 +1335,7 @@
           "key": false
         }
       ],
-      "class_hash": "0xf2031242768bf510bf5a414dcd8cfd2dc3ca2060d85f0cff522259d63bdd42",
+      "class_hash": "0x79429ca93eedb98cac9f94fb4252890b79903ef0a7587231c33b253517c9b50",
       "tag": "dojo_starter-HexDiscovered",
       "selector": "0x4f88d041cccb5e4b173721b59cc21055f8998ab0d761d2864b7a5ec4f45c84d"
     },
@@ -1073,6 +1391,256 @@
     {
       "members": [
         {
+          "name": "mine_key",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "grantee_adventurer_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "granted_by_adventurer_id",
+          "type": "core::felt252",
+          "key": false
+        }
+      ],
+      "class_hash": "0x71a2113223c6de26a64185b55ac3227ad04b72d043278af54e781f735b93913",
+      "tag": "dojo_starter-MineAccessGranted",
+      "selector": "0x6c498aafb984a00936a019038439e4ca38dccb2e1aa08218a8b967d1fbf70b2"
+    },
+    {
+      "members": [
+        {
+          "name": "mine_key",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "grantee_adventurer_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "revoked_by_adventurer_id",
+          "type": "core::felt252",
+          "key": false
+        }
+      ],
+      "class_hash": "0xb09029a4b31fe0a397b750e7d2b9649ce51b16a7f2e27c35547cbb9598a96b",
+      "tag": "dojo_starter-MineAccessRevoked",
+      "selector": "0xadca36941b36498834f549e97c7f766cdd0829c59fafd47e775f9e40b032f6"
+    },
+    {
+      "members": [
+        {
+          "name": "mine_key",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "killed_miners",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "collapse_count",
+          "type": "core::integer::u32",
+          "key": false
+        }
+      ],
+      "class_hash": "0x4ea7e3825f9fd34d63c7d82fdd724e06109d3dad29bd40ec576d0eb54456a6f",
+      "tag": "dojo_starter-MineCollapsed",
+      "selector": "0x392cab14027efe1f2d6efff094b414da340f27c3bd0b33b50f0ae468bb8df4f"
+    },
+    {
+      "members": [
+        {
+          "name": "mine_key",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "hex_coordinate",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "area_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "mine_id",
+          "type": "core::integer::u8",
+          "key": false
+        },
+        {
+          "name": "ore_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "rarity_tier",
+          "type": "core::integer::u8",
+          "key": false
+        }
+      ],
+      "class_hash": "0x75744944a61a56c938ce40218d05ddeb1057ff6b818e90bf727946e11521571",
+      "tag": "dojo_starter-MineInitialized",
+      "selector": "0x69f9acea69b437989d6a32caa0f1c6d1289a3a5c0ba5d4466f072963ecfddfd"
+    },
+    {
+      "members": [
+        {
+          "name": "mine_key",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "energy_contributed",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "repair_energy_remaining",
+          "type": "core::integer::u32",
+          "key": false
+        }
+      ],
+      "class_hash": "0x58b48d2e0fdd22fb2023cc7037edf5dfab129d4fe39110a2e413ebc9cda2eb",
+      "tag": "dojo_starter-MineRepaired",
+      "selector": "0x1dbe5024a9027cc85dac9ef83e9e47d155fb737b22c6ae584a3e75f1d405e7e"
+    },
+    {
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "mine_key",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "stress_reduced",
+          "type": "core::integer::u32",
+          "key": false
+        }
+      ],
+      "class_hash": "0x2bfb29b9ee66aba6aa16d0ed486c8bbf6f968c851fc82278995407ffdb5b233",
+      "tag": "dojo_starter-MineStabilized",
+      "selector": "0x70fb1f4c54ac7bda0230a92cd98b9f0c507d61edfdc75563f8e56049ee1d2b1"
+    },
+    {
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "mine_key",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "mined_ore",
+          "type": "core::integer::u32",
+          "key": false
+        },
+        {
+          "name": "energy_spent",
+          "type": "core::integer::u16",
+          "key": false
+        }
+      ],
+      "class_hash": "0xc907d3b991ff19afbccfe9a635a2410c440f7f36966a4bc593963568034c2c",
+      "tag": "dojo_starter-MiningContinued",
+      "selector": "0x1712704e49be02550997227f327c7263c62ef52f4073a17b35134b7363e34d4"
+    },
+    {
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "mine_key",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "banked_ore",
+          "type": "core::integer::u32",
+          "key": false
+        }
+      ],
+      "class_hash": "0x7d869b953d35d5513ca47ae435489885c1cc80474f3e8395ac97dfaeb908235",
+      "tag": "dojo_starter-MiningExited",
+      "selector": "0x7295b315a3e61ed82937f8ca6774212e9c935284a22576446692f01382f018f"
+    },
+    {
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "mine_key",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "action",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "reason",
+          "type": "core::felt252",
+          "key": false
+        }
+      ],
+      "class_hash": "0xbbd8b5dc1a0393e00b329f5c3004fcbe609ea3d3ba6669ed8104171c49e245",
+      "tag": "dojo_starter-MiningRejected",
+      "selector": "0x63231577eed272d7f90e98208d0574b8c02ea81c0ce76ea21175c627dc9898c"
+    },
+    {
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "mine_key",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "start_block",
+          "type": "core::integer::u64",
+          "key": false
+        }
+      ],
+      "class_hash": "0x6d43f4879b3309cf9473ff1745fd338ec2b0d354979ba18a74c69e241797185",
+      "tag": "dojo_starter-MiningStarted",
+      "selector": "0xe5281d584f36960ec513d25052c8104b8d94b0d7ab1209d08ff48ae1181966"
+    },
+    {
+      "members": [
+        {
           "name": "area_id",
           "type": "core::felt252",
           "key": true
@@ -1096,6 +1664,33 @@
       "class_hash": "0x122c440a5197effa4c18486eaedc92e1669c6960cc0be6ca091ad0b182d25af",
       "tag": "dojo_starter-OwnershipTransferred",
       "selector": "0x7e40ee475bc8d78c7c8505a9f3f82d67df5be89ac9bc05b63ba6e21e709db6b"
+    },
+    {
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "action",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "target",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "reason",
+          "type": "core::felt252",
+          "key": false
+        }
+      ],
+      "class_hash": "0x416eb6b2a5c9db8b5d34a1cb9835f5ee20a06addf7eba1101caaa71f532b9fb",
+      "tag": "dojo_starter-WorldActionRejected",
+      "selector": "0x16a26faa3e782b70ac218956e773226fbac3578820f66345e89de5773f8743c"
     },
     {
       "members": [
@@ -3428,6 +4023,62 @@
     },
     {
       "type": "struct",
+      "name": "dojo_starter::events::harvesting_events::HarvestingRejected",
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "hex",
+          "type": "core::felt252"
+        },
+        {
+          "name": "area_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "plant_id",
+          "type": "core::integer::u8"
+        },
+        {
+          "name": "phase",
+          "type": "core::felt252"
+        },
+        {
+          "name": "reason",
+          "type": "core::felt252"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::harvesting_events::HarvestingRejectedValue",
+      "members": [
+        {
+          "name": "hex",
+          "type": "core::felt252"
+        },
+        {
+          "name": "area_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "plant_id",
+          "type": "core::integer::u8"
+        },
+        {
+          "name": "phase",
+          "type": "core::felt252"
+        },
+        {
+          "name": "reason",
+          "type": "core::felt252"
+        }
+      ]
+    },
+    {
+      "type": "struct",
       "name": "dojo_starter::events::harvesting_events::HarvestingStarted",
       "members": [
         {
@@ -3496,7 +4147,441 @@
     },
     {
       "type": "event",
+      "name": "dojo_starter::events::harvesting_events::e_HarvestingRejected::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
       "name": "dojo_starter::events::harvesting_events::e_HarvestingStarted::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::mining_events::MineAccessGranted",
+      "members": [
+        {
+          "name": "mine_key",
+          "type": "core::felt252"
+        },
+        {
+          "name": "grantee_adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "granted_by_adventurer_id",
+          "type": "core::felt252"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::mining_events::MineAccessGrantedValue",
+      "members": [
+        {
+          "name": "grantee_adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "granted_by_adventurer_id",
+          "type": "core::felt252"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::mining_events::MineAccessRevoked",
+      "members": [
+        {
+          "name": "mine_key",
+          "type": "core::felt252"
+        },
+        {
+          "name": "grantee_adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "revoked_by_adventurer_id",
+          "type": "core::felt252"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::mining_events::MineAccessRevokedValue",
+      "members": [
+        {
+          "name": "grantee_adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "revoked_by_adventurer_id",
+          "type": "core::felt252"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::mining_events::MineCollapsed",
+      "members": [
+        {
+          "name": "mine_key",
+          "type": "core::felt252"
+        },
+        {
+          "name": "killed_miners",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "collapse_count",
+          "type": "core::integer::u32"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::mining_events::MineCollapsedValue",
+      "members": [
+        {
+          "name": "killed_miners",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "collapse_count",
+          "type": "core::integer::u32"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::mining_events::MineInitialized",
+      "members": [
+        {
+          "name": "mine_key",
+          "type": "core::felt252"
+        },
+        {
+          "name": "hex_coordinate",
+          "type": "core::felt252"
+        },
+        {
+          "name": "area_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "mine_id",
+          "type": "core::integer::u8"
+        },
+        {
+          "name": "ore_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "rarity_tier",
+          "type": "core::integer::u8"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::mining_events::MineInitializedValue",
+      "members": [
+        {
+          "name": "hex_coordinate",
+          "type": "core::felt252"
+        },
+        {
+          "name": "area_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "mine_id",
+          "type": "core::integer::u8"
+        },
+        {
+          "name": "ore_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "rarity_tier",
+          "type": "core::integer::u8"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::mining_events::MineRepaired",
+      "members": [
+        {
+          "name": "mine_key",
+          "type": "core::felt252"
+        },
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "energy_contributed",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "repair_energy_remaining",
+          "type": "core::integer::u32"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::mining_events::MineRepairedValue",
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "energy_contributed",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "repair_energy_remaining",
+          "type": "core::integer::u32"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::mining_events::MineStabilized",
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "mine_key",
+          "type": "core::felt252"
+        },
+        {
+          "name": "stress_reduced",
+          "type": "core::integer::u32"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::mining_events::MineStabilizedValue",
+      "members": [
+        {
+          "name": "mine_key",
+          "type": "core::felt252"
+        },
+        {
+          "name": "stress_reduced",
+          "type": "core::integer::u32"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::mining_events::MiningContinued",
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "mine_key",
+          "type": "core::felt252"
+        },
+        {
+          "name": "mined_ore",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "energy_spent",
+          "type": "core::integer::u16"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::mining_events::MiningContinuedValue",
+      "members": [
+        {
+          "name": "mine_key",
+          "type": "core::felt252"
+        },
+        {
+          "name": "mined_ore",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "energy_spent",
+          "type": "core::integer::u16"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::mining_events::MiningExited",
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "mine_key",
+          "type": "core::felt252"
+        },
+        {
+          "name": "banked_ore",
+          "type": "core::integer::u32"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::mining_events::MiningExitedValue",
+      "members": [
+        {
+          "name": "mine_key",
+          "type": "core::felt252"
+        },
+        {
+          "name": "banked_ore",
+          "type": "core::integer::u32"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::mining_events::MiningRejected",
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "mine_key",
+          "type": "core::felt252"
+        },
+        {
+          "name": "action",
+          "type": "core::felt252"
+        },
+        {
+          "name": "reason",
+          "type": "core::felt252"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::mining_events::MiningRejectedValue",
+      "members": [
+        {
+          "name": "mine_key",
+          "type": "core::felt252"
+        },
+        {
+          "name": "action",
+          "type": "core::felt252"
+        },
+        {
+          "name": "reason",
+          "type": "core::felt252"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::mining_events::MiningStarted",
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "mine_key",
+          "type": "core::felt252"
+        },
+        {
+          "name": "start_block",
+          "type": "core::integer::u64"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::mining_events::MiningStartedValue",
+      "members": [
+        {
+          "name": "mine_key",
+          "type": "core::felt252"
+        },
+        {
+          "name": "start_block",
+          "type": "core::integer::u64"
+        }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::events::mining_events::e_MineAccessGranted::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::events::mining_events::e_MineAccessRevoked::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::events::mining_events::e_MineCollapsed::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::events::mining_events::e_MineInitialized::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::events::mining_events::e_MineRepaired::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::events::mining_events::e_MineStabilized::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::events::mining_events::e_MiningContinued::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::events::mining_events::e_MiningExited::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::events::mining_events::e_MiningRejected::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::events::mining_events::e_MiningStarted::Event",
       "kind": "enum",
       "variants": []
     },
@@ -3666,6 +4751,46 @@
     },
     {
       "type": "struct",
+      "name": "dojo_starter::events::world_events::WorldActionRejected",
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "action",
+          "type": "core::felt252"
+        },
+        {
+          "name": "target",
+          "type": "core::felt252"
+        },
+        {
+          "name": "reason",
+          "type": "core::felt252"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::world_events::WorldActionRejectedValue",
+      "members": [
+        {
+          "name": "action",
+          "type": "core::felt252"
+        },
+        {
+          "name": "target",
+          "type": "core::felt252"
+        },
+        {
+          "name": "reason",
+          "type": "core::felt252"
+        }
+      ]
+    },
+    {
+      "type": "struct",
       "name": "dojo_starter::events::world_events::WorldGenConfigInitialized",
       "members": [
         {
@@ -3745,6 +4870,12 @@
     {
       "type": "event",
       "name": "dojo_starter::events::world_events::e_HexDiscovered::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::events::world_events::e_WorldActionRejected::Event",
       "kind": "enum",
       "variants": []
     },
@@ -4464,6 +5595,452 @@
     },
     {
       "type": "struct",
+      "name": "dojo_starter::models::mining::MineAccessGrant",
+      "members": [
+        {
+          "name": "mine_key",
+          "type": "core::felt252"
+        },
+        {
+          "name": "grantee_adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "is_allowed",
+          "type": "core::bool"
+        },
+        {
+          "name": "granted_by_adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "grant_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "revoked_block",
+          "type": "core::integer::u64"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::mining::MineAccessGrantValue",
+      "members": [
+        {
+          "name": "is_allowed",
+          "type": "core::bool"
+        },
+        {
+          "name": "granted_by_adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "grant_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "revoked_block",
+          "type": "core::integer::u64"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::mining::MineCollapseRecord",
+      "members": [
+        {
+          "name": "mine_key",
+          "type": "core::felt252"
+        },
+        {
+          "name": "collapse_count",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "last_collapse_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "trigger_stress",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "trigger_active_miners",
+          "type": "core::integer::u16"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::mining::MineCollapseRecordValue",
+      "members": [
+        {
+          "name": "collapse_count",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "last_collapse_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "trigger_stress",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "trigger_active_miners",
+          "type": "core::integer::u16"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::mining::MineNode",
+      "members": [
+        {
+          "name": "mine_key",
+          "type": "core::felt252"
+        },
+        {
+          "name": "hex_coordinate",
+          "type": "core::felt252"
+        },
+        {
+          "name": "area_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "mine_id",
+          "type": "core::integer::u8"
+        },
+        {
+          "name": "ore_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "rarity_tier",
+          "type": "core::integer::u8"
+        },
+        {
+          "name": "depth_tier",
+          "type": "core::integer::u8"
+        },
+        {
+          "name": "richness_bp",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "remaining_reserve",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "base_stress_per_block",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "collapse_threshold",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "mine_stress",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "safe_shift_blocks",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "active_miners",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "last_update_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "collapsed_until_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "repair_energy_needed",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "is_depleted",
+          "type": "core::bool"
+        },
+        {
+          "name": "active_head_shift_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "active_tail_shift_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "biome_risk_bp",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "rarity_risk_bp",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "base_tick_energy",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "ore_energy_weight",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "conversion_energy_per_unit",
+          "type": "core::integer::u16"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::mining::MineNodeValue",
+      "members": [
+        {
+          "name": "hex_coordinate",
+          "type": "core::felt252"
+        },
+        {
+          "name": "area_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "mine_id",
+          "type": "core::integer::u8"
+        },
+        {
+          "name": "ore_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "rarity_tier",
+          "type": "core::integer::u8"
+        },
+        {
+          "name": "depth_tier",
+          "type": "core::integer::u8"
+        },
+        {
+          "name": "richness_bp",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "remaining_reserve",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "base_stress_per_block",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "collapse_threshold",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "mine_stress",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "safe_shift_blocks",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "active_miners",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "last_update_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "collapsed_until_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "repair_energy_needed",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "is_depleted",
+          "type": "core::bool"
+        },
+        {
+          "name": "active_head_shift_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "active_tail_shift_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "biome_risk_bp",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "rarity_risk_bp",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "base_tick_energy",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "ore_energy_weight",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "conversion_energy_per_unit",
+          "type": "core::integer::u16"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::mining::MiningShift",
+      "members": [
+        {
+          "name": "shift_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "mine_key",
+          "type": "core::felt252"
+        },
+        {
+          "name": "status",
+          "type": "dojo_starter::models::mining::MiningShiftStatus"
+        },
+        {
+          "name": "start_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "last_settle_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "accrued_ore_unbanked",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "accrued_stabilization_work",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "prev_active_shift_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "next_active_shift_id",
+          "type": "core::felt252"
+        }
+      ]
+    },
+    {
+      "type": "enum",
+      "name": "dojo_starter::models::mining::MiningShiftStatus",
+      "variants": [
+        {
+          "name": "Inactive",
+          "type": "()"
+        },
+        {
+          "name": "Active",
+          "type": "()"
+        },
+        {
+          "name": "Exited",
+          "type": "()"
+        },
+        {
+          "name": "Collapsed",
+          "type": "()"
+        },
+        {
+          "name": "Completed",
+          "type": "()"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::mining::MiningShiftValue",
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "mine_key",
+          "type": "core::felt252"
+        },
+        {
+          "name": "status",
+          "type": "dojo_starter::models::mining::MiningShiftStatus"
+        },
+        {
+          "name": "start_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "last_settle_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "accrued_ore_unbanked",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "accrued_stabilization_work",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "prev_active_shift_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "next_active_shift_id",
+          "type": "core::felt252"
+        }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::models::mining::m_MineAccessGrant::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::models::mining::m_MineCollapseRecord::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::models::mining::m_MineNode::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::models::mining::m_MiningShift::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "struct",
       "name": "dojo_starter::models::ownership::AreaOwnership",
       "members": [
         {
@@ -4531,6 +6108,10 @@
         {
           "name": "PlantField",
           "type": "()"
+        },
+        {
+          "name": "MineField",
+          "type": "()"
         }
       ]
     },
@@ -4560,6 +6141,66 @@
         },
         {
           "name": "Swamp",
+          "type": "()"
+        },
+        {
+          "name": "Tundra",
+          "type": "()"
+        },
+        {
+          "name": "Taiga",
+          "type": "()"
+        },
+        {
+          "name": "Jungle",
+          "type": "()"
+        },
+        {
+          "name": "Savanna",
+          "type": "()"
+        },
+        {
+          "name": "Grassland",
+          "type": "()"
+        },
+        {
+          "name": "Canyon",
+          "type": "()"
+        },
+        {
+          "name": "Badlands",
+          "type": "()"
+        },
+        {
+          "name": "Volcanic",
+          "type": "()"
+        },
+        {
+          "name": "Glacier",
+          "type": "()"
+        },
+        {
+          "name": "Wetlands",
+          "type": "()"
+        },
+        {
+          "name": "Steppe",
+          "type": "()"
+        },
+        {
+          "name": "Oasis",
+          "type": "()"
+        },
+        {
+          "name": "Mire",
+          "type": "()"
+        },
+        {
+          "name": "Highlands",
+          "type": "()"
+        },
+        {
+          "name": "Coast",
           "type": "()"
         }
       ]
@@ -4629,6 +6270,10 @@
         {
           "name": "size_category",
           "type": "dojo_starter::models::world::SizeCategory"
+        },
+        {
+          "name": "plant_slot_count",
+          "type": "core::integer::u8"
         }
       ]
     },
@@ -4663,6 +6308,10 @@
         {
           "name": "size_category",
           "type": "dojo_starter::models::world::SizeCategory"
+        },
+        {
+          "name": "plant_slot_count",
+          "type": "core::integer::u8"
         }
       ]
     },
@@ -5175,6 +6824,237 @@
     {
       "type": "event",
       "name": "dojo_starter::systems::harvesting_manager_contract::harvesting_manager::Event",
+      "kind": "enum",
+      "variants": [
+        {
+          "name": "UpgradeableEvent",
+          "type": "dojo::contract::components::upgradeable::upgradeable_cpt::Event",
+          "kind": "nested"
+        },
+        {
+          "name": "WorldProviderEvent",
+          "type": "dojo::contract::components::world_provider::world_provider_cpt::Event",
+          "kind": "nested"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "dojo_starter::systems::mining_manager_contract::IMiningManager",
+      "items": [
+        {
+          "type": "function",
+          "name": "init_mining",
+          "inputs": [
+            {
+              "name": "hex_coordinate",
+              "type": "core::felt252"
+            },
+            {
+              "name": "area_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "mine_id",
+              "type": "core::integer::u8"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "core::bool"
+            }
+          ],
+          "state_mutability": "external"
+        },
+        {
+          "type": "function",
+          "name": "grant_mine_access",
+          "inputs": [
+            {
+              "name": "controller_adventurer_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "mine_key",
+              "type": "core::felt252"
+            },
+            {
+              "name": "grantee_adventurer_id",
+              "type": "core::felt252"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "core::bool"
+            }
+          ],
+          "state_mutability": "external"
+        },
+        {
+          "type": "function",
+          "name": "revoke_mine_access",
+          "inputs": [
+            {
+              "name": "controller_adventurer_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "mine_key",
+              "type": "core::felt252"
+            },
+            {
+              "name": "grantee_adventurer_id",
+              "type": "core::felt252"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "core::bool"
+            }
+          ],
+          "state_mutability": "external"
+        },
+        {
+          "type": "function",
+          "name": "start_mining",
+          "inputs": [
+            {
+              "name": "adventurer_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "hex_coordinate",
+              "type": "core::felt252"
+            },
+            {
+              "name": "area_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "mine_id",
+              "type": "core::integer::u8"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "core::bool"
+            }
+          ],
+          "state_mutability": "external"
+        },
+        {
+          "type": "function",
+          "name": "continue_mining",
+          "inputs": [
+            {
+              "name": "adventurer_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "mine_key",
+              "type": "core::felt252"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "core::integer::u16"
+            }
+          ],
+          "state_mutability": "external"
+        },
+        {
+          "type": "function",
+          "name": "stabilize_mine",
+          "inputs": [
+            {
+              "name": "adventurer_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "mine_key",
+              "type": "core::felt252"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "core::integer::u32"
+            }
+          ],
+          "state_mutability": "external"
+        },
+        {
+          "type": "function",
+          "name": "exit_mining",
+          "inputs": [
+            {
+              "name": "adventurer_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "mine_key",
+              "type": "core::felt252"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "core::integer::u16"
+            }
+          ],
+          "state_mutability": "external"
+        },
+        {
+          "type": "function",
+          "name": "repair_mine",
+          "inputs": [
+            {
+              "name": "adventurer_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "mine_key",
+              "type": "core::felt252"
+            },
+            {
+              "name": "energy_amount",
+              "type": "core::integer::u16"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "core::integer::u32"
+            }
+          ],
+          "state_mutability": "external"
+        },
+        {
+          "type": "function",
+          "name": "inspect_mine",
+          "inputs": [
+            {
+              "name": "hex_coordinate",
+              "type": "core::felt252"
+            },
+            {
+              "name": "area_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "mine_id",
+              "type": "core::integer::u8"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "dojo_starter::models::mining::MineNode"
+            }
+          ],
+          "state_mutability": "view"
+        }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::systems::mining_manager_contract::mining_manager::Event",
       "kind": "enum",
       "variants": [
         {

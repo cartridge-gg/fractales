@@ -62,18 +62,94 @@ mod tests {
         };
 
         let blocked = init_transition(
-            plant, owner, false, 'ROOT'_felt252, 40_u16, 2_u16, 444_felt252, 100_u64,
+            plant, owner, false, true, true, true, 'ROOT'_felt252, 40_u16, 2_u16, 444_felt252, 100_u64,
         );
         assert(blocked.outcome == InitOutcome::HexUndiscovered, 'H_INIT_BLOCK');
 
+        let area_blocked = init_transition(
+            blocked.plant,
+            owner,
+            true,
+            false,
+            true,
+            true,
+            'ROOT'_felt252,
+            40_u16,
+            2_u16,
+            444_felt252,
+            100_u64,
+        );
+        assert(area_blocked.outcome == InitOutcome::AreaUndiscovered, 'H_INIT_AREA_BLOCK');
+
+        let type_blocked = init_transition(
+            area_blocked.plant,
+            owner,
+            true,
+            true,
+            false,
+            true,
+            'ROOT'_felt252,
+            40_u16,
+            2_u16,
+            444_felt252,
+            100_u64,
+        );
+        assert(type_blocked.outcome == InitOutcome::AreaNotPlantField, 'H_INIT_TYPE_BLOCK');
+
         let initialized = init_transition(
-            blocked.plant, owner, true, 'ROOT'_felt252, 40_u16, 2_u16, 444_felt252, 100_u64,
+            type_blocked.plant,
+            owner,
+            true,
+            true,
+            true,
+            true,
+            'ROOT'_felt252,
+            40_u16,
+            2_u16,
+            444_felt252,
+            100_u64,
         );
         assert(initialized.outcome == InitOutcome::Applied, 'H_INIT_OK');
         assert(initialized.plant.current_yield == 40_u16, 'H_INIT_YIELD');
         assert(initialized.plant.health == 100_u16, 'H_INIT_HEALTH');
         assert(initialized.plant.genetics_hash == 444_felt252, 'H_INIT_GENE');
         assert(initialized.plant.discoverer == owner, 'H_INIT_DISC');
+    }
+
+    #[test]
+    fn harvesting_manager_init_rejects_out_of_range_plant_id() {
+        let owner: ContractAddress = 12.try_into().unwrap();
+        let plant = PlantNode {
+            plant_key: derive_plant_key(510_felt252, 511_felt252, 250_u8),
+            hex_coordinate: 510_felt252,
+            area_id: 511_felt252,
+            plant_id: 250_u8,
+            species: 0_felt252,
+            current_yield: 0_u16,
+            reserved_yield: 0_u16,
+            max_yield: 0_u16,
+            regrowth_rate: 0_u16,
+            health: 0_u16,
+            stress_level: 0_u16,
+            genetics_hash: 0_felt252,
+            last_harvest_block: 0_u64,
+            discoverer: 0.try_into().unwrap(),
+        };
+
+        let rejected = init_transition(
+            plant,
+            owner,
+            true,
+            true,
+            true,
+            false,
+            'ROOT'_felt252,
+            40_u16,
+            2_u16,
+            444_felt252,
+            100_u64,
+        );
+        assert(rejected.outcome == InitOutcome::PlantIdOutOfRange, 'H_INIT_PLANT_RANGE');
     }
 
     #[test]
