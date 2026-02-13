@@ -84,3 +84,19 @@ Start here:
 
 Authoritative implementation spec:
 - `docs/02-spec/mvp-functional-spec.md`
+
+Latest live Slot release + player runbook:
+- `docs/07-delivery/releases/2026-02-13-gen-dungeon-live-20260213b.md`
+
+## Current Live Slot Deployment
+
+As of `2026-02-13`, the current live Slot deployment is:
+
+- Slot project: `gen-dungeon-live-20260213b`
+- Katana RPC: `https://api.cartridge.gg/x/gen-dungeon-live-20260213b/katana`
+- Torii HTTP: `https://api.cartridge.gg/x/gen-dungeon-live-20260213b/torii`
+- Torii GraphQL: `https://api.cartridge.gg/x/gen-dungeon-live-20260213b/torii/graphql`
+- World address: `0x00f3d3b78a41b212442a64218a7f7dbde331813ea09a07067c7ad12f93620c11`
+
+Runbook + player instructions:
+- `docs/07-delivery/releases/2026-02-13-gen-dungeon-live-20260213b.md`

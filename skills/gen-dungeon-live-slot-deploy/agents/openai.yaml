@@ -1,0 +1,4 @@
+interface:
+  display_name: "Gen Dungeon Live Slot Deploy"
+  short_description: "Deploy gen-dungeon to Slot and publish play instructions"
+  default_prompt: "Run the live Slot deployment workflow for gen-dungeon and produce release notes with how-to-play steps."

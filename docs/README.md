@@ -28,6 +28,19 @@ The long-term vision includes mining, crafting, facilities, and deeper player-bu
 
 Economic tension in MVP is simple and intentional: push expansion too hard and you cannot maintain territory; play too safely and growth stalls.
 
+## Current Live Slot Deployment
+
+As of `2026-02-13`, the active public Slot deployment is:
+
+- Slot project: `gen-dungeon-live-20260213b`
+- Katana RPC: `https://api.cartridge.gg/x/gen-dungeon-live-20260213b/katana`
+- Torii HTTP: `https://api.cartridge.gg/x/gen-dungeon-live-20260213b/torii`
+- Torii GraphQL: `https://api.cartridge.gg/x/gen-dungeon-live-20260213b/torii/graphql`
+- World address: `0x00f3d3b78a41b212442a64218a7f7dbde331813ea09a07067c7ad12f93620c11`
+
+Live release and how-to-play runbook:
+- `07-delivery/releases/2026-02-13-gen-dungeon-live-20260213b.md`
+
 ## Canonical Sources
 
 - MVP source of truth: `02-spec/mvp-functional-spec.md`

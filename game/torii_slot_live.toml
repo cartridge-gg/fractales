@@ -1,0 +1,16 @@
+rpc = "https://api.cartridge.gg/x/gen-dungeon-live-20260213b/katana"
+world_address = "0x00f3d3b78a41b212442a64218a7f7dbde331813ea09a07067c7ad12f93620c11"
+
+[indexing]
+contracts = [
+  "erc20:0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7",
+  "erc20:0x4718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+]
+
+[sql]
+historical = [
+  "dojo_starter-HexDiscovered",
+  "dojo_starter-AreaDiscovered",
+  "dojo_starter-HarvestingStarted",
+  "dojo_starter-WorldGenConfigInitialized",
+]
