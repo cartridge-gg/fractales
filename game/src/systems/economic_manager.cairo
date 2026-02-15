@@ -387,6 +387,18 @@ pub fn process_decay_transition(
     claimable_threshold: u16,
 ) -> DecayResult {
     let upkeep = upkeep_for_biome(biome);
+    process_decay_transition_with_upkeep(
+        state, upkeep, now_block, period_blocks, claimable_threshold,
+    )
+}
+
+pub fn process_decay_transition_with_upkeep(
+    state: HexDecayState,
+    upkeep: u32,
+    now_block: u64,
+    period_blocks: u64,
+    claimable_threshold: u16,
+) -> DecayResult {
     let processed = process_hex_decay_once_with_status(
         state, now_block, period_blocks, upkeep, claimable_threshold,
     );

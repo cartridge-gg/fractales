@@ -43,6 +43,15 @@ sozo model get dojo_starter-WorldGenConfig 2 --world <WORLD> --rpc-url <RPC_URL>
 - Convert items: `<TX_HASH>`
 - Pay maintenance: `<TX_HASH>`
 
+Optional advanced loop hashes (if enabled in this release):
+
+- Init mining: `<TX_HASH>`
+- Start mining: `<TX_HASH>`
+- Continue or stabilize mining: `<TX_HASH>`
+- Start construction: `<TX_HASH>`
+- Complete construction: `<TX_HASH>`
+- Grant sharing access / share rule: `<TX_HASH>`
+
 ## How To Play (MVP)
 
 1. Connect using the RPC + world address above.
@@ -60,7 +69,7 @@ sozo model get dojo_starter-WorldGenConfig 2 --world <WORLD> --rpc-url <RPC_URL>
 
 ## Known Limitations
 
-- MVP scope excludes advanced modules like mining/crafting/buildings for public gameplay loop docs.
+- Public player docs default to MVP loop; mining/construction/sharing should be documented as advanced release content when enabled.
 - Actions are adjacency-gated and energy-gated.
 - Permadeath is active for adventurers.
 

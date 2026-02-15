@@ -201,6 +201,36 @@ sozo execute dojo_starter-adventurer_manager create_adventurer sstr:'SCOUT' \
   --wait
 ```
 
+## Optional Module Smoke (Mining + Construction + Sharing)
+
+Run this when the release is expected to include post-MVP loops:
+
+```bash
+# Example mining read/write smoke
+sozo call dojo_starter-mining_manager inspect_mine <HEX> <AREA_ID> 0 \
+  --world "$DOJO_WORLD_ADDRESS" \
+  --rpc-url "$STARKNET_RPC_URL"
+
+# Example construction smoke
+sozo execute dojo_starter-construction_manager start_construction <ADV_ID> <HEX> <AREA_ID> sstr:GREENHOUSE \
+  --world "$DOJO_WORLD_ADDRESS" \
+  --rpc-url "$STARKNET_RPC_URL" \
+  --katana-account <ACCOUNT> \
+  --wait
+```
+
+If construction writes fail with:
+`Dojo Contract construction_manager does NOT have WRITER role on model ... Adventurer`,
+grant namespace writer before retry:
+
+```bash
+sozo auth grant writer dojo_starter,dojo_starter-construction_manager \
+  --world "$DOJO_WORLD_ADDRESS" \
+  --rpc-url "$STARKNET_RPC_URL" \
+  --katana-account katana0 \
+  --wait
+```
+
 ## Play Live Loop With Sozo
 
 Use this exact command flow when publishing player instructions. This flow has been executed live on Slot and verified with onchain reads.
@@ -317,6 +347,12 @@ Write player instructions for the MVP loop in plain language:
 6. Pay maintenance to avoid decay.
 7. Defend territory or claim decayed territory.
 
+If post-MVP modules are enabled for the release, add a separate advanced section for:
+
+- mining (`init/start/continue/stabilize/exit`)
+- construction (`start/complete/upkeep/upgrade`)
+- sharing permissions (`grant access + share rule`)
+
 Always include real endpoints (`RPC`, `Torii`, and `world address`) so players can connect immediately.
 
 ## Guardrails
@@ -324,6 +360,7 @@ Always include real endpoints (`RPC`, `Torii`, and `world address`) so players c
 - Do not publish private keys.
 - Do not claim success from tx submission alone; include at least one state read verification.
 - Do not hardcode world generation version assumptions; verify live config from chain (`WorldGenConfig` key `2`).
+- Do not use old caller-defined discovery/harvest signatures; use deterministic runtime signatures (`discover_hex(adventurer, hex)`, `discover_area(adventurer, hex, idx)`, `init_harvesting(hex, area, plant)`).
 - Do not skip player instructions in release notes.
 - If you hit `code=63` with `Missing latest block number`, avoid broken optimistic providers and create fresh Katana with `--config`.
 - If you hit `InsufficientResourcesForValidate` or `Insufficient max L2Gas`, increase `--l2-gas` and retry.

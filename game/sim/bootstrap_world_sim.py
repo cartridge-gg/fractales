@@ -15,7 +15,7 @@ from dataclasses import asdict, dataclass
 from enum import Enum
 from pathlib import Path
 from statistics import mean
-from typing import Iterable, List
+from typing import Iterable, List, Sequence
 
 
 class ModelMode(str, Enum):
@@ -681,6 +681,49 @@ def _owner_scale_bp(owner_alive_count: int) -> int:
 def _energy_surplus_band(current_supply: int, baseline_supply: int) -> int:
     ratio = (current_supply - baseline_supply) / max(1, baseline_supply)
     return _clamp(int(round(ratio * 10)), -8, 8)
+
+
+def oscillation_sign_changes(values: Sequence[int], deadband: int = 0, persistence: int = 2) -> int:
+    if len(values) < 2:
+        return 0
+
+    threshold = max(0, deadband)
+    required_persistence = max(1, persistence)
+    changes = 0
+    current_sign = 0
+    candidate_sign = 0
+    candidate_len = 0
+    prev = values[0]
+
+    for value in values[1:]:
+        delta = value - prev
+        prev = value
+        if abs(delta) <= threshold:
+            continue
+
+        sign = 1 if delta > 0 else -1
+        if current_sign == 0:
+            current_sign = sign
+            continue
+
+        if sign == current_sign:
+            candidate_sign = 0
+            candidate_len = 0
+            continue
+
+        if sign != candidate_sign:
+            candidate_sign = sign
+            candidate_len = 1
+        else:
+            candidate_len += 1
+
+        if candidate_len >= required_persistence:
+            changes += 1
+            current_sign = sign
+            candidate_sign = 0
+            candidate_len = 0
+
+    return changes
 
 
 def _clamp(value: int, min_value: int, max_value: int) -> int:

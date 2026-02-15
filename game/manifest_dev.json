@@ -47,8 +47,24 @@
       ]
     },
     {
-      "address": "0x3e5d844c1feddeb0e7c97e6000ce6dfd212e9b9e7518a271986873c265f63d9",
-      "class_hash": "0x64e4aeffa10c6a0ac43e145d493e030f8fd9c252b97a5760d48d36e20e9f8e3",
+      "address": "0x40b9411eafafce734ae963ae22807bd0365a64a2d0cd32a949d88f772683d1d",
+      "class_hash": "0x112994efc33f1f28b6e04ad9032b0811fae2471888c338acead220bf38d950d",
+      "init_calldata": [],
+      "tag": "dojo_starter-construction_manager",
+      "selector": "0x5f697e92f1a64cc9baeea7f3d67b56a394a3e31ab9b29b0719842ea94c920cf",
+      "systems": [
+        "process_plant_material",
+        "start_construction",
+        "complete_construction",
+        "pay_building_upkeep",
+        "repair_building",
+        "upgrade_building",
+        "upgrade"
+      ]
+    },
+    {
+      "address": "0x4134a7c5dbe01022bff946b376439026eed9cbc0b90fab7d12be5f0c404d588",
+      "class_hash": "0x7d98618988ac3f7aeb667aed1fcdc8b8c592d4cf6b1ca3602ef4a3a35537ff",
       "init_calldata": [],
       "tag": "dojo_starter-economic_manager",
       "selector": "0x34e2f6884d3544bc490b7deefc712e20eef6bf1c3760fb385c29f4837d887ed",
@@ -62,8 +78,8 @@
       ]
     },
     {
-      "address": "0x7b982c47be048493d1f9775869a05ca20e9dbe152895cdeec689e5dc35a647b",
-      "class_hash": "0x415292862665fd05aac6a3a044a1d1f40ec7e504a10fe584083125168606656",
+      "address": "0x1c4e6d7faa61e70d535f15ebd6a65270afb30609041de14f1bcf51317a7ab77",
+      "class_hash": "0x5b96eed0e0fb0d503dd77dff6fa543d1a73e8dc29640e47616aee51a93289ac",
       "init_calldata": [],
       "tag": "dojo_starter-harvesting_manager",
       "selector": "0x5f56bcb882f243efad398fe12f7a6e8b58289fd0232b912822a529f7467c5d5",
@@ -76,8 +92,8 @@
       ]
     },
     {
-      "address": "0x7cb1c9e0f81e4e9de4a7ea3d56ed94d9ac6c0d42718869d2390552019d9706d",
-      "class_hash": "0x657afe8068112876e7e1fabb527f97f7914e6a5aadfada7842e017c8b1deabc",
+      "address": "0x3826f7f116f141284580445070aafdae748397d8c1af99c57f9aba6801f66d8",
+      "class_hash": "0x4a25b5c78686c4385cd8f3fcfc8d05ead08ad9e9ebb5fb42f4c052f680a342b",
       "init_calldata": [],
       "tag": "dojo_starter-mining_manager",
       "selector": "0x78875e581bef3573e0bddb454c1eb8368402b3f807d3d98800c21086d54d2fe",
@@ -101,6 +117,21 @@
       "selector": "0x138393bbcb4747e667866d23300016c720a6fcd095cdd88f9553c0fd7dec8c0",
       "systems": [
         "transfer_ownership",
+        "upgrade"
+      ]
+    },
+    {
+      "address": "0x344241f7ec4310c62f505497ea879d200db0e19019413b9a7f1075fe50d1eb2",
+      "class_hash": "0x30c5567b974e27f7f927ff587c148bf9417102d47c0328e795fcc0eac88c66c",
+      "init_calldata": [],
+      "tag": "dojo_starter-sharing_manager",
+      "selector": "0x1d2300aa897989d29dc97bb2c9e5b1619d49d52a959936be3387bc8d53f4796",
+      "systems": [
+        "upsert_resource_policy",
+        "grant_resource_access",
+        "revoke_resource_access",
+        "set_resource_share_rule",
+        "clear_resource_share_rule",
         "upgrade"
       ]
     },
@@ -315,6 +346,137 @@
       "class_hash": "0x6cb27b2fe668bc51dfa5d8eb581ecfec4bda337494af4daba8d588dfb4b3114",
       "tag": "dojo_starter-ClaimEscrow",
       "selector": "0xca15829ad329e3d7a2e4dae3ef7eba57fdf9f4ed187c4b5e830acd3d76e860"
+    },
+    {
+      "members": [
+        {
+          "name": "area_id",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "hex_coordinate",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "owner_adventurer_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "building_type",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "tier",
+          "type": "core::integer::u8",
+          "key": false
+        },
+        {
+          "name": "condition_bp",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "upkeep_reserve",
+          "type": "core::integer::u32",
+          "key": false
+        },
+        {
+          "name": "last_upkeep_block",
+          "type": "core::integer::u64",
+          "key": false
+        },
+        {
+          "name": "is_active",
+          "type": "core::bool",
+          "key": false
+        }
+      ],
+      "class_hash": "0x2f17888e68417f6c333744b78c3edf124f08b5b0c0c134187623a54f122b2e1",
+      "tag": "dojo_starter-ConstructionBuildingNode",
+      "selector": "0x60501a078165416a64d2c1e77c885c13661065cc1968a8f9191216f43444d9d"
+    },
+    {
+      "members": [
+        {
+          "name": "project_id",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "item_id",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "quantity",
+          "type": "core::integer::u32",
+          "key": false
+        }
+      ],
+      "class_hash": "0x7dd1e93bfe249b6e512a51eb8d40a98ebc26242641fab7efb6af7f0666ea22f",
+      "tag": "dojo_starter-ConstructionMaterialEscrow",
+      "selector": "0xa73fe0ac6e2531460acd2d5745212ab628ad2150dc078e68de43e0c0427ca2"
+    },
+    {
+      "members": [
+        {
+          "name": "project_id",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "hex_coordinate",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "area_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "building_type",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "target_tier",
+          "type": "core::integer::u8",
+          "key": false
+        },
+        {
+          "name": "start_block",
+          "type": "core::integer::u64",
+          "key": false
+        },
+        {
+          "name": "completion_block",
+          "type": "core::integer::u64",
+          "key": false
+        },
+        {
+          "name": "energy_staked",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "status",
+          "type": "dojo_starter::models::construction::ConstructionProjectStatus",
+          "key": false
+        }
+      ],
+      "class_hash": "0x224e3f3abc41368bcbc7bd6d251c8154d9538a9a52e4281b586883a5a7827c3",
+      "tag": "dojo_starter-ConstructionProject",
+      "selector": "0x2b5533a8611bcdfbcb7c535240b3a06b29b967fb26df926d07523518582e111"
     },
     {
       "members": [
@@ -913,6 +1075,241 @@
     {
       "members": [
         {
+          "name": "resource_key",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "grantee_adventurer_id",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "permissions_mask",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "granted_by_adventurer_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "grant_block",
+          "type": "core::integer::u64",
+          "key": false
+        },
+        {
+          "name": "revoke_block",
+          "type": "core::integer::u64",
+          "key": false
+        },
+        {
+          "name": "is_active",
+          "type": "core::bool",
+          "key": false
+        },
+        {
+          "name": "policy_epoch",
+          "type": "core::integer::u32",
+          "key": false
+        }
+      ],
+      "class_hash": "0x291bacde3cdf99f78dba6ab436225f57c7d0855153034fbab57f15e9be14550",
+      "tag": "dojo_starter-ResourceAccessGrant",
+      "selector": "0x310f1d9b5f4b6179173f124df0603edc9fe0fe1a8661df999b8e972fd79eae8"
+    },
+    {
+      "members": [
+        {
+          "name": "resource_key",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "last_nonce",
+          "type": "core::integer::u64",
+          "key": false
+        }
+      ],
+      "class_hash": "0x407fd86d7b2b1b7241717ec033f0c7031745ce5ec7c99e777a22e9916b1541a",
+      "tag": "dojo_starter-ResourceDistributionNonce",
+      "selector": "0x575804de8c900832ffa3b26f90e1506e8b0c4186d2601cb859fa8fd769e9c7f"
+    },
+    {
+      "members": [
+        {
+          "name": "resource_key",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "scope",
+          "type": "dojo_starter::models::sharing::PolicyScope",
+          "key": false
+        },
+        {
+          "name": "scope_key",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "resource_kind",
+          "type": "dojo_starter::models::sharing::ResourceKind",
+          "key": false
+        },
+        {
+          "name": "controller_adventurer_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "policy_epoch",
+          "type": "core::integer::u32",
+          "key": false
+        },
+        {
+          "name": "is_enabled",
+          "type": "core::bool",
+          "key": false
+        },
+        {
+          "name": "updated_block",
+          "type": "core::integer::u64",
+          "key": false
+        },
+        {
+          "name": "last_mutation_block",
+          "type": "core::integer::u64",
+          "key": false
+        }
+      ],
+      "class_hash": "0x3b0f2a2bc0e499778f4bf05517e46b05e4e30c2f868e0d39d7a63816f8254fd",
+      "tag": "dojo_starter-ResourcePolicy",
+      "selector": "0x5f66db5f5213a09c65344faec102dec399888ead3b25b0ffdc3ee5b562df99"
+    },
+    {
+      "members": [
+        {
+          "name": "resource_key",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "recipient_adventurer_id",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "rule_kind",
+          "type": "dojo_starter::models::sharing::ShareRuleKind",
+          "key": true
+        },
+        {
+          "name": "share_bp",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "is_active",
+          "type": "core::bool",
+          "key": false
+        },
+        {
+          "name": "policy_epoch",
+          "type": "core::integer::u32",
+          "key": false
+        },
+        {
+          "name": "updated_block",
+          "type": "core::integer::u64",
+          "key": false
+        }
+      ],
+      "class_hash": "0x5619205a771e0e42db88450ba78b5f520a06a9cf2940a32d217127e5c6228cb",
+      "tag": "dojo_starter-ResourceShareRule",
+      "selector": "0xbefd39fedeb949b8d77401069b6477c2e311af91c0ed102facf065eba9c8a6"
+    },
+    {
+      "members": [
+        {
+          "name": "resource_key",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "rule_kind",
+          "type": "dojo_starter::models::sharing::ShareRuleKind",
+          "key": true
+        },
+        {
+          "name": "total_bp",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "active_recipient_count",
+          "type": "core::integer::u8",
+          "key": false
+        },
+        {
+          "name": "policy_epoch",
+          "type": "core::integer::u32",
+          "key": false
+        },
+        {
+          "name": "recipient_0",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "recipient_1",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "recipient_2",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "recipient_3",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "recipient_4",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "recipient_5",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "recipient_6",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "recipient_7",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "updated_block",
+          "type": "core::integer::u64",
+          "key": false
+        }
+      ],
+      "class_hash": "0x1fcf4e3a70f70fc3f998aa3d628e4cd4999d63bb62e0cf497d2b448981522d6",
+      "tag": "dojo_starter-ResourceShareRuleTally",
+      "selector": "0x7ffa1c06a257edbc0256469841f11d7f6ad7c7fdebd54bdb7ac9feff582e4ff"
+    },
+    {
+      "members": [
+        {
           "name": "generation_version",
           "type": "core::integer::u16",
           "key": true
@@ -1154,6 +1551,230 @@
       "class_hash": "0x4f9fc6e9ef9fe7b6c338c0d7946db659448e4624c7363ae3469e5e33338831c",
       "tag": "dojo_starter-ClaimRefunded",
       "selector": "0x4f5aed38b1c27ef2cc6eeeb3b2b55a4a15fb3b0adc09479c42d34d3cafca91"
+    },
+    {
+      "members": [
+        {
+          "name": "project_id",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "hex_coordinate",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "area_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "building_type",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "resulting_tier",
+          "type": "core::integer::u8",
+          "key": false
+        }
+      ],
+      "class_hash": "0x23ebee618b0de6e5f08f1d8fc294ab6e163423d24ae512b13f8caf7cf9abd52",
+      "tag": "dojo_starter-ConstructionCompleted",
+      "selector": "0x74d7c9f20655efcace8359d5a051a814c34b1298be12340e7deaf5376700078"
+    },
+    {
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "source_item_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "target_material",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "input_qty",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "output_qty",
+          "type": "core::integer::u16",
+          "key": false
+        }
+      ],
+      "class_hash": "0x454bded7fa719f91a25764619f0975a54c91f8e010a4dec7bee261e91311e70",
+      "tag": "dojo_starter-ConstructionPlantProcessed",
+      "selector": "0x2df865b4ad8982aedaa913876c1b8f0b00cd4085a7953d9df530d8c43fd5f6a"
+    },
+    {
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "area_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "action",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "reason",
+          "type": "core::felt252",
+          "key": false
+        }
+      ],
+      "class_hash": "0x29e1ff229e96d0ee95837b5d1701feb450081a63ae73afdae359e793fc497b",
+      "tag": "dojo_starter-ConstructionRejected",
+      "selector": "0x3b14514396ec189622ab1aa3a4185e9968996edb531ec289de86ec1b23f5f70"
+    },
+    {
+      "members": [
+        {
+          "name": "area_id",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "amount",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "condition_bp",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "is_active",
+          "type": "core::bool",
+          "key": false
+        }
+      ],
+      "class_hash": "0x3437e0733e010a92d3d8a272f201b13e7537e533a8fbca7f87c3cc507e773e0",
+      "tag": "dojo_starter-ConstructionRepaired",
+      "selector": "0x514f8d86bedd3546d0523abcfeeb7568d287f404763bd2dfa01e513a11fe287"
+    },
+    {
+      "members": [
+        {
+          "name": "project_id",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "hex_coordinate",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "area_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "building_type",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "target_tier",
+          "type": "core::integer::u8",
+          "key": false
+        },
+        {
+          "name": "completion_block",
+          "type": "core::integer::u64",
+          "key": false
+        }
+      ],
+      "class_hash": "0x7951f3558943d5ab72d73fed9620f13e8bf3153069d0628125692030483fba9",
+      "tag": "dojo_starter-ConstructionStarted",
+      "selector": "0x3c0b0e030260621cee315f0008da0174d1fe23bbf7e4c56b78a328b26e1681d"
+    },
+    {
+      "members": [
+        {
+          "name": "area_id",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "project_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "target_tier",
+          "type": "core::integer::u8",
+          "key": false
+        }
+      ],
+      "class_hash": "0x4044c8d4d2c658c7c4ecefeac9227dae56f3fbafd8986815398e32a3d7d3cd6",
+      "tag": "dojo_starter-ConstructionUpgradeQueued",
+      "selector": "0x6f3662870769e6e4a479a07c1856d982dd997b99b5cb5777291c24c8fa5131"
+    },
+    {
+      "members": [
+        {
+          "name": "area_id",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "amount",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "upkeep_reserve",
+          "type": "core::integer::u32",
+          "key": false
+        }
+      ],
+      "class_hash": "0x6d2613ba97dacbe6e41d745fa30ccb996bc476ddc10880f4fd798e200bd9348",
+      "tag": "dojo_starter-ConstructionUpkeepPaid",
+      "selector": "0x41a76e92c4cb337f04e118c052e62f76384cba947967269fa58f79a8335c058"
     },
     {
       "members": [
@@ -1664,6 +2285,198 @@
       "class_hash": "0x122c440a5197effa4c18486eaedc92e1669c6960cc0be6ca091ad0b182d25af",
       "tag": "dojo_starter-OwnershipTransferred",
       "selector": "0x7e40ee475bc8d78c7c8505a9f3f82d67df5be89ac9bc05b63ba6e21e709db6b"
+    },
+    {
+      "members": [
+        {
+          "name": "resource_key",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "grantee_adventurer_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "granted_by_adventurer_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "permissions_mask",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "policy_epoch",
+          "type": "core::integer::u32",
+          "key": false
+        }
+      ],
+      "class_hash": "0x2ea0b7cd9d5d1bc939fdfb2e25efb4bf65b1efc7ff04f4dd439b756ee546da4",
+      "tag": "dojo_starter-ResourceAccessGranted",
+      "selector": "0x7ee283c5d7cea65dc0fb0e9b164ad4c47dc859106a9d7e434da16c2f49f51ba"
+    },
+    {
+      "members": [
+        {
+          "name": "resource_key",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "grantee_adventurer_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "revoked_by_adventurer_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "policy_epoch",
+          "type": "core::integer::u32",
+          "key": false
+        }
+      ],
+      "class_hash": "0x4b781221dcd5c967b3685453a0e6e430ac92939b185d66528728cd480a02aa",
+      "tag": "dojo_starter-ResourceAccessRevoked",
+      "selector": "0x4eb858c377b55415c737e052da4361e7f1e892e6bd8217abfac59aa1c067d5c"
+    },
+    {
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "resource_key",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "action",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "reason",
+          "type": "core::felt252",
+          "key": false
+        }
+      ],
+      "class_hash": "0x21802cfa1b7410c07cbef7d0b2fd698957a5f946aa9e0fee81a63c19dc87f1c",
+      "tag": "dojo_starter-ResourcePermissionRejected",
+      "selector": "0x18d3eab05b9a9e8b1fa22e1ac6ddf93fa36db525b381ea91a5a7ec36ab8c243"
+    },
+    {
+      "members": [
+        {
+          "name": "resource_key",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "scope",
+          "type": "dojo_starter::models::sharing::PolicyScope",
+          "key": false
+        },
+        {
+          "name": "scope_key",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "resource_kind",
+          "type": "dojo_starter::models::sharing::ResourceKind",
+          "key": false
+        },
+        {
+          "name": "controller_adventurer_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "policy_epoch",
+          "type": "core::integer::u32",
+          "key": false
+        },
+        {
+          "name": "is_enabled",
+          "type": "core::bool",
+          "key": false
+        },
+        {
+          "name": "updated_block",
+          "type": "core::integer::u64",
+          "key": false
+        }
+      ],
+      "class_hash": "0x57b54c53c49001a1a0d9a39ae5216f5aa4847162fbf08c5f44875c6417887f3",
+      "tag": "dojo_starter-ResourcePolicyUpserted",
+      "selector": "0x256ab33d5a9124a8879bf85f507c0d005f8f4c145658a93116fe5812a62891d"
+    },
+    {
+      "members": [
+        {
+          "name": "resource_key",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "recipient_adventurer_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "rule_kind",
+          "type": "dojo_starter::models::sharing::ShareRuleKind",
+          "key": false
+        },
+        {
+          "name": "policy_epoch",
+          "type": "core::integer::u32",
+          "key": false
+        }
+      ],
+      "class_hash": "0x5babc158d8a455cfa23561eb5e7b2b279eb284f767182ca103dee1a0a859792",
+      "tag": "dojo_starter-ResourceShareRuleCleared",
+      "selector": "0x1da5a6f22aad59245cce274bd3c2b868d7608c9c364150716f5f0606453647f"
+    },
+    {
+      "members": [
+        {
+          "name": "resource_key",
+          "type": "core::felt252",
+          "key": true
+        },
+        {
+          "name": "recipient_adventurer_id",
+          "type": "core::felt252",
+          "key": false
+        },
+        {
+          "name": "rule_kind",
+          "type": "dojo_starter::models::sharing::ShareRuleKind",
+          "key": false
+        },
+        {
+          "name": "share_bp",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "policy_epoch",
+          "type": "core::integer::u32",
+          "key": false
+        }
+      ],
+      "class_hash": "0xfaa6314c0fe1ad7993c5b61d3615ffcbf94a3aaaa0bda25246a5478b27561a",
+      "tag": "dojo_starter-ResourceShareRuleSet",
+      "selector": "0x40526c66b0c5506927f8974fa1887c69bcfa1aa08c548ae4ea41597526c0277"
     },
     {
       "members": [
@@ -3665,6 +4478,384 @@
     },
     {
       "type": "struct",
+      "name": "dojo_starter::events::construction_events::ConstructionCompleted",
+      "members": [
+        {
+          "name": "project_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "hex_coordinate",
+          "type": "core::felt252"
+        },
+        {
+          "name": "area_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "building_type",
+          "type": "core::felt252"
+        },
+        {
+          "name": "resulting_tier",
+          "type": "core::integer::u8"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::construction_events::ConstructionCompletedValue",
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "hex_coordinate",
+          "type": "core::felt252"
+        },
+        {
+          "name": "area_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "building_type",
+          "type": "core::felt252"
+        },
+        {
+          "name": "resulting_tier",
+          "type": "core::integer::u8"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::construction_events::ConstructionPlantProcessed",
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "source_item_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "target_material",
+          "type": "core::felt252"
+        },
+        {
+          "name": "input_qty",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "output_qty",
+          "type": "core::integer::u16"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::construction_events::ConstructionPlantProcessedValue",
+      "members": [
+        {
+          "name": "source_item_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "target_material",
+          "type": "core::felt252"
+        },
+        {
+          "name": "input_qty",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "output_qty",
+          "type": "core::integer::u16"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::construction_events::ConstructionRejected",
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "area_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "action",
+          "type": "core::felt252"
+        },
+        {
+          "name": "reason",
+          "type": "core::felt252"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::construction_events::ConstructionRejectedValue",
+      "members": [
+        {
+          "name": "area_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "action",
+          "type": "core::felt252"
+        },
+        {
+          "name": "reason",
+          "type": "core::felt252"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::construction_events::ConstructionRepaired",
+      "members": [
+        {
+          "name": "area_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "amount",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "condition_bp",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "is_active",
+          "type": "core::bool"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::construction_events::ConstructionRepairedValue",
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "amount",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "condition_bp",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "is_active",
+          "type": "core::bool"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::construction_events::ConstructionStarted",
+      "members": [
+        {
+          "name": "project_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "hex_coordinate",
+          "type": "core::felt252"
+        },
+        {
+          "name": "area_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "building_type",
+          "type": "core::felt252"
+        },
+        {
+          "name": "target_tier",
+          "type": "core::integer::u8"
+        },
+        {
+          "name": "completion_block",
+          "type": "core::integer::u64"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::construction_events::ConstructionStartedValue",
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "hex_coordinate",
+          "type": "core::felt252"
+        },
+        {
+          "name": "area_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "building_type",
+          "type": "core::felt252"
+        },
+        {
+          "name": "target_tier",
+          "type": "core::integer::u8"
+        },
+        {
+          "name": "completion_block",
+          "type": "core::integer::u64"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::construction_events::ConstructionUpgradeQueued",
+      "members": [
+        {
+          "name": "area_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "project_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "target_tier",
+          "type": "core::integer::u8"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::construction_events::ConstructionUpgradeQueuedValue",
+      "members": [
+        {
+          "name": "project_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "target_tier",
+          "type": "core::integer::u8"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::construction_events::ConstructionUpkeepPaid",
+      "members": [
+        {
+          "name": "area_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "amount",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "upkeep_reserve",
+          "type": "core::integer::u32"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::construction_events::ConstructionUpkeepPaidValue",
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "amount",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "upkeep_reserve",
+          "type": "core::integer::u32"
+        }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::events::construction_events::e_ConstructionCompleted::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::events::construction_events::e_ConstructionPlantProcessed::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::events::construction_events::e_ConstructionRejected::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::events::construction_events::e_ConstructionRepaired::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::events::construction_events::e_ConstructionStarted::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::events::construction_events::e_ConstructionUpgradeQueued::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::events::construction_events::e_ConstructionUpkeepPaid::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "struct",
       "name": "dojo_starter::events::economic_events::ClaimExpired",
       "members": [
         {
@@ -4679,6 +5870,330 @@
     },
     {
       "type": "struct",
+      "name": "dojo_starter::events::sharing_events::ResourceAccessGranted",
+      "members": [
+        {
+          "name": "resource_key",
+          "type": "core::felt252"
+        },
+        {
+          "name": "grantee_adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "granted_by_adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "permissions_mask",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "policy_epoch",
+          "type": "core::integer::u32"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::sharing_events::ResourceAccessGrantedValue",
+      "members": [
+        {
+          "name": "grantee_adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "granted_by_adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "permissions_mask",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "policy_epoch",
+          "type": "core::integer::u32"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::sharing_events::ResourceAccessRevoked",
+      "members": [
+        {
+          "name": "resource_key",
+          "type": "core::felt252"
+        },
+        {
+          "name": "grantee_adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "revoked_by_adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "policy_epoch",
+          "type": "core::integer::u32"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::sharing_events::ResourceAccessRevokedValue",
+      "members": [
+        {
+          "name": "grantee_adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "revoked_by_adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "policy_epoch",
+          "type": "core::integer::u32"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::sharing_events::ResourcePermissionRejected",
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "resource_key",
+          "type": "core::felt252"
+        },
+        {
+          "name": "action",
+          "type": "core::felt252"
+        },
+        {
+          "name": "reason",
+          "type": "core::felt252"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::sharing_events::ResourcePermissionRejectedValue",
+      "members": [
+        {
+          "name": "resource_key",
+          "type": "core::felt252"
+        },
+        {
+          "name": "action",
+          "type": "core::felt252"
+        },
+        {
+          "name": "reason",
+          "type": "core::felt252"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::sharing_events::ResourcePolicyUpserted",
+      "members": [
+        {
+          "name": "resource_key",
+          "type": "core::felt252"
+        },
+        {
+          "name": "scope",
+          "type": "dojo_starter::models::sharing::PolicyScope"
+        },
+        {
+          "name": "scope_key",
+          "type": "core::felt252"
+        },
+        {
+          "name": "resource_kind",
+          "type": "dojo_starter::models::sharing::ResourceKind"
+        },
+        {
+          "name": "controller_adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "policy_epoch",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "is_enabled",
+          "type": "core::bool"
+        },
+        {
+          "name": "updated_block",
+          "type": "core::integer::u64"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::sharing_events::ResourcePolicyUpsertedValue",
+      "members": [
+        {
+          "name": "scope",
+          "type": "dojo_starter::models::sharing::PolicyScope"
+        },
+        {
+          "name": "scope_key",
+          "type": "core::felt252"
+        },
+        {
+          "name": "resource_kind",
+          "type": "dojo_starter::models::sharing::ResourceKind"
+        },
+        {
+          "name": "controller_adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "policy_epoch",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "is_enabled",
+          "type": "core::bool"
+        },
+        {
+          "name": "updated_block",
+          "type": "core::integer::u64"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::sharing_events::ResourceShareRuleCleared",
+      "members": [
+        {
+          "name": "resource_key",
+          "type": "core::felt252"
+        },
+        {
+          "name": "recipient_adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "rule_kind",
+          "type": "dojo_starter::models::sharing::ShareRuleKind"
+        },
+        {
+          "name": "policy_epoch",
+          "type": "core::integer::u32"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::sharing_events::ResourceShareRuleClearedValue",
+      "members": [
+        {
+          "name": "recipient_adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "rule_kind",
+          "type": "dojo_starter::models::sharing::ShareRuleKind"
+        },
+        {
+          "name": "policy_epoch",
+          "type": "core::integer::u32"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::sharing_events::ResourceShareRuleSet",
+      "members": [
+        {
+          "name": "resource_key",
+          "type": "core::felt252"
+        },
+        {
+          "name": "recipient_adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "rule_kind",
+          "type": "dojo_starter::models::sharing::ShareRuleKind"
+        },
+        {
+          "name": "share_bp",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "policy_epoch",
+          "type": "core::integer::u32"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::sharing_events::ResourceShareRuleSetValue",
+      "members": [
+        {
+          "name": "recipient_adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "rule_kind",
+          "type": "dojo_starter::models::sharing::ShareRuleKind"
+        },
+        {
+          "name": "share_bp",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "policy_epoch",
+          "type": "core::integer::u32"
+        }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::events::sharing_events::e_ResourceAccessGranted::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::events::sharing_events::e_ResourceAccessRevoked::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::events::sharing_events::e_ResourcePermissionRejected::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::events::sharing_events::e_ResourcePolicyUpserted::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::events::sharing_events::e_ResourceShareRuleCleared::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::events::sharing_events::e_ResourceShareRuleSet::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "struct",
       "name": "dojo_starter::events::world_events::AreaDiscovered",
       "members": [
         {
@@ -4960,6 +6475,242 @@
     {
       "type": "event",
       "name": "dojo_starter::models::adventurer::m_Adventurer::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::construction::ConstructionBuildingNode",
+      "members": [
+        {
+          "name": "area_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "hex_coordinate",
+          "type": "core::felt252"
+        },
+        {
+          "name": "owner_adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "building_type",
+          "type": "core::felt252"
+        },
+        {
+          "name": "tier",
+          "type": "core::integer::u8"
+        },
+        {
+          "name": "condition_bp",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "upkeep_reserve",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "last_upkeep_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "is_active",
+          "type": "core::bool"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::construction::ConstructionBuildingNodeValue",
+      "members": [
+        {
+          "name": "hex_coordinate",
+          "type": "core::felt252"
+        },
+        {
+          "name": "owner_adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "building_type",
+          "type": "core::felt252"
+        },
+        {
+          "name": "tier",
+          "type": "core::integer::u8"
+        },
+        {
+          "name": "condition_bp",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "upkeep_reserve",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "last_upkeep_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "is_active",
+          "type": "core::bool"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::construction::ConstructionMaterialEscrow",
+      "members": [
+        {
+          "name": "project_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "item_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "quantity",
+          "type": "core::integer::u32"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::construction::ConstructionMaterialEscrowValue",
+      "members": [
+        {
+          "name": "quantity",
+          "type": "core::integer::u32"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::construction::ConstructionProject",
+      "members": [
+        {
+          "name": "project_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "hex_coordinate",
+          "type": "core::felt252"
+        },
+        {
+          "name": "area_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "building_type",
+          "type": "core::felt252"
+        },
+        {
+          "name": "target_tier",
+          "type": "core::integer::u8"
+        },
+        {
+          "name": "start_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "completion_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "energy_staked",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "status",
+          "type": "dojo_starter::models::construction::ConstructionProjectStatus"
+        }
+      ]
+    },
+    {
+      "type": "enum",
+      "name": "dojo_starter::models::construction::ConstructionProjectStatus",
+      "variants": [
+        {
+          "name": "Inactive",
+          "type": "()"
+        },
+        {
+          "name": "Active",
+          "type": "()"
+        },
+        {
+          "name": "Completed",
+          "type": "()"
+        },
+        {
+          "name": "Canceled",
+          "type": "()"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::construction::ConstructionProjectValue",
+      "members": [
+        {
+          "name": "adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "hex_coordinate",
+          "type": "core::felt252"
+        },
+        {
+          "name": "area_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "building_type",
+          "type": "core::felt252"
+        },
+        {
+          "name": "target_tier",
+          "type": "core::integer::u8"
+        },
+        {
+          "name": "start_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "completion_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "energy_staked",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "status",
+          "type": "dojo_starter::models::construction::ConstructionProjectStatus"
+        }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::models::construction::m_ConstructionBuildingNode::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::models::construction::m_ConstructionMaterialEscrow::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::models::construction::m_ConstructionProject::Event",
       "kind": "enum",
       "variants": []
     },
@@ -6095,6 +7846,442 @@
     },
     {
       "type": "enum",
+      "name": "dojo_starter::models::sharing::PolicyScope",
+      "variants": [
+        {
+          "name": "None",
+          "type": "()"
+        },
+        {
+          "name": "Global",
+          "type": "()"
+        },
+        {
+          "name": "Hex",
+          "type": "()"
+        },
+        {
+          "name": "Area",
+          "type": "()"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::sharing::ResourceAccessGrant",
+      "members": [
+        {
+          "name": "resource_key",
+          "type": "core::felt252"
+        },
+        {
+          "name": "grantee_adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "permissions_mask",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "granted_by_adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "grant_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "revoke_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "is_active",
+          "type": "core::bool"
+        },
+        {
+          "name": "policy_epoch",
+          "type": "core::integer::u32"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::sharing::ResourceAccessGrantValue",
+      "members": [
+        {
+          "name": "permissions_mask",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "granted_by_adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "grant_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "revoke_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "is_active",
+          "type": "core::bool"
+        },
+        {
+          "name": "policy_epoch",
+          "type": "core::integer::u32"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::sharing::ResourceDistributionNonce",
+      "members": [
+        {
+          "name": "resource_key",
+          "type": "core::felt252"
+        },
+        {
+          "name": "last_nonce",
+          "type": "core::integer::u64"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::sharing::ResourceDistributionNonceValue",
+      "members": [
+        {
+          "name": "last_nonce",
+          "type": "core::integer::u64"
+        }
+      ]
+    },
+    {
+      "type": "enum",
+      "name": "dojo_starter::models::sharing::ResourceKind",
+      "variants": [
+        {
+          "name": "Unknown",
+          "type": "()"
+        },
+        {
+          "name": "Mine",
+          "type": "()"
+        },
+        {
+          "name": "PlantArea",
+          "type": "()"
+        },
+        {
+          "name": "ConstructionArea",
+          "type": "()"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::sharing::ResourcePolicy",
+      "members": [
+        {
+          "name": "resource_key",
+          "type": "core::felt252"
+        },
+        {
+          "name": "scope",
+          "type": "dojo_starter::models::sharing::PolicyScope"
+        },
+        {
+          "name": "scope_key",
+          "type": "core::felt252"
+        },
+        {
+          "name": "resource_kind",
+          "type": "dojo_starter::models::sharing::ResourceKind"
+        },
+        {
+          "name": "controller_adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "policy_epoch",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "is_enabled",
+          "type": "core::bool"
+        },
+        {
+          "name": "updated_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "last_mutation_block",
+          "type": "core::integer::u64"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::sharing::ResourcePolicyValue",
+      "members": [
+        {
+          "name": "scope",
+          "type": "dojo_starter::models::sharing::PolicyScope"
+        },
+        {
+          "name": "scope_key",
+          "type": "core::felt252"
+        },
+        {
+          "name": "resource_kind",
+          "type": "dojo_starter::models::sharing::ResourceKind"
+        },
+        {
+          "name": "controller_adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "policy_epoch",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "is_enabled",
+          "type": "core::bool"
+        },
+        {
+          "name": "updated_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "last_mutation_block",
+          "type": "core::integer::u64"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::sharing::ResourceShareRule",
+      "members": [
+        {
+          "name": "resource_key",
+          "type": "core::felt252"
+        },
+        {
+          "name": "recipient_adventurer_id",
+          "type": "core::felt252"
+        },
+        {
+          "name": "rule_kind",
+          "type": "dojo_starter::models::sharing::ShareRuleKind"
+        },
+        {
+          "name": "share_bp",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "is_active",
+          "type": "core::bool"
+        },
+        {
+          "name": "policy_epoch",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "updated_block",
+          "type": "core::integer::u64"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::sharing::ResourceShareRuleTally",
+      "members": [
+        {
+          "name": "resource_key",
+          "type": "core::felt252"
+        },
+        {
+          "name": "rule_kind",
+          "type": "dojo_starter::models::sharing::ShareRuleKind"
+        },
+        {
+          "name": "total_bp",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "active_recipient_count",
+          "type": "core::integer::u8"
+        },
+        {
+          "name": "policy_epoch",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "recipient_0",
+          "type": "core::felt252"
+        },
+        {
+          "name": "recipient_1",
+          "type": "core::felt252"
+        },
+        {
+          "name": "recipient_2",
+          "type": "core::felt252"
+        },
+        {
+          "name": "recipient_3",
+          "type": "core::felt252"
+        },
+        {
+          "name": "recipient_4",
+          "type": "core::felt252"
+        },
+        {
+          "name": "recipient_5",
+          "type": "core::felt252"
+        },
+        {
+          "name": "recipient_6",
+          "type": "core::felt252"
+        },
+        {
+          "name": "recipient_7",
+          "type": "core::felt252"
+        },
+        {
+          "name": "updated_block",
+          "type": "core::integer::u64"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::sharing::ResourceShareRuleTallyValue",
+      "members": [
+        {
+          "name": "total_bp",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "active_recipient_count",
+          "type": "core::integer::u8"
+        },
+        {
+          "name": "policy_epoch",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "recipient_0",
+          "type": "core::felt252"
+        },
+        {
+          "name": "recipient_1",
+          "type": "core::felt252"
+        },
+        {
+          "name": "recipient_2",
+          "type": "core::felt252"
+        },
+        {
+          "name": "recipient_3",
+          "type": "core::felt252"
+        },
+        {
+          "name": "recipient_4",
+          "type": "core::felt252"
+        },
+        {
+          "name": "recipient_5",
+          "type": "core::felt252"
+        },
+        {
+          "name": "recipient_6",
+          "type": "core::felt252"
+        },
+        {
+          "name": "recipient_7",
+          "type": "core::felt252"
+        },
+        {
+          "name": "updated_block",
+          "type": "core::integer::u64"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::sharing::ResourceShareRuleValue",
+      "members": [
+        {
+          "name": "share_bp",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "is_active",
+          "type": "core::bool"
+        },
+        {
+          "name": "policy_epoch",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "updated_block",
+          "type": "core::integer::u64"
+        }
+      ]
+    },
+    {
+      "type": "enum",
+      "name": "dojo_starter::models::sharing::ShareRuleKind",
+      "variants": [
+        {
+          "name": "OutputItem",
+          "type": "()"
+        },
+        {
+          "name": "OutputEnergy",
+          "type": "()"
+        },
+        {
+          "name": "FeeOnly",
+          "type": "()"
+        }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::models::sharing::m_ResourceAccessGrant::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::models::sharing::m_ResourceDistributionNonce::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::models::sharing::m_ResourcePolicy::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::models::sharing::m_ResourceShareRule::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::models::sharing::m_ResourceShareRuleTally::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "enum",
       "name": "dojo_starter::models::world::AreaType",
       "variants": [
         {
@@ -6530,6 +8717,205 @@
     {
       "type": "event",
       "name": "dojo_starter::systems::adventurer_manager_contract::adventurer_manager::Event",
+      "kind": "enum",
+      "variants": [
+        {
+          "name": "UpgradeableEvent",
+          "type": "dojo::contract::components::upgradeable::upgradeable_cpt::Event",
+          "kind": "nested"
+        },
+        {
+          "name": "WorldProviderEvent",
+          "type": "dojo::contract::components::world_provider::world_provider_cpt::Event",
+          "kind": "nested"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "dojo_starter::systems::construction_manager_contract::IConstructionManager",
+      "items": [
+        {
+          "type": "function",
+          "name": "process_plant_material",
+          "inputs": [
+            {
+              "name": "adventurer_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "source_item_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "quantity",
+              "type": "core::integer::u16"
+            },
+            {
+              "name": "target_material",
+              "type": "core::felt252"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "core::integer::u16"
+            }
+          ],
+          "state_mutability": "external"
+        },
+        {
+          "type": "function",
+          "name": "start_construction",
+          "inputs": [
+            {
+              "name": "adventurer_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "hex_coordinate",
+              "type": "core::felt252"
+            },
+            {
+              "name": "area_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "building_type",
+              "type": "core::felt252"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "core::felt252"
+            }
+          ],
+          "state_mutability": "external"
+        },
+        {
+          "type": "function",
+          "name": "complete_construction",
+          "inputs": [
+            {
+              "name": "adventurer_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "project_id",
+              "type": "core::felt252"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "core::bool"
+            }
+          ],
+          "state_mutability": "external"
+        },
+        {
+          "type": "function",
+          "name": "pay_building_upkeep",
+          "inputs": [
+            {
+              "name": "adventurer_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "hex_coordinate",
+              "type": "core::felt252"
+            },
+            {
+              "name": "area_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "amount",
+              "type": "core::integer::u16"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "core::bool"
+            }
+          ],
+          "state_mutability": "external"
+        },
+        {
+          "type": "function",
+          "name": "repair_building",
+          "inputs": [
+            {
+              "name": "adventurer_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "hex_coordinate",
+              "type": "core::felt252"
+            },
+            {
+              "name": "area_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "amount",
+              "type": "core::integer::u16"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "core::bool"
+            }
+          ],
+          "state_mutability": "external"
+        },
+        {
+          "type": "function",
+          "name": "upgrade_building",
+          "inputs": [
+            {
+              "name": "adventurer_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "hex_coordinate",
+              "type": "core::felt252"
+            },
+            {
+              "name": "area_id",
+              "type": "core::felt252"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "core::bool"
+            }
+          ],
+          "state_mutability": "external"
+        },
+        {
+          "type": "function",
+          "name": "inspect_building",
+          "inputs": [
+            {
+              "name": "hex_coordinate",
+              "type": "core::felt252"
+            },
+            {
+              "name": "area_id",
+              "type": "core::felt252"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "dojo_starter::models::construction::ConstructionBuildingNode"
+            }
+          ],
+          "state_mutability": "view"
+        }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::systems::construction_manager_contract::construction_manager::Event",
       "kind": "enum",
       "variants": [
         {
@@ -7114,6 +9500,213 @@
     {
       "type": "event",
       "name": "dojo_starter::systems::ownership_manager_contract::ownership_manager::Event",
+      "kind": "enum",
+      "variants": [
+        {
+          "name": "UpgradeableEvent",
+          "type": "dojo::contract::components::upgradeable::upgradeable_cpt::Event",
+          "kind": "nested"
+        },
+        {
+          "name": "WorldProviderEvent",
+          "type": "dojo::contract::components::world_provider::world_provider_cpt::Event",
+          "kind": "nested"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "dojo_starter::systems::sharing_manager_contract::ISharingManager",
+      "items": [
+        {
+          "type": "function",
+          "name": "upsert_resource_policy",
+          "inputs": [
+            {
+              "name": "controller_adventurer_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "resource_key",
+              "type": "core::felt252"
+            },
+            {
+              "name": "resource_kind",
+              "type": "dojo_starter::models::sharing::ResourceKind"
+            },
+            {
+              "name": "is_enabled",
+              "type": "core::bool"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "core::bool"
+            }
+          ],
+          "state_mutability": "external"
+        },
+        {
+          "type": "function",
+          "name": "grant_resource_access",
+          "inputs": [
+            {
+              "name": "controller_adventurer_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "resource_key",
+              "type": "core::felt252"
+            },
+            {
+              "name": "grantee_adventurer_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "permissions_mask",
+              "type": "core::integer::u16"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "core::bool"
+            }
+          ],
+          "state_mutability": "external"
+        },
+        {
+          "type": "function",
+          "name": "revoke_resource_access",
+          "inputs": [
+            {
+              "name": "controller_adventurer_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "resource_key",
+              "type": "core::felt252"
+            },
+            {
+              "name": "grantee_adventurer_id",
+              "type": "core::felt252"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "core::bool"
+            }
+          ],
+          "state_mutability": "external"
+        },
+        {
+          "type": "function",
+          "name": "set_resource_share_rule",
+          "inputs": [
+            {
+              "name": "controller_adventurer_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "resource_key",
+              "type": "core::felt252"
+            },
+            {
+              "name": "recipient_adventurer_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "rule_kind",
+              "type": "dojo_starter::models::sharing::ShareRuleKind"
+            },
+            {
+              "name": "share_bp",
+              "type": "core::integer::u16"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "core::bool"
+            }
+          ],
+          "state_mutability": "external"
+        },
+        {
+          "type": "function",
+          "name": "clear_resource_share_rule",
+          "inputs": [
+            {
+              "name": "controller_adventurer_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "resource_key",
+              "type": "core::felt252"
+            },
+            {
+              "name": "recipient_adventurer_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "rule_kind",
+              "type": "dojo_starter::models::sharing::ShareRuleKind"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "core::bool"
+            }
+          ],
+          "state_mutability": "external"
+        },
+        {
+          "type": "function",
+          "name": "inspect_resource_permissions",
+          "inputs": [
+            {
+              "name": "resource_key",
+              "type": "core::felt252"
+            },
+            {
+              "name": "adventurer_id",
+              "type": "core::felt252"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "core::integer::u16"
+            }
+          ],
+          "state_mutability": "view"
+        },
+        {
+          "type": "function",
+          "name": "inspect_resource_share",
+          "inputs": [
+            {
+              "name": "resource_key",
+              "type": "core::felt252"
+            },
+            {
+              "name": "recipient_adventurer_id",
+              "type": "core::felt252"
+            },
+            {
+              "name": "rule_kind",
+              "type": "dojo_starter::models::sharing::ShareRuleKind"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "core::integer::u16"
+            }
+          ],
+          "state_mutability": "view"
+        }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::systems::sharing_manager_contract::sharing_manager::Event",
       "kind": "enum",
       "variants": [
         {

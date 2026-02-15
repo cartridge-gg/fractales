@@ -37,6 +37,7 @@ pub mod tests {
         mod construction_balance_test;
         mod sharing_math_test;
         mod autoregulator_math_test;
+        mod autoregulator_manager_test;
         mod sharing_manager_test;
         mod construction_events_test;
         mod sharing_events_test;
@@ -53,6 +54,7 @@ pub mod tests {
         mod death_models_test;
         mod adventurer_manager_test;
         mod harvesting_manager_test;
+        mod economics_models_test;
         mod economic_manager_test;
         mod ownership_manager_test;
         mod world_gen_manager_test;
@@ -76,5 +78,6 @@ pub mod tests {
         mod mining_manager_integration_test;
         mod construction_manager_integration_test;
         mod sharing_manager_integration_test;
+        mod autoregulator_keeper_bounty_integration_test;
     }
 }

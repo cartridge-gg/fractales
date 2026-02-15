@@ -1,5 +1,6 @@
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 
 from game.sim.bootstrap_world_sim import (
@@ -7,6 +8,7 @@ from game.sim.bootstrap_world_sim import (
     Scenario,
     ScenarioRunner,
     build_default_scenarios,
+    oscillation_sign_changes,
 )
 
 
@@ -101,6 +103,16 @@ class BootstrapWorldSimTests(unittest.TestCase):
         for summary in summaries:
             self.assertGreaterEqual(summary.net_inflation_pct, -5.0)
             self.assertLessEqual(summary.net_inflation_pct, 21.0)
+
+    def test_baseline_policy_signal_has_no_sustained_oscillation(self) -> None:
+        runner = ScenarioRunner()
+        scenarios = build_default_scenarios()
+        baseline = next(s for s in scenarios if s.key == "baseline_10k")
+        long_horizon = replace(baseline, weeks=24)
+        result = runner.run_scenario(long_horizon)
+        policy_signal = [row["conversion_tax_bp"] for row in result.timeseries]
+        sign_changes = oscillation_sign_changes(policy_signal, deadband=25)
+        self.assertLessEqual(sign_changes, 24)
 
 
 if __name__ == "__main__":

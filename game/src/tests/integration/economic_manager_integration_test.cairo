@@ -19,7 +19,7 @@ mod tests {
     use dojo_starter::models::construction::ConstructionBuildingNode;
     use dojo_starter::models::economics::{
         AdventurerEconomics, ClaimEscrow, ClaimEscrowStatus, ConversionRate, HexDecayState,
-        derive_hex_claim_id,
+        RegulatorConfig, RegulatorPolicy, derive_hex_claim_id,
     };
     use dojo_starter::models::inventory::{BackpackItem, Inventory};
     use dojo_starter::models::ownership::AreaOwnership;
@@ -41,6 +41,8 @@ mod tests {
                 TestResource::Model("HexDecayState"),
                 TestResource::Model("ClaimEscrow"),
                 TestResource::Model("ConversionRate"),
+                TestResource::Model("RegulatorPolicy"),
+                TestResource::Model("RegulatorConfig"),
                 TestResource::Model("AreaOwnership"),
                 TestResource::Model("ConstructionBuildingNode"),
                 TestResource::Event("ItemsConverted"),
@@ -93,6 +95,211 @@ mod tests {
                 last_regen_block: 0_u64,
             },
         );
+    }
+
+    fn seed_regulator_policy(
+        ref world: dojo::world::WorldStorage,
+        policy_epoch: u32,
+        conversion_tax_bp: u16,
+        upkeep_bp: u16,
+        mint_discount_bp: u16,
+    ) {
+        world.write_model_test(
+            @RegulatorConfig {
+                slot: 1_u8,
+                epoch_blocks: 100_u64,
+                keeper_bounty_energy: 10_u16,
+                keeper_bounty_max: 20_u16,
+                bounty_funding_share_bp: 100_u16,
+                inflation_target_pct: 10_u16,
+                inflation_deadband_pct: 1_u16,
+                policy_slew_limit_bp: 100_u16,
+                min_conversion_tax_bp: 100_u16,
+                max_conversion_tax_bp: 5_000_u16,
+            },
+        );
+        world.write_model_test(
+            @RegulatorPolicy {
+                slot: 1_u8,
+                policy_epoch,
+                conversion_tax_bp,
+                upkeep_bp,
+                mint_discount_bp,
+            },
+        );
+    }
+
+    #[test]
+    fn economic_manager_integration_conversion_tax_reads_regulator_policy() {
+        let caller = get_default_caller_address();
+        set_block_number(200_u64);
+        let mut world = spawn_test_world([namespace_def()].span());
+        world.sync_perms_and_inits(contract_defs());
+
+        let (contract_address, _) = world.dns(@"economic_manager").unwrap();
+        let manager = IEconomicManagerDispatcher { contract_address };
+
+        let adventurer_id = 9801_felt252;
+        world.write_model_test(
+            @Adventurer {
+                adventurer_id,
+                owner: caller,
+                name: 'TAX'_felt252,
+                energy: 100_u16,
+                max_energy: 500_u16,
+                current_hex: 0_felt252,
+                activity_locked_until: 0_u64,
+                is_alive: true,
+            },
+        );
+        world.write_model_test(
+            @AdventurerEconomics {
+                adventurer_id,
+                energy_balance: 100_u16,
+                total_energy_spent: 0_u64,
+                total_energy_earned: 0_u64,
+                last_regen_block: 0_u64,
+            },
+        );
+        world.write_model_test(
+            @Inventory { adventurer_id, current_weight: 20_u32, max_weight: 100_u32 },
+        );
+        world.write_model_test(
+            @BackpackItem {
+                adventurer_id,
+                item_id: 880_felt252,
+                quantity: 20_u32,
+                quality: 100_u16,
+                weight_per_unit: 1_u16,
+            },
+        );
+        world.write_model_test(
+            @ConversionRate {
+                item_type: 880_felt252,
+                current_rate: 10_u16,
+                base_rate: 10_u16,
+                last_update_block: 0_u64,
+                units_converted_in_window: 0_u32,
+            },
+        );
+        seed_regulator_policy(ref world, 1_u32, 2_000_u16, 10_000_u16, 0_u16);
+
+        let gained = manager.convert_items_to_energy(adventurer_id, 880_felt252, 10_u16);
+        assert(gained == 80_u16, 'S4_POL_TAX_GAIN');
+
+        let after: Adventurer = world.read_model(adventurer_id);
+        let econ_after: AdventurerEconomics = world.read_model(adventurer_id);
+        assert(after.energy == 180_u16, 'S4_POL_TAX_ENERGY');
+        assert(econ_after.energy_balance == 180_u16, 'S4_POL_TAX_BAL');
+    }
+
+    #[test]
+    fn economic_manager_integration_upkeep_reads_regulator_policy() {
+        let caller = get_default_caller_address();
+        set_block_number(200_u64);
+        let mut world = spawn_test_world([namespace_def()].span());
+        world.sync_perms_and_inits(contract_defs());
+
+        let (contract_address, _) = world.dns(@"economic_manager").unwrap();
+        let manager = IEconomicManagerDispatcher { contract_address };
+
+        let owner_id = 9802_felt252;
+        let hex_coordinate = 9803_felt252;
+        setup_actor(ref world, owner_id, caller, 200_u16, hex_coordinate);
+        world.write_model_test(
+            @Hex {
+                coordinate: hex_coordinate,
+                biome: Biome::Forest,
+                is_discovered: true,
+                discovery_block: 1_u64,
+                discoverer: caller,
+                area_count: 0_u8,
+            },
+        );
+        world.write_model_test(
+            @HexDecayState {
+                hex_coordinate,
+                owner_adventurer_id: owner_id,
+                current_energy_reserve: 0_u32,
+                last_energy_payment_block: 0_u64,
+                last_decay_processed_block: 0_u64,
+                decay_level: 80_u16,
+                claimable_since_block: 10_u64,
+            },
+        );
+        // 50% upkeep policy should increase effective recovery at fixed payment.
+        seed_regulator_policy(ref world, 1_u32, 0_u16, 5_000_u16, 0_u16);
+
+        let paid = manager.pay_hex_maintenance(owner_id, hex_coordinate, 100_u16);
+        assert(paid, 'S4_POL_UPKEEP_PAY');
+
+        let state_after: HexDecayState = world.read_model(hex_coordinate);
+        assert(state_after.current_energy_reserve == 100_u32, 'S4_POL_UPKEEP_RESV');
+        assert(state_after.decay_level == 60_u16, 'S4_POL_UPKEEP_DECAY');
+    }
+
+    #[test]
+    fn economic_manager_integration_policy_changes_apply_next_epoch() {
+        let caller = get_default_caller_address();
+        set_block_number(100_u64);
+        let mut world = spawn_test_world([namespace_def()].span());
+        world.sync_perms_and_inits(contract_defs());
+
+        let (contract_address, _) = world.dns(@"economic_manager").unwrap();
+        let manager = IEconomicManagerDispatcher { contract_address };
+
+        let adventurer_id = 9804_felt252;
+        world.write_model_test(
+            @Adventurer {
+                adventurer_id,
+                owner: caller,
+                name: 'NXT'_felt252,
+                energy: 100_u16,
+                max_energy: 500_u16,
+                current_hex: 0_felt252,
+                activity_locked_until: 0_u64,
+                is_alive: true,
+            },
+        );
+        world.write_model_test(
+            @AdventurerEconomics {
+                adventurer_id,
+                energy_balance: 100_u16,
+                total_energy_spent: 0_u64,
+                total_energy_earned: 0_u64,
+                last_regen_block: 0_u64,
+            },
+        );
+        world.write_model_test(
+            @Inventory { adventurer_id, current_weight: 20_u32, max_weight: 100_u32 },
+        );
+        world.write_model_test(
+            @BackpackItem {
+                adventurer_id,
+                item_id: 881_felt252,
+                quantity: 20_u32,
+                quality: 100_u16,
+                weight_per_unit: 1_u16,
+            },
+        );
+        world.write_model_test(
+            @ConversionRate {
+                item_type: 881_felt252,
+                current_rate: 10_u16,
+                base_rate: 10_u16,
+                last_update_block: 0_u64,
+                units_converted_in_window: 0_u32,
+            },
+        );
+        // Policy epoch equals current epoch (1), so conversion tax must apply next epoch.
+        seed_regulator_policy(ref world, 1_u32, 2_000_u16, 10_000_u16, 0_u16);
+
+        let same_epoch = manager.convert_items_to_energy(adventurer_id, 881_felt252, 5_u16);
+        assert(same_epoch == 50_u16, 'S4_POL_NEXT_EPOCH_WAIT');
+
+        set_block_number(200_u64);
+        let next_epoch = manager.convert_items_to_energy(adventurer_id, 881_felt252, 5_u16);
+        assert(next_epoch == 40_u16, 'S4_POL_NEXT_EPOCH_APPLY');
     }
 
     #[test]

@@ -9,7 +9,7 @@ mod tests {
     use dojo_starter::libs::coord_codec::{CubeCoord, encode_cube};
     use dojo_starter::models::adventurer::Adventurer;
     use dojo_starter::models::deaths::DeathRecord;
-    use dojo_starter::models::economics::AdventurerEconomics;
+    use dojo_starter::models::economics::{AdventurerEconomics, RegulatorConfig, RegulatorPolicy};
     use dojo_starter::models::inventory::Inventory;
     use dojo_starter::systems::adventurer_manager_contract::{
         IAdventurerManagerDispatcher, IAdventurerManagerDispatcherTrait,
@@ -23,6 +23,8 @@ mod tests {
                 TestResource::Model("Inventory"),
                 TestResource::Model("DeathRecord"),
                 TestResource::Model("AdventurerEconomics"),
+                TestResource::Model("RegulatorPolicy"),
+                TestResource::Model("RegulatorConfig"),
                 TestResource::Event("AdventurerCreated"),
                 TestResource::Event("AdventurerDied"),
                 TestResource::Contract("adventurer_manager"),
@@ -78,6 +80,34 @@ mod tests {
         );
         world.write_model_test(
             @Inventory { adventurer_id, current_weight: 0_u32, max_weight: 750_u32 },
+        );
+    }
+
+    fn seed_regulator_policy(
+        ref world: dojo::world::WorldStorage, policy_epoch: u32, mint_discount_bp: u16,
+    ) {
+        world.write_model_test(
+            @RegulatorConfig {
+                slot: 1_u8,
+                epoch_blocks: 100_u64,
+                keeper_bounty_energy: 10_u16,
+                keeper_bounty_max: 20_u16,
+                bounty_funding_share_bp: 100_u16,
+                inflation_target_pct: 10_u16,
+                inflation_deadband_pct: 1_u16,
+                policy_slew_limit_bp: 100_u16,
+                min_conversion_tax_bp: 100_u16,
+                max_conversion_tax_bp: 5_000_u16,
+            },
+        );
+        world.write_model_test(
+            @RegulatorPolicy {
+                slot: 1_u8,
+                policy_epoch,
+                conversion_tax_bp: 0_u16,
+                upkeep_bp: 10_000_u16,
+                mint_discount_bp,
+            },
         );
     }
 
@@ -164,5 +194,28 @@ mod tests {
 
         let not_owner_kill = manager.kill_adventurer(foreign_id, 'DENY'_felt252);
         assert(!not_owner_kill, 'S2_INT_NOT_OWNER_KILL');
+    }
+
+    #[test]
+    fn adventurer_manager_integration_mint_discount_reads_regulator_policy() {
+        set_block_number(200_u64);
+        let mut world = spawn_test_world([namespace_def()].span());
+        world.sync_perms_and_inits(contract_defs());
+
+        let (contract_address, _) = world.dns(@"adventurer_manager").unwrap();
+        let manager = IAdventurerManagerDispatcher { contract_address };
+
+        seed_regulator_policy(ref world, 1_u32, 2_500_u16);
+        let discounted = manager.quote_create_adventurer_cost();
+        assert(discounted == 75_u16, 'S2_INT_MINT_DISC');
+
+        // Current-epoch policy changes should not apply until next epoch.
+        set_block_number(100_u64);
+        let same_epoch = manager.quote_create_adventurer_cost();
+        assert(same_epoch == 100_u16, 'S2_INT_MINT_WAIT');
+
+        set_block_number(200_u64);
+        let next_epoch = manager.quote_create_adventurer_cost();
+        assert(next_epoch == 75_u16, 'S2_INT_MINT_NEXT');
     }
 }

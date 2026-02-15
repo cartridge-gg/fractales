@@ -16,3 +16,5 @@ pub mod construction_manager;
 pub mod construction_manager_contract;
 pub mod sharing_manager;
 pub mod sharing_manager_contract;
+pub mod autoregulator_manager;
+pub mod autoregulator_manager_contract;

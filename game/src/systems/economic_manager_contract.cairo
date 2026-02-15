@@ -46,7 +46,8 @@ pub mod economic_manager {
     use dojo_starter::models::construction::{ConstructionBuildingNode, is_building_effective};
     use dojo_starter::models::economics::{
         AdventurerEconomics, ClaimEscrow, ClaimEscrowExpireOutcome, ClaimEscrowStatus,
-        ConversionRate, HexDecayState, derive_hex_claim_id, expire_claim_escrow_once_with_status,
+        ConversionRate, HexDecayState, RegulatorConfig, RegulatorPolicy, derive_hex_claim_id,
+        expire_claim_escrow_once_with_status,
     };
     use dojo_starter::models::inventory::{BackpackItem, Inventory};
     use dojo_starter::models::ownership::AreaOwnership;
@@ -54,13 +55,16 @@ pub mod economic_manager {
     use dojo_starter::systems::economic_manager::{
         ClaimInitOutcome, ConvertOutcome, DecayOutcome, DefendOutcome, PayOutcome, convert_transition,
         defend_claim_transition, initiate_claim_transition, pay_maintenance_transition,
-        process_decay_transition,
+        process_decay_transition_with_upkeep,
     };
+    use dojo_starter::systems::autoregulator_manager::normalize_config;
     use starknet::{get_block_info, get_caller_address};
 
     const U64_MAX_U128: u128 = 18_446_744_073_709_551_615_u128;
     const U16_MAX_U128: u128 = 65_535_u128;
     const BP_ONE: u16 = 10_000_u16;
+    const UPKEEP_BP_MAX: u16 = 20_000_u16;
+    const REGULATOR_SLOT: u8 = 1_u8;
 
     fn saturating_add_u16(lhs: u16, rhs: u16) -> u16 {
         let sum_u128: u128 = lhs.into() + rhs.into();
@@ -93,11 +97,113 @@ pub mod economic_manager {
         }
     }
 
+    fn apply_bp_floor_u32(value: u32, bp: u16) -> u32 {
+        if value == 0_u32 || bp == 0_u16 {
+            return 0_u32;
+        }
+
+        let scaled_u128: u128 = value.into() * bp.into() / BP_ONE.into();
+        if scaled_u128 > 4_294_967_295_u128 {
+            4_294_967_295_u32
+        } else {
+            scaled_u128.try_into().unwrap()
+        }
+    }
+
+    fn current_epoch_from_block(now_block: u64, epoch_blocks: u64) -> u32 {
+        let blocks = if epoch_blocks == 0_u64 { 1_u64 } else { epoch_blocks };
+        let epoch_u64 = now_block / blocks;
+        let epoch_u128: u128 = epoch_u64.into();
+        if epoch_u128 > 4_294_967_295_u128 {
+            4_294_967_295_u32
+        } else {
+            epoch_u128.try_into().unwrap()
+        }
+    }
+
+    fn regulator_policy_effective_now(
+        ref world: dojo::world::WorldStorage, now_block: u64,
+    ) -> RegulatorPolicy {
+        let mut policy: RegulatorPolicy = world.read_model(REGULATOR_SLOT);
+        policy.slot = REGULATOR_SLOT;
+
+        let mut config: RegulatorConfig = world.read_model(REGULATOR_SLOT);
+        config.slot = REGULATOR_SLOT;
+        let normalized = normalize_config(config);
+        let current_epoch = current_epoch_from_block(now_block, normalized.epoch_blocks);
+
+        if policy.policy_epoch == 0_u32 || policy.policy_epoch >= current_epoch {
+            return RegulatorPolicy {
+                slot: REGULATOR_SLOT,
+                policy_epoch: policy.policy_epoch,
+                conversion_tax_bp: 0_u16,
+                upkeep_bp: BP_ONE,
+                mint_discount_bp: 0_u16,
+            };
+        }
+
+        policy
+    }
+
+    fn effective_conversion_tax_bp(ref world: dojo::world::WorldStorage, now_block: u64) -> u16 {
+        let policy = regulator_policy_effective_now(ref world, now_block);
+        if policy.conversion_tax_bp > BP_ONE {
+            BP_ONE
+        } else {
+            policy.conversion_tax_bp
+        }
+    }
+
+    fn effective_upkeep_for_biome(
+        ref world: dojo::world::WorldStorage, biome: dojo_starter::models::world::Biome, now_block: u64,
+    ) -> u32 {
+        let base = upkeep_for_biome(biome);
+        let policy = regulator_policy_effective_now(ref world, now_block);
+        let upkeep_bp = if policy.upkeep_bp == 0_u16 {
+            BP_ONE
+        } else if policy.upkeep_bp > UPKEEP_BP_MAX {
+            UPKEEP_BP_MAX
+        } else {
+            policy.upkeep_bp
+        };
+
+        let scaled = apply_bp_floor_u32(base, upkeep_bp);
+        if scaled == 0_u32 && base > 0_u32 && upkeep_bp > 0_u16 {
+            1_u32
+        } else {
+            scaled
+        }
+    }
+
     fn bonus_extra_from_bp(base_value: u16, bp: u16) -> u16 {
         if bp <= BP_ONE {
             return 0_u16;
         }
         apply_bp_floor_u16(base_value, bp - BP_ONE)
+    }
+
+    fn apply_conversion_tax(
+        mut adventurer: Adventurer,
+        mut economics: AdventurerEconomics,
+        tax_bp: u16,
+        taxable_energy: u16,
+    ) -> (Adventurer, AdventurerEconomics, u16) {
+        if tax_bp == 0_u16 || taxable_energy == 0_u16 {
+            return (adventurer, economics, 0_u16);
+        }
+
+        let tax = apply_bp_floor_u16(taxable_energy, tax_bp);
+        if tax == 0_u16 {
+            return (adventurer, economics, 0_u16);
+        }
+
+        let deducted = if adventurer.energy < tax { adventurer.energy } else { tax };
+        if deducted > 0_u16 {
+            adventurer.energy -= deducted;
+            economics.total_energy_spent = saturating_add_u64(economics.total_energy_spent, deducted.into());
+            economics.energy_balance = adventurer.energy;
+        }
+        (adventurer, economics, deducted)
     }
 
     fn mint_bonus_energy_with_cap(
@@ -310,13 +416,23 @@ pub mod economic_manager {
                         ref world, converted.adventurer.current_hex, item_id,
                     );
                     let bonus_raw = bonus_extra_from_bp(converted.energy_gained, bonus_bp);
-                    let (bonus_adventurer, bonus_economics, _) = mint_bonus_energy_with_cap(
+                    let (bonus_adventurer, bonus_economics, bonus_minted) = mint_bonus_energy_with_cap(
                         converted.adventurer, converted.economics, bonus_raw,
                     );
-                    let total_energy_gained = saturating_add_u16(converted.energy_gained, bonus_raw);
+                    let total_energy_gained_gross = saturating_add_u16(converted.energy_gained, bonus_raw);
+                    let conversion_tax_bp = effective_conversion_tax_bp(ref world, now_block);
+                    let taxable_minted = saturating_add_u16(converted.minted_energy, bonus_minted);
+                    let (taxed_adventurer, taxed_economics, tax_paid) = apply_conversion_tax(
+                        bonus_adventurer, bonus_economics, conversion_tax_bp, taxable_minted,
+                    );
+                    let total_energy_gained = if total_energy_gained_gross > tax_paid {
+                        total_energy_gained_gross - tax_paid
+                    } else {
+                        0_u16
+                    };
 
-                    world.write_model(@bonus_adventurer);
-                    world.write_model(@bonus_economics);
+                    world.write_model(@taxed_adventurer);
+                    world.write_model(@taxed_economics);
                     world.write_model(@converted.inventory);
                     world.write_model(@converted.item);
                     world.write_model(@converted.rate);
@@ -345,7 +461,7 @@ pub mod economic_manager {
             let economics: AdventurerEconomics = world.read_model(adventurer_id);
             let state: HexDecayState = world.read_model(hex_coordinate);
             let hex: Hex = world.read_model(hex_coordinate);
-            let upkeep = upkeep_for_biome(hex.biome);
+            let upkeep = effective_upkeep_for_biome(ref world, hex.biome, now_block);
 
             let paid = pay_maintenance_transition(
                 adventurer,
@@ -384,10 +500,11 @@ pub mod economic_manager {
 
             let state: HexDecayState = world.read_model(hex_coordinate);
             let hex: Hex = world.read_model(hex_coordinate);
+            let upkeep = effective_upkeep_for_biome(ref world, hex.biome, now_block);
 
-            let processed = process_decay_transition(
+            let processed = process_decay_transition_with_upkeep(
                 state,
-                hex.biome,
+                upkeep,
                 now_block,
                 DECAY_PERIOD_BLOCKS,
                 CLAIMABLE_DECAY_THRESHOLD,
@@ -422,7 +539,7 @@ pub mod economic_manager {
             let claimant_economics: AdventurerEconomics = world.read_model(adventurer_id);
             let state: HexDecayState = world.read_model(hex_coordinate);
             let hex: Hex = world.read_model(hex_coordinate);
-            let upkeep = upkeep_for_biome(hex.biome);
+            let upkeep = effective_upkeep_for_biome(ref world, hex.biome, now_block);
             let min_required_u16 = min_claim_energy(
                 upkeep, state.decay_level, CLAIMABLE_DECAY_THRESHOLD,
             );
@@ -489,7 +606,7 @@ pub mod economic_manager {
             let defender_economics: AdventurerEconomics = world.read_model(adventurer_id);
             let state: HexDecayState = world.read_model(hex_coordinate);
             let hex: Hex = world.read_model(hex_coordinate);
-            let upkeep = upkeep_for_biome(hex.biome);
+            let upkeep = effective_upkeep_for_biome(ref world, hex.biome, now_block);
 
             let claim_id = derive_hex_claim_id(hex_coordinate);
             let mut escrow: ClaimEscrow = world.read_model(claim_id);

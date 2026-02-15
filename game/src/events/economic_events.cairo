@@ -1,3 +1,5 @@
+use starknet::ContractAddress;
+
 #[derive(Copy, Drop, Serde)]
 #[dojo::event]
 pub struct ItemsConverted {
@@ -63,4 +65,33 @@ pub struct HexDefended {
     pub hex: felt252,
     pub owner: felt252,
     pub energy: u16,
+}
+
+#[derive(Copy, Drop, Serde)]
+#[dojo::event]
+pub struct RegulatorTicked {
+    #[key]
+    pub epoch: u32,
+    pub caller: ContractAddress,
+    pub bounty_paid: u16,
+    pub status: u8,
+}
+
+#[derive(Copy, Drop, Serde)]
+#[dojo::event]
+pub struct RegulatorPolicyUpdated {
+    #[key]
+    pub epoch: u32,
+    pub conversion_tax_bp: u16,
+    pub upkeep_bp: u16,
+    pub mint_discount_bp: u16,
+}
+
+#[derive(Copy, Drop, Serde)]
+#[dojo::event]
+pub struct BountyPaid {
+    #[key]
+    pub epoch: u32,
+    pub caller: ContractAddress,
+    pub amount: u16,
 }

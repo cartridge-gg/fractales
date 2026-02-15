@@ -1,6 +1,6 @@
 ---
 name: gen-dungeon-agent-play
-description: Operate Infinite Hex Adventurers as an agent-first game client. Use when you need to read indexed Dojo/Torii state, compute legal/optimal actions, and execute World/Adventurer/Harvesting/Economic/Ownership function calls (prefer Cartridge controller-cli, fallback to sozo/RPC).
+description: Operate Infinite Hex Adventurers as an agent-first game client. Use when you need to read indexed Dojo/Torii state, compute legal/optimal actions, and execute World/Adventurer/Harvesting/Economic/Ownership/Mining/Construction/Sharing function calls (prefer Cartridge controller-cli, fallback to sozo/RPC).
 ---
 
 # Gen Dungeon Agent Play
@@ -22,9 +22,9 @@ Run every turn as `read -> compute -> act -> verify`.
 - `adventurer_manager.regenerate_energy(adventurer_id)`
 - `adventurer_manager.kill_adventurer(adventurer_id, cause)`
 - `world_manager.move_adventurer(adventurer_id, to_hex_coordinate)`
-- `world_manager.discover_hex(adventurer_id, hex_coordinate, biome, area_count)`
-- `world_manager.discover_area(adventurer_id, hex_coordinate, area_index, area_type, resource_quality, size_category)`
-- `harvesting_manager.init_harvesting(hex_coordinate, area_id, plant_id, species, max_yield, regrowth_rate)`
+- `world_manager.discover_hex(adventurer_id, hex_coordinate)`
+- `world_manager.discover_area(adventurer_id, hex_coordinate, area_index)`
+- `harvesting_manager.init_harvesting(hex_coordinate, area_id, plant_id)`
 - `harvesting_manager.start_harvesting(adventurer_id, hex_coordinate, area_id, plant_id, amount)`
 - `harvesting_manager.complete_harvesting(adventurer_id, hex_coordinate, area_id, plant_id)`
 - `harvesting_manager.cancel_harvesting(adventurer_id, hex_coordinate, area_id, plant_id)`
@@ -35,6 +35,25 @@ Run every turn as `read -> compute -> act -> verify`.
 - `economic_manager.defend_hex_from_claim(adventurer_id, hex_coordinate, defense_energy)`
 - `ownership_manager.get_owner(area_id)`
 - `ownership_manager.transfer_ownership(area_id, to_adventurer_id)`
+- `mining_manager.init_mining(hex_coordinate, area_id, mine_id)`
+- `mining_manager.grant_mine_access(controller_adventurer_id, mine_key, grantee_adventurer_id)`
+- `mining_manager.revoke_mine_access(controller_adventurer_id, mine_key, grantee_adventurer_id)`
+- `mining_manager.start_mining(adventurer_id, hex_coordinate, area_id, mine_id)`
+- `mining_manager.continue_mining(adventurer_id, mine_key)`
+- `mining_manager.stabilize_mine(adventurer_id, mine_key)`
+- `mining_manager.exit_mining(adventurer_id, mine_key)`
+- `mining_manager.repair_mine(adventurer_id, mine_key, energy_amount)`
+- `construction_manager.process_plant_material(adventurer_id, source_item_id, quantity, target_material)`
+- `construction_manager.start_construction(adventurer_id, hex_coordinate, area_id, building_type)`
+- `construction_manager.complete_construction(adventurer_id, project_id)`
+- `construction_manager.pay_building_upkeep(adventurer_id, hex_coordinate, area_id, amount)`
+- `construction_manager.repair_building(adventurer_id, hex_coordinate, area_id, amount)`
+- `construction_manager.upgrade_building(adventurer_id, hex_coordinate, area_id)`
+- `sharing_manager.upsert_resource_policy(controller_adventurer_id, resource_key, resource_kind, is_enabled)`
+- `sharing_manager.grant_resource_access(controller_adventurer_id, resource_key, grantee_adventurer_id, permissions_mask)`
+- `sharing_manager.revoke_resource_access(controller_adventurer_id, resource_key, grantee_adventurer_id)`
+- `sharing_manager.set_resource_share_rule(controller_adventurer_id, resource_key, recipient_adventurer_id, rule_kind, share_bp)`
+- `sharing_manager.clear_resource_share_rule(controller_adventurer_id, resource_key, recipient_adventurer_id, rule_kind)`
 
 ## Mirror These Constants In The Client
 
@@ -67,6 +86,14 @@ Use indexer SQL tables and expose parameterized queries from your read client:
 - `v_conversion_rate_state`
 - `v_active_claims`
 - `v_claimable_hexes`
+- `v_mine_state`
+- `v_mining_shift_state`
+- `v_mine_access_state`
+- `v_construction_project_state`
+- `v_building_state`
+- `v_resource_policy_state`
+- `v_resource_access_grant_state`
+- `v_resource_share_rule_state`
 
 Use `adventurer_id`, `hex_coordinate`, `area_id`, and `plant_id` as primary query params.
 
@@ -89,6 +116,12 @@ Use `adventurer_id`, `hex_coordinate`, `area_id`, and `plant_id` as primary quer
 - claim quote:
   - minimum energy with `min_claim_energy` logic
   - immediate claim only if `now_block - claimable_since_block >= 500`
+- mining quote:
+  - current `mine_stress` vs `collapse_threshold`
+  - `continue` vs `stabilize` expected value with collapse risk
+- construction quote:
+  - `completion_block - now_block` for active projects
+  - upkeep due estimate from `upkeep_per_100_blocks` and elapsed blocks
 
 ## Follow This Action Priority
 
@@ -100,10 +133,12 @@ For each adventurer, evaluate in order:
 4. If controlling decaying hex and maintenance has best ROI, pay maintenance.
 5. If harvest is active and mature, complete harvest.
 6. If harvest is active but low EV to wait, cancel harvest.
-7. If inventory is overweight or conversion ROI is high, convert items.
-8. If unlocked and enough energy, start harvest.
-9. If expansion EV is high, move/discover hex and discover area.
-10. Otherwise wait and re-evaluate next block window.
+7. If mining shift is active, choose `continue`, `stabilize`, `exit`, or `repair`.
+8. If construction project is mature, complete construction.
+9. If inventory is overweight or conversion ROI is high, convert items.
+10. If unlocked and enough energy, start harvest or start construction.
+11. If expansion EV is high, move/discover hex and discover area.
+12. Otherwise wait and re-evaluate next block window.
 
 ## Enforce These Guardrails
 
@@ -111,6 +146,7 @@ For each adventurer, evaluate in order:
 - Never trust stale indexer state; compare indexer head to RPC block and set a max lag.
 - Never convert items while at energy cap unless intentional (items burn even if minted energy is zero).
 - Never attempt second active claim with energy already locked in escrow.
+- Never pass caller-defined generation payloads for discovery/harvest init; world and plant profiles are deterministic onchain.
 - Always treat replay/no-op paths as expected outcomes for idempotent actions.
 
 ## Execute With Controller CLI
@@ -138,6 +174,9 @@ After submission:
   - world: `HexDiscovered`, `AreaDiscovered`, `AdventurerMoved`
   - harvesting: `HarvestingStarted`, `HarvestingCompleted`, `HarvestingCancelled`
   - economics: `ItemsConverted`, `HexEnergyPaid`, `HexBecameClaimable`, `ClaimInitiated`, `ClaimExpired`, `ClaimRefunded`, `HexDefended`
+  - mining: `MineInitialized`, `MineAccessGranted`, `MiningStarted`, `MiningContinued`, `MineStabilized`, `MiningExited`, `MineCollapsed`
+  - construction: `ConstructionStarted`, `ConstructionCompleted`, `ConstructionUpkeepPaid`, `ConstructionRepaired`, `ConstructionUpgradeQueued`, `ConstructionPlantProcessed`
+  - sharing: `ResourcePolicyUpserted`, `ResourceAccessGranted`, `ResourceAccessRevoked`, `ResourceShareRuleSet`, `ResourceShareRuleCleared`
   - ownership: `AreaOwnershipAssigned`, `OwnershipTransferred`
 - Record an action journal row:
   - `action_id`, `adventurer_id`, `inputs`, `pre_state_hash`, `post_state_hash`, `tx_hash`, `success`, `reason`

@@ -1,5 +1,6 @@
 use dojo_starter::models::adventurer::Adventurer;
 use core::traits::TryInto;
+use starknet::ContractAddress;
 
 #[derive(Copy, Drop, Serde, Debug)]
 #[dojo::model]
@@ -91,6 +92,96 @@ pub struct HexDecayState {
     pub claimable_since_block: u64,
 }
 
+#[derive(Copy, Drop, Serde, Debug)]
+#[dojo::model]
+pub struct EconomyAccumulator {
+    #[key]
+    pub epoch: u32,
+    pub total_sources: u64,
+    pub total_sinks: u64,
+    pub new_hexes: u32,
+    pub deaths: u32,
+    pub mints: u32,
+}
+
+#[derive(Copy, Drop, Serde, Debug)]
+#[dojo::model]
+pub struct EconomyEpochSnapshot {
+    #[key]
+    pub epoch: u32,
+    pub total_sources: u64,
+    pub total_sinks: u64,
+    pub net_energy: u64,
+    pub new_hexes: u32,
+    pub deaths: u32,
+    pub mints: u32,
+    pub finalized_at_block: u64,
+    pub is_finalized: bool,
+}
+
+#[derive(Copy, Drop, Serde, Debug)]
+#[dojo::model]
+pub struct RegulatorState {
+    #[key]
+    pub slot: u8,
+    pub has_ticked: bool,
+    pub last_tick_block: u64,
+    pub last_tick_epoch: u32,
+}
+
+#[derive(Copy, Drop, Serde, Debug)]
+#[dojo::model]
+pub struct RegulatorPolicy {
+    #[key]
+    pub slot: u8,
+    pub policy_epoch: u32,
+    pub conversion_tax_bp: u16,
+    pub upkeep_bp: u16,
+    pub mint_discount_bp: u16,
+}
+
+#[derive(Copy, Drop, Serde, Debug)]
+#[dojo::model]
+pub struct RegulatorConfig {
+    #[key]
+    pub slot: u8,
+    pub epoch_blocks: u64,
+    pub keeper_bounty_energy: u16,
+    pub keeper_bounty_max: u16,
+    pub bounty_funding_share_bp: u16,
+    pub inflation_target_pct: u16,
+    pub inflation_deadband_pct: u16,
+    pub policy_slew_limit_bp: u16,
+    pub min_conversion_tax_bp: u16,
+    pub max_conversion_tax_bp: u16,
+}
+
+#[derive(Copy, Drop, Serde, Debug)]
+#[dojo::model]
+pub struct RegulatorTreasury {
+    #[key]
+    pub slot: u8,
+    pub regulator_bounty_pool: u64,
+    pub last_bounty_epoch: u32,
+    pub last_bounty_paid: u16,
+    pub last_bounty_caller: ContractAddress,
+}
+
+#[derive(Serde, Copy, Drop, Introspect, PartialEq, Debug, DojoStore, Default)]
+pub enum EpochFinalizeOutcome {
+    #[default]
+    InvalidEpoch,
+    AlreadyFinalized,
+    Applied,
+}
+
+#[derive(Copy, Drop, Serde, Debug)]
+pub struct EpochFinalizeResult {
+    pub accumulator: EconomyAccumulator,
+    pub snapshot: EconomyEpochSnapshot,
+    pub outcome: EpochFinalizeOutcome,
+}
+
 #[derive(Serde, Copy, Drop, Introspect, PartialEq, Debug, DojoStore, Default)]
 pub enum DecayProcessOutcome {
     #[default]
@@ -105,6 +196,68 @@ pub struct DecayProcessResult {
     pub outcome: DecayProcessOutcome,
     pub periods_processed: u64,
     pub became_claimable: bool,
+}
+
+pub fn reset_economy_accumulator_for_epoch(epoch: u32) -> EconomyAccumulator {
+    EconomyAccumulator {
+        epoch,
+        total_sources: 0_u64,
+        total_sinks: 0_u64,
+        new_hexes: 0_u32,
+        deaths: 0_u32,
+        mints: 0_u32,
+    }
+}
+
+pub fn snapshot_fields_non_negative(snapshot: EconomyEpochSnapshot) -> bool {
+    snapshot.net_energy <= snapshot.total_sources
+}
+
+fn snapshot_from_accumulator(accumulator: EconomyAccumulator, now_block: u64) -> EconomyEpochSnapshot {
+    let net_energy = if accumulator.total_sources >= accumulator.total_sinks {
+        accumulator.total_sources - accumulator.total_sinks
+    } else {
+        0_u64
+    };
+
+    EconomyEpochSnapshot {
+        epoch: accumulator.epoch,
+        total_sources: accumulator.total_sources,
+        total_sinks: accumulator.total_sinks,
+        net_energy,
+        new_hexes: accumulator.new_hexes,
+        deaths: accumulator.deaths,
+        mints: accumulator.mints,
+        finalized_at_block: now_block,
+        is_finalized: true,
+    }
+}
+
+pub fn finalize_epoch_once_with_status(
+    accumulator: EconomyAccumulator, snapshot: EconomyEpochSnapshot, now_block: u64,
+) -> EpochFinalizeResult {
+    if accumulator.epoch != snapshot.epoch {
+        return EpochFinalizeResult { accumulator, snapshot, outcome: EpochFinalizeOutcome::InvalidEpoch };
+    }
+
+    if snapshot.is_finalized {
+        return EpochFinalizeResult {
+            accumulator, snapshot, outcome: EpochFinalizeOutcome::AlreadyFinalized,
+        };
+    }
+
+    let next_snapshot = snapshot_from_accumulator(accumulator, now_block);
+    let next_epoch = if accumulator.epoch == 4_294_967_295_u32 {
+        accumulator.epoch
+    } else {
+        accumulator.epoch + 1_u32
+    };
+
+    EpochFinalizeResult {
+        accumulator: reset_economy_accumulator_for_epoch(next_epoch),
+        snapshot: next_snapshot,
+        outcome: EpochFinalizeOutcome::Applied,
+    }
 }
 
 pub fn derive_hex_claim_id(hex_coordinate: felt252) -> felt252 {
