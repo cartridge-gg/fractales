@@ -127,6 +127,11 @@ Recommended acceptance ranges during bootstrap:
 - collapse risk: non-zero `total_deaths`, but not dominant over mint growth
 - concentration control: monitor scenario variants with elevated `owner_bp` and raider share
 
+Enforced simulator guardrails in tests:
+
+- baseline scenario: `9%` to `11%` inflation
+- matrix-wide bound: `-5%` to `+21%` inflation
+
 ## 7. Tuning Knobs
 
 Primary policy levers exposed in config/scenarios:
@@ -153,9 +158,9 @@ For tighter parity with onchain behavior, next step is plugging live contract-de
 
 Using the current default parameters:
 
-- `baseline_10k` ends at `+10.08%` net inflation (`sink/source=0.6184`)
-- `anti_inflation_hard_mode` ends at `+14.49%` net inflation (`sink/source=0.8184`)
-- `collapse_wave` ends at `+0.31%` net inflation with higher capital lock than baseline
-- full matrix inflation range is now bounded in `+0.31% .. +24.76%`
+- `baseline_10k` ends at `+10.97%` net inflation (`sink/source=0.6275`)
+- `anti_inflation_hard_mode` ends at `+14.77%` net inflation (`sink/source=0.8187`)
+- `collapse_wave` ends at `+0.87%` net inflation with higher capital lock than baseline
+- full matrix inflation range is now bounded in `+0.87% .. +20.58%`
 
-Conclusion: baseline is tuned to the 10% target and current scenario variants remain within the enforced matrix safety band (`-5% .. +25%`).
+Conclusion: baseline remains tuned to the 10% target and scenario variants are now compressed under the tighter enforced matrix safety band (`-5% .. +21%`).

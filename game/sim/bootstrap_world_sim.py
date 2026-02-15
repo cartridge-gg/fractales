@@ -65,10 +65,10 @@ class SimConfig:
     active_owner_count: int = 2_000
 
     target_final_inflation_pct: float = 10.0
-    inflation_upper_band_bp: int = 1_100
-    inflation_lower_band_bp: int = 800
-    anti_inflation_gain_bp: int = 5_000
-    anti_deflation_release_gain_bp: int = 3_000
+    inflation_upper_band_bp: int = 900
+    inflation_lower_band_bp: int = 700
+    anti_inflation_gain_bp: int = 8_000
+    anti_deflation_release_gain_bp: int = 2_000
 
 
 @dataclass(frozen=True)

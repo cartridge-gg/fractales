@@ -100,7 +100,7 @@ class BootstrapWorldSimTests(unittest.TestCase):
         summaries = [runner.run_scenario(s).summary for s in build_default_scenarios()]
         for summary in summaries:
             self.assertGreaterEqual(summary.net_inflation_pct, -5.0)
-            self.assertLessEqual(summary.net_inflation_pct, 25.0)
+            self.assertLessEqual(summary.net_inflation_pct, 21.0)
 
 
 if __name__ == "__main__":
