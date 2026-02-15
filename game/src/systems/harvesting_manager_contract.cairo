@@ -49,6 +49,7 @@ pub mod harvesting_manager {
     use dojo_starter::libs::construction_balance::{
         B_GREENHOUSE, B_STOREHOUSE, effect_bp_for_building,
     };
+    use dojo_starter::libs::sharing_math::{PERM_EXTRACT, alloc_from_bp_floor_u32, has_permissions};
     use dojo_starter::models::construction::{ConstructionBuildingNode, is_building_effective};
     use dojo_starter::libs::world_gen::derive_plant_profile_with_config;
     use dojo_starter::models::adventurer::Adventurer;
@@ -58,6 +59,11 @@ pub mod harvesting_manager {
         derive_plant_key,
     };
     use dojo_starter::models::inventory::{BackpackItem, Inventory};
+    use dojo_starter::models::ownership::AreaOwnership;
+    use dojo_starter::models::sharing::{
+        ResourceAccessGrant, ResourceKind, ResourcePolicy, derive_area_resource_key, is_grant_effective,
+        is_policy_effective, is_share_rule_effective, ResourceShareRule, ResourceShareRuleTally, ShareRuleKind,
+    };
     use dojo_starter::models::world::{AreaType, Hex, HexArea, WorldGenConfig, derive_area_id};
     use dojo_starter::systems::harvesting_manager::{
         CancelOutcome, CompleteOutcome, InitOutcome, StartOutcome, cancel_transition, complete_transition,
@@ -219,6 +225,152 @@ pub mod harvesting_manager {
         }
     }
 
+    fn has_harvest_access(
+        ref world: dojo::world::WorldStorage,
+        area_id: felt252,
+        adventurer_id: felt252,
+    ) -> bool {
+        let mut ownership: AreaOwnership = world.read_model(area_id);
+        ownership.area_id = area_id;
+        if ownership.owner_adventurer_id == 0_felt252 {
+            return true;
+        }
+        if ownership.owner_adventurer_id == adventurer_id {
+            return true;
+        }
+
+        let resource_key = derive_area_resource_key(area_id, ResourceKind::PlantArea);
+        let mut policy: ResourcePolicy = world.read_model(resource_key);
+        policy.resource_key = resource_key;
+        if !is_policy_effective(policy) {
+            return false;
+        }
+        if policy.controller_adventurer_id == adventurer_id {
+            return true;
+        }
+
+        let mut grant: ResourceAccessGrant = world.read_model((resource_key, adventurer_id));
+        grant.resource_key = resource_key;
+        grant.grantee_adventurer_id = adventurer_id;
+        is_grant_effective(grant, policy.policy_epoch)
+            && has_permissions(grant.permissions_mask, PERM_EXTRACT)
+    }
+
+    fn recipient_from_slot(tally: ResourceShareRuleTally, slot: u8) -> felt252 {
+        match slot {
+            0_u8 => tally.recipient_0,
+            1_u8 => tally.recipient_1,
+            2_u8 => tally.recipient_2,
+            3_u8 => tally.recipient_3,
+            4_u8 => tally.recipient_4,
+            5_u8 => tally.recipient_5,
+            6_u8 => tally.recipient_6,
+            7_u8 => tally.recipient_7,
+            _ => 0_felt252,
+        }
+    }
+
+    fn apply_shared_item_distribution(
+        ref world: dojo::world::WorldStorage,
+        area_id: felt252,
+        actor_adventurer_id: felt252,
+        item_id: felt252,
+        gross_minted: u16,
+        mut actor_inventory: Inventory,
+        mut actor_item: BackpackItem,
+    ) -> (Inventory, BackpackItem) {
+        if gross_minted == 0_u16 {
+            return (actor_inventory, actor_item);
+        }
+
+        let resource_key = derive_area_resource_key(area_id, ResourceKind::PlantArea);
+        let mut policy: ResourcePolicy = world.read_model(resource_key);
+        policy.resource_key = resource_key;
+        if !is_policy_effective(policy) {
+            return (actor_inventory, actor_item);
+        }
+
+        let mut tally: ResourceShareRuleTally = world.read_model((resource_key, ShareRuleKind::OutputItem));
+        tally.resource_key = resource_key;
+        tally.rule_kind = ShareRuleKind::OutputItem;
+        if tally.policy_epoch != policy.policy_epoch || tally.active_recipient_count == 0_u8 {
+            return (actor_inventory, actor_item);
+        }
+
+        let gross_u32: u32 = gross_minted.into();
+        let mut slot: u8 = 0_u8;
+        loop {
+            if slot >= 8_u8 {
+                break;
+            };
+
+            let recipient_adventurer_id = recipient_from_slot(tally, slot);
+            if recipient_adventurer_id != 0_felt252 && recipient_adventurer_id != actor_adventurer_id {
+                let mut rule: ResourceShareRule = world.read_model(
+                    (resource_key, recipient_adventurer_id, ShareRuleKind::OutputItem),
+                );
+                rule.resource_key = resource_key;
+                rule.recipient_adventurer_id = recipient_adventurer_id;
+                rule.rule_kind = ShareRuleKind::OutputItem;
+
+                if is_share_rule_effective(rule, policy.policy_epoch) {
+                    let requested_u32 = alloc_from_bp_floor_u32(gross_u32, rule.share_bp);
+                    if requested_u32 > 0_u32 && actor_item.quantity > 0_u32 {
+                        let actor_available = actor_item.quantity;
+                        let request_capped = if requested_u32 > actor_available {
+                            actor_available
+                        } else {
+                            requested_u32
+                        };
+
+                        let mut recipient_inventory: Inventory = world.read_model(recipient_adventurer_id);
+                        let mut recipient_item: BackpackItem = world.read_model(
+                            (recipient_adventurer_id, item_id),
+                        );
+                        recipient_item.adventurer_id = recipient_adventurer_id;
+                        recipient_item.item_id = item_id;
+
+                        let recipient_capacity = if recipient_inventory.max_weight > recipient_inventory.current_weight {
+                            recipient_inventory.max_weight - recipient_inventory.current_weight
+                        } else {
+                            0_u32
+                        };
+                        let transferable_u32 = if request_capped > recipient_capacity {
+                            recipient_capacity
+                        } else {
+                            request_capped
+                        };
+
+                        if transferable_u32 > 0_u32 {
+                            actor_item.quantity -= transferable_u32;
+                            actor_inventory.current_weight = if actor_inventory.current_weight > transferable_u32 {
+                                actor_inventory.current_weight - transferable_u32
+                            } else {
+                                0_u32
+                            };
+
+                            recipient_inventory.current_weight += transferable_u32;
+                            recipient_item.quantity += transferable_u32;
+                            if recipient_item.quality == 0_u16 {
+                                recipient_item.quality = actor_item.quality;
+                            }
+                            if recipient_item.weight_per_unit == 0_u16 {
+                                recipient_item.weight_per_unit = 1_u16;
+                            }
+
+                            world.write_model(@recipient_inventory);
+                            world.write_model(@recipient_item);
+                        }
+                    }
+                }
+            }
+
+            slot += 1_u8;
+        };
+
+        (actor_inventory, actor_item)
+    }
+
     #[abi(embed_v0)]
     impl HarvestingManagerImpl of IHarvestingManager<ContractState> {
         fn init_harvesting(
@@ -304,6 +456,20 @@ pub mod harvesting_manager {
             let economics: AdventurerEconomics = world.read_model(adventurer_id);
             let plant_key = derive_plant_key(hex_coordinate, area_id, plant_id);
             let plant: PlantNode = world.read_model(plant_key);
+
+            if !has_harvest_access(ref world, area_id, adventurer_id) {
+                world.emit_event(
+                    @HarvestingRejected {
+                        adventurer_id,
+                        hex: hex_coordinate,
+                        area_id,
+                        plant_id,
+                        phase: PHASE_START,
+                        reason: 'NO_ACCESS'_felt252,
+                    },
+                );
+                return false;
+            }
 
             let reservation_id = derive_harvest_reservation_id(adventurer_id, plant_key);
             let mut reservation: HarvestReservation = world.read_model(reservation_id);
@@ -417,13 +583,23 @@ pub mod harvesting_manager {
                         quality_for_bonus,
                         effective_max_weight,
                     );
+                    let (distributed_inventory, distributed_item) = apply_shared_item_distribution(
+                        ref world,
+                        area_id,
+                        adventurer_id,
+                        item_id,
+                        completed.minted_yield,
+                        inventory_with_bonus,
+                        item_with_bonus,
+                    );
+                    inventory_with_bonus = distributed_inventory;
                     inventory_with_bonus.max_weight = inventory.max_weight;
 
                     world.write_model(@completed.adventurer);
                     world.write_model(@completed.plant);
                     world.write_model(@completed.reservation);
                     world.write_model(@inventory_with_bonus);
-                    world.write_model(@item_with_bonus);
+                    world.write_model(@distributed_item);
                     world.emit_event(
                         @HarvestingCompleted {
                             adventurer_id,
@@ -496,13 +672,23 @@ pub mod harvesting_manager {
                         quality_for_bonus,
                         effective_max_weight,
                     );
+                    let (distributed_inventory, distributed_item) = apply_shared_item_distribution(
+                        ref world,
+                        area_id,
+                        adventurer_id,
+                        item_id,
+                        canceled.minted_yield,
+                        inventory_with_bonus,
+                        item_with_bonus,
+                    );
+                    inventory_with_bonus = distributed_inventory;
                     inventory_with_bonus.max_weight = inventory.max_weight;
 
                     world.write_model(@canceled.adventurer);
                     world.write_model(@canceled.plant);
                     world.write_model(@canceled.reservation);
                     world.write_model(@inventory_with_bonus);
-                    world.write_model(@item_with_bonus);
+                    world.write_model(@distributed_item);
                     world.emit_event(
                         @HarvestingCancelled {
                             adventurer_id,

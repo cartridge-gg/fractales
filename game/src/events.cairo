@@ -5,3 +5,4 @@ pub mod economic_events;
 pub mod ownership_events;
 pub mod mining_events;
 pub mod construction_events;
+pub mod sharing_events;

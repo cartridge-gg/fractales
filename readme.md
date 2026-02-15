@@ -70,6 +70,44 @@ Loop notes:
 - Decay/claim uses escrow with explicit timeout + refund.
 - Permadeath is irreversible and blocks all state-changing actions.
 
+## Shared Harvest Flow (R5)
+
+```mermaid
+flowchart TD
+    A[Start Harvest Request] --> B{Area Owned?}
+    B -- No --> C[Allow if Actor Valid]
+    B -- Yes --> D{Actor Is Controller?}
+    D -- Yes --> C
+    D -- No --> E{Has Active Shared Extract Grant?}
+    E -- No --> F[Reject NO_ACCESS]
+    E -- Yes --> C
+    C --> G[Reserve Yield + Lock Activity]
+    G --> H{Complete or Cancel}
+    H -- Complete --> I[Mint Actual Yield]
+    H -- Cancel --> J[Mint Partial Yield]
+    I --> K[Apply OutputItem Share Rules]
+    J --> K
+    K --> L[Iterate active recipient slots max 8]
+    L --> M[Compute floor allocation from share basis points]
+    M --> O[Transfer up to recipient capacity]
+    O --> N[Residual stays with actor]
+```
+
+R5 behavior notes:
+- Shared harvest ACL is enforced for owned areas (`controller` or granted `extract`).
+- Output split routing runs on both complete and cancel paths.
+- Distribution is deterministic floor math; capped recipients and recipient capacity are handled conservatively.
+
+### Emergent Behavior (Why this is interesting)
+
+- Labor markets can form naturally: controllers can lease `extract` access and pay workers via static output shares.
+- Specialized logistics roles appear: recipients with spare inventory capacity become valuable because capacity limits can redirect residuals.
+- Negotiation pressure is continuous: deterministic floor allocation means small `bp` changes produce predictable, testable payout shifts.
+- Risk-sharing contracts are possible: because cancel and complete both route through split logic, collaborators can agree on downside splits, not just upside.
+- Soft power over throughput emerges: controllers choose who receives guaranteed slices first, shaping local production networks without any offchain arbiter.
+- Adversarial play stays bounded: cartel or rent-seeking behavior is allowed by design, but cannot violate conservation (`sum(allocations) <= gross`) or bypass ACL.
+- Ownership politics matter: on transfer, stale grants/shares are invalidated by epoch, so each new controller can reset collaboration topology.
+
 ## MVP Scope Snapshot
 
 - Canonical MVP source of truth: `docs/02-spec/mvp-functional-spec.md` and `docs/02-spec/design-decisions.md`.

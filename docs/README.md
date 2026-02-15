@@ -54,6 +54,7 @@ Live release and how-to-play runbook:
 - Construction loop (ore + plant, 7-building scope): `05-modules/construction.md`
 - Construction balance scope + simulator workflow: `07-delivery/construction-balance-scope.md`
 - Construction implementation PRD/TDD plan: `07-delivery/construction-prd-tdd.md`
+- Resource-sharing permissions PRD/TDD plan: `07-delivery/resource-sharing-permissions-prd-tdd.md`
 
 ## Recommended Reading Order
 

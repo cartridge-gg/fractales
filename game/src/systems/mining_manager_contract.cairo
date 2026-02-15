@@ -30,6 +30,7 @@ pub mod mining_manager {
     use dojo_starter::libs::mining_math::{
         compute_stress_delta, compute_tick_energy_cost, compute_tick_yield, will_collapse,
     };
+    use dojo_starter::libs::sharing_math::{PERM_EXTRACT, PERM_INSPECT, has_permissions};
     use dojo_starter::models::adventurer::{
         Adventurer, AdventurerWriteStatus, kill_once_with_status, spend_energy,
     };
@@ -42,6 +43,10 @@ pub mod mining_manager {
         derive_mining_item_id, derive_mining_shift_id,
     };
     use dojo_starter::models::ownership::AreaOwnership;
+    use dojo_starter::models::sharing::{
+        PolicyScope, ResourceAccessGrant, ResourceKind, ResourcePolicy, is_grant_effective,
+        is_policy_effective,
+    };
     use dojo_starter::models::world::{AreaType, Hex, HexArea, derive_area_id};
     use dojo_starter::systems::mining_manager::{
         DENSITY_K_BP, MAX_STRESS_PENALTY_BP, OVERSTAY_K_BP, SWARM_K_LOCKED, apply_shoring_stress_delta,
@@ -129,7 +134,51 @@ pub mod mining_manager {
         let mut grant: MineAccessGrant = world.read_model((mine.mine_key, adventurer_id));
         grant.mine_key = mine.mine_key;
         grant.grantee_adventurer_id = adventurer_id;
-        grant.is_allowed
+        if grant.is_allowed {
+            return true;
+        }
+
+        let mut policy: ResourcePolicy = world.read_model(mine.mine_key);
+        policy.resource_key = mine.mine_key;
+        if !is_policy_effective(policy) {
+            return false;
+        }
+        if policy.controller_adventurer_id == adventurer_id {
+            return true;
+        }
+
+        let mut shared_grant: ResourceAccessGrant = world.read_model((mine.mine_key, adventurer_id));
+        shared_grant.resource_key = mine.mine_key;
+        shared_grant.grantee_adventurer_id = adventurer_id;
+        is_grant_effective(shared_grant, policy.policy_epoch)
+            && has_permissions(shared_grant.permissions_mask, PERM_EXTRACT)
+    }
+
+    fn upsert_shared_mine_policy(
+        ref world: dojo::world::WorldStorage,
+        mine: MineNode,
+        controller_adventurer_id: felt252,
+        now_block: u64,
+    ) -> ResourcePolicy {
+        let mut policy: ResourcePolicy = world.read_model(mine.mine_key);
+        policy.resource_key = mine.mine_key;
+        policy.scope = PolicyScope::Area;
+        policy.scope_key = mine.area_id;
+        policy.resource_kind = ResourceKind::Mine;
+        policy.is_enabled = true;
+        policy.updated_block = now_block;
+        policy.last_mutation_block = now_block;
+
+        if policy.policy_epoch == 0_u32 {
+            policy.policy_epoch = 1_u32;
+        } else if policy.controller_adventurer_id != 0_felt252
+            && policy.controller_adventurer_id != controller_adventurer_id {
+            policy.policy_epoch += 1_u32;
+        }
+
+        policy.controller_adventurer_id = controller_adventurer_id;
+        world.write_model(@policy);
+        policy
     }
 
     fn active_hex_building_effect_bp(
@@ -329,6 +378,13 @@ pub mod mining_manager {
             mine.conversion_energy_per_unit = profile.conversion_energy_per_unit;
 
             world.write_model(@mine);
+            let mut ownership: AreaOwnership = world.read_model(area_id);
+            ownership.area_id = area_id;
+            if ownership.owner_adventurer_id != 0_felt252 {
+                upsert_shared_mine_policy(
+                    ref world, mine, ownership.owner_adventurer_id, now_block,
+                );
+            }
             world.emit_event(
                 @MineInitialized {
                     mine_key,
@@ -374,6 +430,20 @@ pub mod mining_manager {
             grant.revoked_block = 0_u64;
             world.write_model(@grant);
 
+            let shared_policy = upsert_shared_mine_policy(
+                ref world, mine, controller_adventurer_id, now_block,
+            );
+            let mut shared_grant: ResourceAccessGrant = world.read_model((mine_key, grantee_adventurer_id));
+            shared_grant.resource_key = mine_key;
+            shared_grant.grantee_adventurer_id = grantee_adventurer_id;
+            shared_grant.permissions_mask = PERM_INSPECT + PERM_EXTRACT;
+            shared_grant.granted_by_adventurer_id = controller_adventurer_id;
+            shared_grant.grant_block = now_block;
+            shared_grant.revoke_block = 0_u64;
+            shared_grant.is_active = true;
+            shared_grant.policy_epoch = shared_policy.policy_epoch;
+            world.write_model(@shared_grant);
+
             world.emit_event(
                 @MineAccessGranted {
                     mine_key,
@@ -414,6 +484,17 @@ pub mod mining_manager {
             grant.granted_by_adventurer_id = controller_adventurer_id;
             grant.revoked_block = now_block;
             world.write_model(@grant);
+
+            let shared_policy = upsert_shared_mine_policy(
+                ref world, mine, controller_adventurer_id, now_block,
+            );
+            let mut shared_grant: ResourceAccessGrant = world.read_model((mine_key, grantee_adventurer_id));
+            shared_grant.resource_key = mine_key;
+            shared_grant.grantee_adventurer_id = grantee_adventurer_id;
+            shared_grant.is_active = false;
+            shared_grant.revoke_block = now_block;
+            shared_grant.policy_epoch = shared_policy.policy_epoch;
+            world.write_model(@shared_grant);
 
             world.emit_event(
                 @MineAccessRevoked {

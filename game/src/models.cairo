@@ -7,3 +7,4 @@ pub mod economics;
 pub mod ownership;
 pub mod mining;
 pub mod construction;
+pub mod sharing;

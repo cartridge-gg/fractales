@@ -15,6 +15,8 @@ pub mod libs {
     pub mod conversion_math;
     pub mod decay_math;
     pub mod construction_balance;
+    pub mod sharing_math;
+    pub mod autoregulator_math;
 }
 
 pub mod tests {
@@ -33,8 +35,13 @@ pub mod tests {
         mod conversion_math_test;
         mod decay_math_test;
         mod construction_balance_test;
+        mod sharing_math_test;
+        mod autoregulator_math_test;
+        mod sharing_manager_test;
         mod construction_events_test;
+        mod sharing_events_test;
         mod construction_models_test;
+        mod sharing_models_test;
         mod construction_manager_test;
         mod world_models_test;
         mod world_events_test;
@@ -68,5 +75,6 @@ pub mod tests {
         mod world_economy_bridge_integration_test;
         mod mining_manager_integration_test;
         mod construction_manager_integration_test;
+        mod sharing_manager_integration_test;
     }
 }

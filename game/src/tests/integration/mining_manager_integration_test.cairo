@@ -16,6 +16,7 @@ mod tests {
         MiningExited, MiningRejected, MiningStarted,
     };
     use dojo_starter::libs::construction_balance::{B_SHORING_RIG, B_STOREHOUSE, effect_bp_for_building};
+    use dojo_starter::libs::sharing_math::{PERM_EXTRACT, has_permissions};
     use dojo_starter::libs::mining_math::compute_stress_delta;
     use dojo_starter::models::construction::ConstructionBuildingNode;
     use dojo_starter::models::adventurer::Adventurer;
@@ -27,6 +28,7 @@ mod tests {
         derive_mine_key, derive_mining_item_id, derive_mining_shift_id,
     };
     use dojo_starter::models::ownership::AreaOwnership;
+    use dojo_starter::models::sharing::{ResourceAccessGrant as SharedAccessGrant, ResourceKind, ResourcePolicy};
     use dojo_starter::models::world::{AreaType, Biome, Hex, HexArea, SizeCategory, derive_area_id};
     use dojo_starter::systems::mining_manager_contract::{
         IMiningManagerDispatcher, IMiningManagerDispatcherTrait,
@@ -50,6 +52,8 @@ mod tests {
                 TestResource::Model("MineAccessGrant"),
                 TestResource::Model("MineCollapseRecord"),
                 TestResource::Model("ConstructionBuildingNode"),
+                TestResource::Model("ResourcePolicy"),
+                TestResource::Model("ResourceAccessGrant"),
                 TestResource::Event("MineInitialized"),
                 TestResource::Event("MineAccessGranted"),
                 TestResource::Event("MineAccessRevoked"),
@@ -814,5 +818,56 @@ mod tests {
         assert(collapsed_count == 1_usize, 'MINT_COLL_EVT_COLL');
         assert(repaired_count == 1_usize, 'MINT_COLL_EVT_REPAIR');
         assert(rejected_count == 0_usize, 'MINT_COLL_EVT_REJ_0');
+    }
+
+    #[test]
+    fn mining_manager_integration_grant_wrapper_syncs_shared_acl_and_start_uses_it() {
+        let caller = get_default_caller_address();
+        set_block_number(1200_u64);
+
+        let mut world = spawn_test_world([namespace_def()].span());
+        world.sync_perms_and_inits(contract_defs());
+
+        let (contract_address, _) = world.dns(@"mining_manager").unwrap();
+        let manager = IMiningManagerDispatcher { contract_address };
+
+        let controller_id = 7601_felt252;
+        let grantee_id = 7602_felt252;
+        let hex_coordinate = 8601_felt252;
+        let area_id = 8602_felt252;
+        let mine_id = 0_u8;
+        let mine_key = derive_mine_key(hex_coordinate, area_id, mine_id);
+
+        setup_actor(ref world, controller_id, caller, hex_coordinate, 1_000_u16);
+        setup_actor(ref world, grantee_id, caller, hex_coordinate, 1_000_u16);
+        setup_discovered_minefield(ref world, caller, controller_id, hex_coordinate, area_id);
+
+        let initialized = manager.init_mining(hex_coordinate, area_id, mine_id);
+        assert(initialized, 'MINT_SHARE_INIT');
+
+        let granted = manager.grant_mine_access(controller_id, mine_key, grantee_id);
+        assert(granted, 'MINT_SHARE_GRANT');
+
+        let shared_policy: ResourcePolicy = world.read_model(mine_key);
+        assert(shared_policy.resource_key == mine_key, 'MINT_SHARE_POL_KEY');
+        assert(shared_policy.resource_kind == ResourceKind::Mine, 'MINT_SHARE_POL_KIND');
+        assert(shared_policy.controller_adventurer_id == controller_id, 'MINT_SHARE_POL_CTRL');
+        assert(shared_policy.is_enabled, 'MINT_SHARE_POL_ON');
+
+        let shared_grant: SharedAccessGrant = world.read_model((mine_key, grantee_id));
+        assert(shared_grant.is_active, 'MINT_SHARE_GRANT_ON');
+        assert(
+            has_permissions(shared_grant.permissions_mask, PERM_EXTRACT),
+            'MINT_SHARE_GRANT_EXTRACT',
+        );
+
+        let mut legacy_grant: MineAccessGrant = world.read_model((mine_key, grantee_id));
+        legacy_grant.mine_key = mine_key;
+        legacy_grant.grantee_adventurer_id = grantee_id;
+        legacy_grant.is_allowed = false;
+        world.write_model_test(@legacy_grant);
+
+        let started = manager.start_mining(grantee_id, hex_coordinate, area_id, mine_id);
+        assert(started, 'MINT_SHARE_START');
     }
 }

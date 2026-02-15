@@ -54,6 +54,7 @@ Long-term product vision and mechanics live in:
 - `economic-stability.md`: Anti-inflation and territorial energy economics
 - `economic-simulator-spec.md`: 10k-adventurer off-chain simulator spec for stress-testing the MVP economic loop
 - `bootstrap-world-scenario-matrix-spec.md`: 8-week bootstrap scenario matrix, elastic adventurer pricing controls, and simulator implementation contract
+- `autoregulator-prd-tdd.md`: Permissionless onchain autoregulator with keeper bounty and TDD implementation plan
 
 ### `docs/05-modules/`
 - `mining.md`: Mining module design
@@ -71,6 +72,7 @@ Long-term product vision and mechanics live in:
 - `mining-fractal-prd-tdd.md`: Post-MVP deterministic mining PRD with TDD milestones and collapse dilemma loop
 - `construction-balance-scope.md`: 7-building construction balance envelope, thresholds, and simulator workflow
 - `construction-prd-tdd.md`: Construction module implementation PRD/TDD slices mapped to game files
+- `resource-sharing-permissions-prd-tdd.md`: Detailed PRD/TDD rollout for cross-module ACL + deterministic resource sharing
 - `biome-20-expansion-checklist.md`: Execution checklist for 20-biome generation/profile rollout and guardrails
 - `development-plan.md`: Phased implementation plan
 - `dojo-setup-guide.md`: Dojo environment setup and patterns

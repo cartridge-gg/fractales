@@ -41,6 +41,8 @@ mod tests {
                 TestResource::Model("MiningShift"),
                 TestResource::Model("MineAccessGrant"),
                 TestResource::Model("MineCollapseRecord"),
+                TestResource::Model("ResourcePolicy"),
+                TestResource::Model("ResourceAccessGrant"),
                 TestResource::Model("ConstructionProject"),
                 TestResource::Model("ConstructionBuildingNode"),
                 TestResource::Model("ConstructionMaterialEscrow"),

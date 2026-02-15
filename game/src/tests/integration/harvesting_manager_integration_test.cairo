@@ -15,6 +15,7 @@ mod tests {
         HarvestingCancelled, HarvestingCompleted, HarvestingRejected, HarvestingStarted,
     };
     use dojo_starter::libs::construction_balance::{B_GREENHOUSE, B_STOREHOUSE};
+    use dojo_starter::libs::sharing_math::{PERM_EXTRACT, has_permissions};
     use dojo_starter::libs::world_gen::derive_plant_profile;
     use dojo_starter::models::construction::ConstructionBuildingNode;
     use dojo_starter::models::adventurer::Adventurer;
@@ -24,9 +25,16 @@ mod tests {
         derive_harvest_reservation_id, derive_plant_key,
     };
     use dojo_starter::models::inventory::{BackpackItem, Inventory};
+    use dojo_starter::models::ownership::AreaOwnership;
+    use dojo_starter::models::sharing::{
+        ResourceAccessGrant, ResourceKind, ShareRuleKind, derive_area_resource_key,
+    };
     use dojo_starter::models::world::{AreaType, Biome, Hex, HexArea, SizeCategory, derive_area_id};
     use dojo_starter::systems::harvesting_manager_contract::{
         IHarvestingManagerDispatcher, IHarvestingManagerDispatcherTrait,
+    };
+    use dojo_starter::systems::sharing_manager_contract::{
+        ISharingManagerDispatcher, ISharingManagerDispatcherTrait,
     };
 
     fn namespace_def() -> NamespaceDef {
@@ -43,11 +51,23 @@ mod tests {
                 TestResource::Model("PlantNode"),
                 TestResource::Model("HarvestReservation"),
                 TestResource::Model("ConstructionBuildingNode"),
+                TestResource::Model("AreaOwnership"),
+                TestResource::Model("ResourcePolicy"),
+                TestResource::Model("ResourceAccessGrant"),
+                TestResource::Model("ResourceShareRule"),
+                TestResource::Model("ResourceShareRuleTally"),
                 TestResource::Event("HarvestingStarted"),
                 TestResource::Event("HarvestingCompleted"),
                 TestResource::Event("HarvestingCancelled"),
                 TestResource::Event("HarvestingRejected"),
+                TestResource::Event("ResourcePolicyUpserted"),
+                TestResource::Event("ResourceAccessGranted"),
+                TestResource::Event("ResourceAccessRevoked"),
+                TestResource::Event("ResourceShareRuleSet"),
+                TestResource::Event("ResourceShareRuleCleared"),
+                TestResource::Event("ResourcePermissionRejected"),
                 TestResource::Contract("harvesting_manager"),
+                TestResource::Contract("sharing_manager"),
             ]
                 .span(),
         }
@@ -56,6 +76,8 @@ mod tests {
     fn contract_defs() -> Span<ContractDef> {
         [
             ContractDefTrait::new(@"dojo_starter", @"harvesting_manager")
+                .with_writer_of([dojo::utils::bytearray_hash(@"dojo_starter")].span()),
+            ContractDefTrait::new(@"dojo_starter", @"sharing_manager")
                 .with_writer_of([dojo::utils::bytearray_hash(@"dojo_starter")].span()),
         ]
             .span()
@@ -698,5 +720,230 @@ mod tests {
 
         let plant: PlantNode = world.read_model(plant_key);
         assert(plant.max_yield == 0_u16, 'H_INT_V2_ONLY_NO_WRITE');
+    }
+
+    #[test]
+    fn harvesting_manager_integration_owned_area_requires_shared_grant_for_collaborator() {
+        let caller = get_default_caller_address();
+        set_block_number(100_u64);
+        let mut world = spawn_test_world([namespace_def()].span());
+        world.sync_perms_and_inits(contract_defs());
+
+        let (harvest_address, _) = world.dns(@"harvesting_manager").unwrap();
+        let manager = IHarvestingManagerDispatcher { contract_address: harvest_address };
+        let (sharing_address, _) = world.dns(@"sharing_manager").unwrap();
+        let sharing = ISharingManagerDispatcher { contract_address: sharing_address };
+
+        let controller_id = 8841_felt252;
+        let collaborator_id = 8842_felt252;
+        let hex_coordinate = 940_felt252;
+        let area_id = 941_felt252;
+        let plant_id = 1_u8;
+        let resource_key = derive_area_resource_key(area_id, ResourceKind::PlantArea);
+
+        setup_actor_and_hex(ref world, controller_id, caller, hex_coordinate);
+        setup_actor_and_hex(ref world, collaborator_id, caller, hex_coordinate);
+        setup_discovered_plant_field_area(ref world, area_id, hex_coordinate, caller);
+        world.write_model_test(
+            @AreaOwnership {
+                area_id,
+                owner_adventurer_id: controller_id,
+                discoverer_adventurer_id: controller_id,
+                discovery_block: 1_u64,
+                claim_block: 1_u64,
+            },
+        );
+
+        let inited = manager.init_harvesting(hex_coordinate, area_id, plant_id);
+        assert(inited, 'H_INT_SHR_INIT');
+
+        let blocked = manager.start_harvesting(
+            collaborator_id, hex_coordinate, area_id, plant_id, 2_u16,
+        );
+        assert(!blocked, 'H_INT_SHR_BLOCK');
+
+        let upserted = sharing.upsert_resource_policy(
+            controller_id, resource_key, ResourceKind::PlantArea, true,
+        );
+        assert(upserted, 'H_INT_SHR_POLICY');
+
+        set_block_number(250_u64);
+        let granted = sharing.grant_resource_access(
+            controller_id, resource_key, collaborator_id, PERM_EXTRACT,
+        );
+        assert(granted, 'H_INT_SHR_GRANT');
+
+        let shared_grant: ResourceAccessGrant = world.read_model((resource_key, collaborator_id));
+        assert(shared_grant.is_active, 'H_INT_SHR_GRANT_ON');
+        assert(has_permissions(shared_grant.permissions_mask, PERM_EXTRACT), 'H_INT_SHR_MASK');
+
+        set_block_number(260_u64);
+        let started = manager.start_harvesting(
+            collaborator_id, hex_coordinate, area_id, plant_id, 2_u16,
+        );
+        assert(started, 'H_INT_SHR_START');
+
+        set_block_number(264_u64);
+        let completed = manager.complete_harvesting(
+            collaborator_id, hex_coordinate, area_id, plant_id,
+        );
+        assert(completed == 2_u16, 'H_INT_SHR_COMPLETE');
+    }
+
+    #[test]
+    fn harvesting_manager_integration_shared_split_routes_minted_yield_by_bp() {
+        let caller = get_default_caller_address();
+        set_block_number(100_u64);
+        let mut world = spawn_test_world([namespace_def()].span());
+        world.sync_perms_and_inits(contract_defs());
+
+        let (harvest_address, _) = world.dns(@"harvesting_manager").unwrap();
+        let manager = IHarvestingManagerDispatcher { contract_address: harvest_address };
+        let (sharing_address, _) = world.dns(@"sharing_manager").unwrap();
+        let sharing = ISharingManagerDispatcher { contract_address: sharing_address };
+
+        let controller_id = 8851_felt252;
+        let collaborator_id = 8852_felt252;
+        let recipient_id = 8853_felt252;
+        let hex_coordinate = 950_felt252;
+        let area_id = 951_felt252;
+        let plant_id = 1_u8;
+        let plant_key = derive_plant_key(hex_coordinate, area_id, plant_id);
+        let item_id = derive_harvest_item_id(plant_key);
+        let resource_key = derive_area_resource_key(area_id, ResourceKind::PlantArea);
+
+        setup_actor_and_hex(ref world, controller_id, caller, hex_coordinate);
+        setup_actor_and_hex(ref world, collaborator_id, caller, hex_coordinate);
+        setup_actor_and_hex(ref world, recipient_id, caller, hex_coordinate);
+        setup_discovered_plant_field_area(ref world, area_id, hex_coordinate, caller);
+        world.write_model_test(
+            @AreaOwnership {
+                area_id,
+                owner_adventurer_id: controller_id,
+                discoverer_adventurer_id: controller_id,
+                discovery_block: 1_u64,
+                claim_block: 1_u64,
+            },
+        );
+
+        let inited = manager.init_harvesting(hex_coordinate, area_id, plant_id);
+        assert(inited, 'H_INT_SPLIT_INIT');
+
+        let upserted = sharing.upsert_resource_policy(
+            controller_id, resource_key, ResourceKind::PlantArea, true,
+        );
+        assert(upserted, 'H_INT_SPLIT_POLICY');
+        set_block_number(250_u64);
+        let granted = sharing.grant_resource_access(
+            controller_id, resource_key, collaborator_id, PERM_EXTRACT,
+        );
+        assert(granted, 'H_INT_SPLIT_GRANT');
+        set_block_number(400_u64);
+        let rule_set = sharing.set_resource_share_rule(
+            controller_id,
+            resource_key,
+            recipient_id,
+            ShareRuleKind::OutputItem,
+            2_500_u16,
+        );
+        assert(rule_set, 'H_INT_SPLIT_RULE');
+
+        set_block_number(410_u64);
+        let started = manager.start_harvesting(
+            collaborator_id, hex_coordinate, area_id, plant_id, 8_u16,
+        );
+        assert(started, 'H_INT_SPLIT_START');
+
+        set_block_number(426_u64);
+        let completed = manager.complete_harvesting(
+            collaborator_id, hex_coordinate, area_id, plant_id,
+        );
+        assert(completed == 8_u16, 'H_INT_SPLIT_COMPLETE');
+
+        let collaborator_item: BackpackItem = world.read_model((collaborator_id, item_id));
+        let recipient_item: BackpackItem = world.read_model((recipient_id, item_id));
+        assert(collaborator_item.quantity == 6_u32, 'H_INT_SPLIT_ACTOR_QTY');
+        assert(recipient_item.quantity == 2_u32, 'H_INT_SPLIT_RECIP_QTY');
+    }
+
+    #[test]
+    fn harvesting_manager_integration_shared_split_respects_recipient_capacity() {
+        let caller = get_default_caller_address();
+        set_block_number(100_u64);
+        let mut world = spawn_test_world([namespace_def()].span());
+        world.sync_perms_and_inits(contract_defs());
+
+        let (harvest_address, _) = world.dns(@"harvesting_manager").unwrap();
+        let manager = IHarvestingManagerDispatcher { contract_address: harvest_address };
+        let (sharing_address, _) = world.dns(@"sharing_manager").unwrap();
+        let sharing = ISharingManagerDispatcher { contract_address: sharing_address };
+
+        let controller_id = 8861_felt252;
+        let collaborator_id = 8862_felt252;
+        let recipient_id = 8863_felt252;
+        let hex_coordinate = 960_felt252;
+        let area_id = 961_felt252;
+        let plant_id = 1_u8;
+        let plant_key = derive_plant_key(hex_coordinate, area_id, plant_id);
+        let item_id = derive_harvest_item_id(plant_key);
+        let resource_key = derive_area_resource_key(area_id, ResourceKind::PlantArea);
+
+        setup_actor_and_hex(ref world, controller_id, caller, hex_coordinate);
+        setup_actor_and_hex(ref world, collaborator_id, caller, hex_coordinate);
+        setup_actor_and_hex(ref world, recipient_id, caller, hex_coordinate);
+        setup_discovered_plant_field_area(ref world, area_id, hex_coordinate, caller);
+        world.write_model_test(
+            @AreaOwnership {
+                area_id,
+                owner_adventurer_id: controller_id,
+                discoverer_adventurer_id: controller_id,
+                discovery_block: 1_u64,
+                claim_block: 1_u64,
+            },
+        );
+        world.write_model_test(@Inventory { adventurer_id: recipient_id, current_weight: 0_u32, max_weight: 1_u32 });
+
+        let inited = manager.init_harvesting(hex_coordinate, area_id, plant_id);
+        assert(inited, 'H_INT_CAP_INIT');
+
+        let upserted = sharing.upsert_resource_policy(
+            controller_id, resource_key, ResourceKind::PlantArea, true,
+        );
+        assert(upserted, 'H_INT_CAP_POLICY');
+        set_block_number(250_u64);
+        let granted = sharing.grant_resource_access(
+            controller_id, resource_key, collaborator_id, PERM_EXTRACT,
+        );
+        assert(granted, 'H_INT_CAP_GRANT');
+        set_block_number(400_u64);
+        let rule_set = sharing.set_resource_share_rule(
+            controller_id,
+            resource_key,
+            recipient_id,
+            ShareRuleKind::OutputItem,
+            5_000_u16,
+        );
+        assert(rule_set, 'H_INT_CAP_RULE');
+
+        set_block_number(410_u64);
+        let started = manager.start_harvesting(
+            collaborator_id, hex_coordinate, area_id, plant_id, 4_u16,
+        );
+        assert(started, 'H_INT_CAP_START');
+
+        set_block_number(418_u64);
+        let completed = manager.complete_harvesting(
+            collaborator_id, hex_coordinate, area_id, plant_id,
+        );
+        assert(completed == 4_u16, 'H_INT_CAP_COMPLETE');
+
+        let collaborator_item: BackpackItem = world.read_model((collaborator_id, item_id));
+        let recipient_item: BackpackItem = world.read_model((recipient_id, item_id));
+        let collaborator_inventory: Inventory = world.read_model(collaborator_id);
+        let recipient_inventory: Inventory = world.read_model(recipient_id);
+        assert(recipient_item.quantity == 1_u32, 'H_INT_CAP_RECIP_QTY');
+        assert(collaborator_item.quantity == 3_u32, 'H_INT_CAP_ACTOR_QTY');
+        assert(recipient_inventory.current_weight == 1_u32, 'H_INT_CAP_RECIP_W');
+        assert(collaborator_inventory.current_weight == 3_u32, 'H_INT_CAP_ACTOR_W');
     }
 }

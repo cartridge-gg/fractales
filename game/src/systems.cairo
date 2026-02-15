@@ -14,3 +14,5 @@ pub mod mining_manager;
 pub mod mining_manager_contract;
 pub mod construction_manager;
 pub mod construction_manager_contract;
+pub mod sharing_manager;
+pub mod sharing_manager_contract;
