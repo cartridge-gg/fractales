@@ -53,6 +53,7 @@ Long-term product vision and mechanics live in:
 ### `docs/04-economy/`
 - `economic-stability.md`: Anti-inflation and territorial energy economics
 - `economic-simulator-spec.md`: 10k-adventurer off-chain simulator spec for stress-testing the MVP economic loop
+- `bootstrap-world-scenario-matrix-spec.md`: 8-week bootstrap scenario matrix, elastic adventurer pricing controls, and simulator implementation contract
 
 ### `docs/05-modules/`
 - `mining.md`: Mining module design
