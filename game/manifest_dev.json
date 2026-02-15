@@ -47,6 +47,17 @@
       ]
     },
     {
+      "address": "0x6b8d05ad111e25079ac97976d827949e664e95ff2dba6aa0b9c0b57b0e35a04",
+      "class_hash": "0x7c04568060ee774894a1015a5924e99cb4d0705575bfde42774112d60ff4e91",
+      "init_calldata": [],
+      "tag": "dojo_starter-autoregulator_manager",
+      "selector": "0x6bd655c051572614a3d0d4f394a8b9d31670e4f7c324da04696adeb2389cc5",
+      "systems": [
+        "tick_autoregulator",
+        "upgrade"
+      ]
+    },
+    {
       "address": "0x40b9411eafafce734ae963ae22807bd0365a64a2d0cd32a949d88f772683d1d",
       "class_hash": "0x112994efc33f1f28b6e04ad9032b0811fae2471888c338acead220bf38d950d",
       "init_calldata": [],
@@ -63,8 +74,8 @@
       ]
     },
     {
-      "address": "0x4134a7c5dbe01022bff946b376439026eed9cbc0b90fab7d12be5f0c404d588",
-      "class_hash": "0x7d98618988ac3f7aeb667aed1fcdc8b8c592d4cf6b1ca3602ef4a3a35537ff",
+      "address": "0x212c3376d5486146682520f094e6e971db3c21bb3800137d4691dd4c486f166",
+      "class_hash": "0x4d0ccb9fba60ede4e3420954caab9f46d480f58c49258d0507576c6f76268b0",
       "init_calldata": [],
       "tag": "dojo_starter-economic_manager",
       "selector": "0x34e2f6884d3544bc490b7deefc712e20eef6bf1c3760fb385c29f4837d887ed",
@@ -541,6 +552,95 @@
       "class_hash": "0xb308d70c2c4f03496f11a905183e9affe6e9df7c51b3af3436ae95fba1b6a2",
       "tag": "dojo_starter-DeathRecord",
       "selector": "0x73419ec0fecd439fc5ce0057c9a71c2afd165931167041d3cf4b18ccb006567"
+    },
+    {
+      "members": [
+        {
+          "name": "epoch",
+          "type": "core::integer::u32",
+          "key": true
+        },
+        {
+          "name": "total_sources",
+          "type": "core::integer::u64",
+          "key": false
+        },
+        {
+          "name": "total_sinks",
+          "type": "core::integer::u64",
+          "key": false
+        },
+        {
+          "name": "new_hexes",
+          "type": "core::integer::u32",
+          "key": false
+        },
+        {
+          "name": "deaths",
+          "type": "core::integer::u32",
+          "key": false
+        },
+        {
+          "name": "mints",
+          "type": "core::integer::u32",
+          "key": false
+        }
+      ],
+      "class_hash": "0x39f67ac1079a7cec808adb44161de96760ba6dd7c8cc08b9c89921a212e6db5",
+      "tag": "dojo_starter-EconomyAccumulator",
+      "selector": "0x721852bbcc4f1096f07b05352e199de018a5153af8dd798959d33febb4fb49c"
+    },
+    {
+      "members": [
+        {
+          "name": "epoch",
+          "type": "core::integer::u32",
+          "key": true
+        },
+        {
+          "name": "total_sources",
+          "type": "core::integer::u64",
+          "key": false
+        },
+        {
+          "name": "total_sinks",
+          "type": "core::integer::u64",
+          "key": false
+        },
+        {
+          "name": "net_energy",
+          "type": "core::integer::u64",
+          "key": false
+        },
+        {
+          "name": "new_hexes",
+          "type": "core::integer::u32",
+          "key": false
+        },
+        {
+          "name": "deaths",
+          "type": "core::integer::u32",
+          "key": false
+        },
+        {
+          "name": "mints",
+          "type": "core::integer::u32",
+          "key": false
+        },
+        {
+          "name": "finalized_at_block",
+          "type": "core::integer::u64",
+          "key": false
+        },
+        {
+          "name": "is_finalized",
+          "type": "core::bool",
+          "key": false
+        }
+      ],
+      "class_hash": "0x5c5f4e3aee73ddb8ce0d12784fb0f4e7a5b8a0eb74716941efff7495e785c58",
+      "tag": "dojo_starter-EconomyEpochSnapshot",
+      "selector": "0x404a1b25bd8c9e830aa462c776d1e89fd746fe3bfb4fcb666143aeaa2004ce4"
     },
     {
       "members": [
@@ -1075,6 +1175,154 @@
     {
       "members": [
         {
+          "name": "slot",
+          "type": "core::integer::u8",
+          "key": true
+        },
+        {
+          "name": "epoch_blocks",
+          "type": "core::integer::u64",
+          "key": false
+        },
+        {
+          "name": "keeper_bounty_energy",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "keeper_bounty_max",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "bounty_funding_share_bp",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "inflation_target_pct",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "inflation_deadband_pct",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "policy_slew_limit_bp",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "min_conversion_tax_bp",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "max_conversion_tax_bp",
+          "type": "core::integer::u16",
+          "key": false
+        }
+      ],
+      "class_hash": "0x238b20771625d29f762b09b6d90f01a2b46d294d37851472346ab28f9d9af0c",
+      "tag": "dojo_starter-RegulatorConfig",
+      "selector": "0x5d951d60a8870cb6943faec29566b6c252e3488b53e251d5547da687dfaef14"
+    },
+    {
+      "members": [
+        {
+          "name": "slot",
+          "type": "core::integer::u8",
+          "key": true
+        },
+        {
+          "name": "policy_epoch",
+          "type": "core::integer::u32",
+          "key": false
+        },
+        {
+          "name": "conversion_tax_bp",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "upkeep_bp",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "mint_discount_bp",
+          "type": "core::integer::u16",
+          "key": false
+        }
+      ],
+      "class_hash": "0x761779b41a3eb36e7508bf45188131c32f9e3fa98ba47fb2d3793b0784d1810",
+      "tag": "dojo_starter-RegulatorPolicy",
+      "selector": "0x248ed8ba3357952d065c654c7449789ad5ae9168451e7bd5a7a527b58c17046"
+    },
+    {
+      "members": [
+        {
+          "name": "slot",
+          "type": "core::integer::u8",
+          "key": true
+        },
+        {
+          "name": "has_ticked",
+          "type": "core::bool",
+          "key": false
+        },
+        {
+          "name": "last_tick_block",
+          "type": "core::integer::u64",
+          "key": false
+        },
+        {
+          "name": "last_tick_epoch",
+          "type": "core::integer::u32",
+          "key": false
+        }
+      ],
+      "class_hash": "0x7f37762bda18b2b3b374b350724805aafd61968ea229a8884ecceda4cba52a9",
+      "tag": "dojo_starter-RegulatorState",
+      "selector": "0x65a9dd2bdb90423c9e4b66b1c9d319f800a0f0e7c59284718eb727524cfd91b"
+    },
+    {
+      "members": [
+        {
+          "name": "slot",
+          "type": "core::integer::u8",
+          "key": true
+        },
+        {
+          "name": "regulator_bounty_pool",
+          "type": "core::integer::u64",
+          "key": false
+        },
+        {
+          "name": "last_bounty_epoch",
+          "type": "core::integer::u32",
+          "key": false
+        },
+        {
+          "name": "last_bounty_paid",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "last_bounty_caller",
+          "type": "core::starknet::contract_address::ContractAddress",
+          "key": false
+        }
+      ],
+      "class_hash": "0x524355dd4e89d45a7e8f304cc150c16784eeef6ea708669b9e5bf5bbbba17a",
+      "tag": "dojo_starter-RegulatorTreasury",
+      "selector": "0x6d41f00f5ba96022644d9d9807910bc3d221e303f1e4a9a4f1b9fcaf3f5a69a"
+    },
+    {
+      "members": [
+        {
           "name": "resource_key",
           "type": "core::felt252",
           "key": true
@@ -1470,6 +1718,28 @@
       "class_hash": "0x7dc73189b883dbb99cf470995852826e4950f07611bcf6ab45d2573f844433",
       "tag": "dojo_starter-AreaOwnershipAssigned",
       "selector": "0x398ed6353431801fb576618e9f236a0de7a6cd7bb109578ae439c7edfe136f6"
+    },
+    {
+      "members": [
+        {
+          "name": "epoch",
+          "type": "core::integer::u32",
+          "key": true
+        },
+        {
+          "name": "caller",
+          "type": "core::starknet::contract_address::ContractAddress",
+          "key": false
+        },
+        {
+          "name": "amount",
+          "type": "core::integer::u16",
+          "key": false
+        }
+      ],
+      "class_hash": "0x2ec93e7c931613c383bcb5bb729bf1e775ed320173ee7407108b002b509b947",
+      "tag": "dojo_starter-BountyPaid",
+      "selector": "0x3e702dc168cf95ed2688175a10004bee0481bed16507f35683580a73f7b08cb"
     },
     {
       "members": [
@@ -2285,6 +2555,60 @@
       "class_hash": "0x122c440a5197effa4c18486eaedc92e1669c6960cc0be6ca091ad0b182d25af",
       "tag": "dojo_starter-OwnershipTransferred",
       "selector": "0x7e40ee475bc8d78c7c8505a9f3f82d67df5be89ac9bc05b63ba6e21e709db6b"
+    },
+    {
+      "members": [
+        {
+          "name": "epoch",
+          "type": "core::integer::u32",
+          "key": true
+        },
+        {
+          "name": "conversion_tax_bp",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "upkeep_bp",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "mint_discount_bp",
+          "type": "core::integer::u16",
+          "key": false
+        }
+      ],
+      "class_hash": "0x79fabdd233df40710404ee1f23797dce4e9841c4e8e6ad8d8604dc82beb65a5",
+      "tag": "dojo_starter-RegulatorPolicyUpdated",
+      "selector": "0x6c70a63dfb8501cd5f65bd54beedd10f9357561006789d714d1ed79d35e2ccf"
+    },
+    {
+      "members": [
+        {
+          "name": "epoch",
+          "type": "core::integer::u32",
+          "key": true
+        },
+        {
+          "name": "caller",
+          "type": "core::starknet::contract_address::ContractAddress",
+          "key": false
+        },
+        {
+          "name": "bounty_paid",
+          "type": "core::integer::u16",
+          "key": false
+        },
+        {
+          "name": "status",
+          "type": "core::integer::u8",
+          "key": false
+        }
+      ],
+      "class_hash": "0x14ea92c1dc484d533f129215e9807d5bc6b91b1c26312decf3008001be6c27e",
+      "tag": "dojo_starter-RegulatorTicked",
+      "selector": "0x7a0e2fbf0dfb977a2edc8f9ef0a91da72c7b1af19250bb857a68e92d649d320"
     },
     {
       "members": [
@@ -4856,6 +5180,38 @@
     },
     {
       "type": "struct",
+      "name": "dojo_starter::events::economic_events::BountyPaid",
+      "members": [
+        {
+          "name": "epoch",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "caller",
+          "type": "core::starknet::contract_address::ContractAddress"
+        },
+        {
+          "name": "amount",
+          "type": "core::integer::u16"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::economic_events::BountyPaidValue",
+      "members": [
+        {
+          "name": "caller",
+          "type": "core::starknet::contract_address::ContractAddress"
+        },
+        {
+          "name": "amount",
+          "type": "core::integer::u16"
+        }
+      ]
+    },
+    {
+      "type": "struct",
       "name": "dojo_starter::events::economic_events::ClaimExpired",
       "members": [
         {
@@ -5099,6 +5455,92 @@
       ]
     },
     {
+      "type": "struct",
+      "name": "dojo_starter::events::economic_events::RegulatorPolicyUpdated",
+      "members": [
+        {
+          "name": "epoch",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "conversion_tax_bp",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "upkeep_bp",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "mint_discount_bp",
+          "type": "core::integer::u16"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::economic_events::RegulatorPolicyUpdatedValue",
+      "members": [
+        {
+          "name": "conversion_tax_bp",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "upkeep_bp",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "mint_discount_bp",
+          "type": "core::integer::u16"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::economic_events::RegulatorTicked",
+      "members": [
+        {
+          "name": "epoch",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "caller",
+          "type": "core::starknet::contract_address::ContractAddress"
+        },
+        {
+          "name": "bounty_paid",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "status",
+          "type": "core::integer::u8"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::events::economic_events::RegulatorTickedValue",
+      "members": [
+        {
+          "name": "caller",
+          "type": "core::starknet::contract_address::ContractAddress"
+        },
+        {
+          "name": "bounty_paid",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "status",
+          "type": "core::integer::u8"
+        }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::events::economic_events::e_BountyPaid::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
       "type": "event",
       "name": "dojo_starter::events::economic_events::e_ClaimExpired::Event",
       "kind": "enum",
@@ -5137,6 +5579,18 @@
     {
       "type": "event",
       "name": "dojo_starter::events::economic_events::e_ItemsConverted::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::events::economic_events::e_RegulatorPolicyUpdated::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::events::economic_events::e_RegulatorTicked::Event",
       "kind": "enum",
       "variants": []
     },
@@ -6952,6 +7406,142 @@
     },
     {
       "type": "struct",
+      "name": "dojo_starter::models::economics::EconomyAccumulator",
+      "members": [
+        {
+          "name": "epoch",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "total_sources",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "total_sinks",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "new_hexes",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "deaths",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "mints",
+          "type": "core::integer::u32"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::economics::EconomyAccumulatorValue",
+      "members": [
+        {
+          "name": "total_sources",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "total_sinks",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "new_hexes",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "deaths",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "mints",
+          "type": "core::integer::u32"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::economics::EconomyEpochSnapshot",
+      "members": [
+        {
+          "name": "epoch",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "total_sources",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "total_sinks",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "net_energy",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "new_hexes",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "deaths",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "mints",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "finalized_at_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "is_finalized",
+          "type": "core::bool"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::economics::EconomyEpochSnapshotValue",
+      "members": [
+        {
+          "name": "total_sources",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "total_sinks",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "net_energy",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "new_hexes",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "deaths",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "mints",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "finalized_at_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "is_finalized",
+          "type": "core::bool"
+        }
+      ]
+    },
+    {
+      "type": "struct",
       "name": "dojo_starter::models::economics::HexDecayState",
       "members": [
         {
@@ -7015,6 +7605,230 @@
       ]
     },
     {
+      "type": "struct",
+      "name": "dojo_starter::models::economics::RegulatorConfig",
+      "members": [
+        {
+          "name": "slot",
+          "type": "core::integer::u8"
+        },
+        {
+          "name": "epoch_blocks",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "keeper_bounty_energy",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "keeper_bounty_max",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "bounty_funding_share_bp",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "inflation_target_pct",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "inflation_deadband_pct",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "policy_slew_limit_bp",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "min_conversion_tax_bp",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "max_conversion_tax_bp",
+          "type": "core::integer::u16"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::economics::RegulatorConfigValue",
+      "members": [
+        {
+          "name": "epoch_blocks",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "keeper_bounty_energy",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "keeper_bounty_max",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "bounty_funding_share_bp",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "inflation_target_pct",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "inflation_deadband_pct",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "policy_slew_limit_bp",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "min_conversion_tax_bp",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "max_conversion_tax_bp",
+          "type": "core::integer::u16"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::economics::RegulatorPolicy",
+      "members": [
+        {
+          "name": "slot",
+          "type": "core::integer::u8"
+        },
+        {
+          "name": "policy_epoch",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "conversion_tax_bp",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "upkeep_bp",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "mint_discount_bp",
+          "type": "core::integer::u16"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::economics::RegulatorPolicyValue",
+      "members": [
+        {
+          "name": "policy_epoch",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "conversion_tax_bp",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "upkeep_bp",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "mint_discount_bp",
+          "type": "core::integer::u16"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::economics::RegulatorState",
+      "members": [
+        {
+          "name": "slot",
+          "type": "core::integer::u8"
+        },
+        {
+          "name": "has_ticked",
+          "type": "core::bool"
+        },
+        {
+          "name": "last_tick_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "last_tick_epoch",
+          "type": "core::integer::u32"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::economics::RegulatorStateValue",
+      "members": [
+        {
+          "name": "has_ticked",
+          "type": "core::bool"
+        },
+        {
+          "name": "last_tick_block",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "last_tick_epoch",
+          "type": "core::integer::u32"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::economics::RegulatorTreasury",
+      "members": [
+        {
+          "name": "slot",
+          "type": "core::integer::u8"
+        },
+        {
+          "name": "regulator_bounty_pool",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "last_bounty_epoch",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "last_bounty_paid",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "last_bounty_caller",
+          "type": "core::starknet::contract_address::ContractAddress"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::economics::RegulatorTreasuryValue",
+      "members": [
+        {
+          "name": "regulator_bounty_pool",
+          "type": "core::integer::u64"
+        },
+        {
+          "name": "last_bounty_epoch",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "last_bounty_paid",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "last_bounty_caller",
+          "type": "core::starknet::contract_address::ContractAddress"
+        }
+      ]
+    },
+    {
       "type": "event",
       "name": "dojo_starter::models::economics::m_AdventurerEconomics::Event",
       "kind": "enum",
@@ -7034,7 +7848,43 @@
     },
     {
       "type": "event",
+      "name": "dojo_starter::models::economics::m_EconomyAccumulator::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::models::economics::m_EconomyEpochSnapshot::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
       "name": "dojo_starter::models::economics::m_HexDecayState::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::models::economics::m_RegulatorConfig::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::models::economics::m_RegulatorPolicy::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::models::economics::m_RegulatorState::Event",
+      "kind": "enum",
+      "variants": []
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::models::economics::m_RegulatorTreasury::Event",
       "kind": "enum",
       "variants": []
     },
@@ -8717,6 +9567,102 @@
     {
       "type": "event",
       "name": "dojo_starter::systems::adventurer_manager_contract::adventurer_manager::Event",
+      "kind": "enum",
+      "variants": [
+        {
+          "name": "UpgradeableEvent",
+          "type": "dojo::contract::components::upgradeable::upgradeable_cpt::Event",
+          "kind": "nested"
+        },
+        {
+          "name": "WorldProviderEvent",
+          "type": "dojo::contract::components::world_provider::world_provider_cpt::Event",
+          "kind": "nested"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::systems::autoregulator_manager::TickOutcome",
+      "members": [
+        {
+          "name": "status",
+          "type": "dojo_starter::systems::autoregulator_manager::TickStatus"
+        },
+        {
+          "name": "epoch",
+          "type": "core::integer::u32"
+        },
+        {
+          "name": "bounty_paid",
+          "type": "core::integer::u16"
+        },
+        {
+          "name": "policy_changed",
+          "type": "core::bool"
+        }
+      ]
+    },
+    {
+      "type": "enum",
+      "name": "dojo_starter::systems::autoregulator_manager::TickStatus",
+      "variants": [
+        {
+          "name": "NoOpEarly",
+          "type": "()"
+        },
+        {
+          "name": "NoOpAlreadyTicked",
+          "type": "()"
+        },
+        {
+          "name": "Applied",
+          "type": "()"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "dojo_starter::systems::autoregulator_manager_contract::IAutoregulatorManager",
+      "items": [
+        {
+          "type": "function",
+          "name": "tick_autoregulator",
+          "inputs": [],
+          "outputs": [
+            {
+              "type": "dojo_starter::systems::autoregulator_manager::TickOutcome"
+            }
+          ],
+          "state_mutability": "external"
+        },
+        {
+          "type": "function",
+          "name": "get_regulator_policy",
+          "inputs": [],
+          "outputs": [
+            {
+              "type": "dojo_starter::models::economics::RegulatorPolicy"
+            }
+          ],
+          "state_mutability": "view"
+        },
+        {
+          "type": "function",
+          "name": "get_latest_snapshot",
+          "inputs": [],
+          "outputs": [
+            {
+              "type": "dojo_starter::models::economics::EconomyEpochSnapshot"
+            }
+          ],
+          "state_mutability": "view"
+        }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "dojo_starter::systems::autoregulator_manager_contract::autoregulator_manager::Event",
       "kind": "enum",
       "variants": [
         {

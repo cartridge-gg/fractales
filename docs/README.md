@@ -30,16 +30,62 @@ Economic tension in MVP is simple and intentional: push expansion too hard and y
 
 ## Current Live Slot Deployment
 
-As of `2026-02-13`, the active public Slot deployment is:
+As of `2026-02-15`, the active public Slot deployment is:
 
-- Slot project: `gen-dungeon-live-20260213b`
-- Katana RPC: `https://api.cartridge.gg/x/gen-dungeon-live-20260213b/katana`
-- Torii HTTP: `https://api.cartridge.gg/x/gen-dungeon-live-20260213b/torii`
-- Torii GraphQL: `https://api.cartridge.gg/x/gen-dungeon-live-20260213b/torii/graphql`
+- Slot project: `gen-dungeon-live-20260215a`
+- Katana RPC: `https://api.cartridge.gg/x/gen-dungeon-live-20260215a/katana`
+- Torii HTTP: `https://api.cartridge.gg/x/gen-dungeon-live-20260215a/torii`
+- Torii GraphQL: `https://api.cartridge.gg/x/gen-dungeon-live-20260215a/torii/graphql`
 - World address: `0x00f3d3b78a41b212442a64218a7f7dbde331813ea09a07067c7ad12f93620c11`
 
-Live release and how-to-play runbook:
-- `07-delivery/releases/2026-02-13-gen-dungeon-live-20260213b.md`
+## Agent Join Quickstart (Live Slot)
+
+Use this when another agent needs to join the live world quickly.
+
+1. Authenticate and verify access:
+
+```bash
+slot auth info
+```
+
+2. Pull the prefunded Katana accounts for this project:
+
+```bash
+slot deployments accounts gen-dungeon-live-20260215a katana
+```
+
+3. Export live environment variables:
+
+```bash
+export SLOT_PROJECT=gen-dungeon-live-20260215a
+export KATANA_RPC=https://api.cartridge.gg/x/gen-dungeon-live-20260215a/katana
+export TORII_HTTP=https://api.cartridge.gg/x/gen-dungeon-live-20260215a/torii
+export TORII_GQL=https://api.cartridge.gg/x/gen-dungeon-live-20260215a/torii/graphql
+export WORLD_ADDRESS=0x00f3d3b78a41b212442a64218a7f7dbde331813ea09a07067c7ad12f93620c11
+```
+
+4. Verify reads (RPC + Torii):
+
+```bash
+sozo model get dojo_starter-WorldGenConfig 2 --world $WORLD_ADDRESS --rpc-url $KATANA_RPC
+curl -sS -X POST "$TORII_GQL" \
+  -H 'content-type: application/json' \
+  --data '{"query":"{ __typename }"}'
+```
+
+5. Send a smoke write tx:
+
+```bash
+sozo execute dojo_starter-adventurer_manager create_adventurer \
+  --world $WORLD_ADDRESS \
+  --rpc-url $KATANA_RPC \
+  --katana-account katana1 \
+  --wait
+```
+
+Core gameplay loop on live:
+
+`create -> discover hex -> move -> discover area -> init/start/complete harvest -> convert -> maintain -> defend/claim`
 
 ## Canonical Sources
 
