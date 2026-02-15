@@ -559,7 +559,8 @@ pub fn defend_claim_transition(
     mut escrow: ClaimEscrow,
     mut claimant: Adventurer,
     mut claimant_economics: AdventurerEconomics,
-    defense_energy: u16,
+    defense_energy_spent: u16,
+    defense_energy_effective: u16,
     now_block: u64,
     upkeep_per_period: u32,
     recovery_bp: u16,
@@ -628,7 +629,7 @@ pub fn defend_claim_transition(
             outcome: DefendOutcome::ClaimExpired,
         };
     }
-    if defense_energy == 0_u16 || defense_energy < escrow.energy_locked {
+    if defense_energy_spent == 0_u16 || defense_energy_effective < escrow.energy_locked {
         return DefendResult {
             defender,
             defender_economics,
@@ -641,7 +642,7 @@ pub fn defend_claim_transition(
     }
 
     let consumed = consume_transition(
-        defender, defender_economics, caller, defense_energy, now_block, ENERGY_REGEN_PER_100_BLOCKS,
+        defender, defender_economics, caller, defense_energy_spent, now_block, ENERGY_REGEN_PER_100_BLOCKS,
     );
     match consumed.outcome {
         ConsumeOutcome::Applied => {},
@@ -680,8 +681,10 @@ pub fn defend_claim_transition(
         },
     }
 
-    state.current_energy_reserve = saturating_add_u32(state.current_energy_reserve, defense_energy.into());
-    let recovery = maintenance_decay_recovery(defense_energy, upkeep_per_period, recovery_bp);
+    state.current_energy_reserve = saturating_add_u32(
+        state.current_energy_reserve, defense_energy_spent.into(),
+    );
+    let recovery = maintenance_decay_recovery(defense_energy_spent, upkeep_per_period, recovery_bp);
     if recovery >= state.decay_level {
         state.decay_level = 0_u16;
     } else {

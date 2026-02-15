@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { StreamPatchEnvelope } from "@gen-dungeon/explorer-types";
-import { applyStreamPatch, createPatchReducerState } from "../src/patch-reducer";
+import { applyStreamPatch, createPatchReducerState } from "../src/patch-reducer.js";
 
 function patch(sequence: number): StreamPatchEnvelope {
   return {

@@ -7,7 +7,7 @@ import type {
   HexArea,
   HexDecayState,
   PlantNode
-} from "./generated";
+} from "./generated.js";
 
 export type ExplorerSchemaVersion = "explorer-v1";
 export type Felt = `0x${string}` | string;

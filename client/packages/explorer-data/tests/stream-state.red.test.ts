@@ -3,7 +3,7 @@ import type { StreamPatchEnvelope } from "@gen-dungeon/explorer-types";
 import {
   applyIncomingPatchMetadata,
   createStreamState
-} from "../src/stream-state";
+} from "../src/stream-state.js";
 
 function patch(sequence: number): StreamPatchEnvelope {
   return {

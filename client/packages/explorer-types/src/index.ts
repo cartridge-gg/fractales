@@ -1,2 +1,2 @@
-export * from "./generated";
-export * from "./explorer-dtos";
+export * from "./generated.js";
+export * from "./explorer-dtos.js";

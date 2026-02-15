@@ -14,15 +14,17 @@ mod tests {
     use dojo_starter::events::harvesting_events::{
         HarvestingCancelled, HarvestingCompleted, HarvestingRejected, HarvestingStarted,
     };
+    use dojo_starter::libs::construction_balance::{B_GREENHOUSE, B_STOREHOUSE};
     use dojo_starter::libs::world_gen::derive_plant_profile;
+    use dojo_starter::models::construction::ConstructionBuildingNode;
     use dojo_starter::models::adventurer::Adventurer;
     use dojo_starter::models::economics::AdventurerEconomics;
     use dojo_starter::models::harvesting::{
-        HarvestReservation, HarvestReservationStatus, PlantNode, derive_harvest_reservation_id,
-        derive_plant_key,
+        HarvestReservation, HarvestReservationStatus, PlantNode, derive_harvest_item_id,
+        derive_harvest_reservation_id, derive_plant_key,
     };
-    use dojo_starter::models::inventory::Inventory;
-    use dojo_starter::models::world::{AreaType, Biome, Hex, HexArea, SizeCategory};
+    use dojo_starter::models::inventory::{BackpackItem, Inventory};
+    use dojo_starter::models::world::{AreaType, Biome, Hex, HexArea, SizeCategory, derive_area_id};
     use dojo_starter::systems::harvesting_manager_contract::{
         IHarvestingManagerDispatcher, IHarvestingManagerDispatcherTrait,
     };
@@ -40,6 +42,7 @@ mod tests {
                 TestResource::Model("WorldGenConfig"),
                 TestResource::Model("PlantNode"),
                 TestResource::Model("HarvestReservation"),
+                TestResource::Model("ConstructionBuildingNode"),
                 TestResource::Event("HarvestingStarted"),
                 TestResource::Event("HarvestingCompleted"),
                 TestResource::Event("HarvestingCancelled"),
@@ -287,6 +290,73 @@ mod tests {
         assert(started_count == 2_usize, 'H_INT_EVT_START_CNT');
         assert(completed_count == 1_usize, 'H_INT_EVT_COMPLETE_CNT');
         assert(cancelled_count == 1_usize, 'H_INT_EVT_CANCEL_CNT');
+    }
+
+    #[test]
+    fn harvesting_manager_integration_greenhouse_bonus_and_storehouse_capacity_apply() {
+        let caller = get_default_caller_address();
+        set_block_number(100_u64);
+        let mut world = spawn_test_world([namespace_def()].span());
+        world.sync_perms_and_inits(contract_defs());
+
+        let (contract_address, _) = world.dns(@"harvesting_manager").unwrap();
+        let manager = IHarvestingManagerDispatcher { contract_address };
+
+        let adventurer_id = 8821_felt252;
+        let hex_coordinate = 921_felt252;
+        let area_id = derive_area_id(hex_coordinate, 2_u8);
+        let plant_id = 1_u8;
+        let plant_key = derive_plant_key(hex_coordinate, area_id, plant_id);
+        setup_actor_and_hex(ref world, adventurer_id, caller, hex_coordinate);
+        world.write_model_test(@Inventory { adventurer_id, current_weight: 0_u32, max_weight: 5_u32 });
+        setup_discovered_plant_field_area(ref world, area_id, hex_coordinate, caller);
+
+        world.write_model_test(
+            @ConstructionBuildingNode {
+                area_id: derive_area_id(hex_coordinate, 0_u8),
+                hex_coordinate,
+                owner_adventurer_id: adventurer_id,
+                building_type: B_GREENHOUSE,
+                tier: 1_u8,
+                condition_bp: 10_000_u16,
+                upkeep_reserve: 0_u32,
+                last_upkeep_block: 0_u64,
+                is_active: true,
+            },
+        );
+        world.write_model_test(
+            @ConstructionBuildingNode {
+                area_id: derive_area_id(hex_coordinate, 1_u8),
+                hex_coordinate,
+                owner_adventurer_id: adventurer_id,
+                building_type: B_STOREHOUSE,
+                tier: 1_u8,
+                condition_bp: 10_000_u16,
+                upkeep_reserve: 0_u32,
+                last_upkeep_block: 0_u64,
+                is_active: true,
+            },
+        );
+
+        let inited = manager.init_harvesting(hex_coordinate, area_id, plant_id);
+        assert(inited, 'H_INT_C4_INIT');
+        let initialized_plant: PlantNode = world.read_model(plant_key);
+
+        let started = manager.start_harvesting(adventurer_id, hex_coordinate, area_id, plant_id, 10_u16);
+        assert(started, 'H_INT_C4_START');
+
+        set_block_number(120_u64);
+        let completed_yield = manager.complete_harvesting(adventurer_id, hex_coordinate, area_id, plant_id);
+        assert(completed_yield == 10_u16, 'H_INT_C4_COMPLETE_RET');
+
+        let after_complete: PlantNode = world.read_model(plant_key);
+        let item_id = derive_harvest_item_id(plant_key);
+        let item: BackpackItem = world.read_model((adventurer_id, item_id));
+        let inventory: Inventory = world.read_model(adventurer_id);
+
+        assert(after_complete.current_yield == initialized_plant.max_yield - 10_u16, 'H_INT_C4_PLANT');
+        assert(inventory.current_weight == 7_u32, 'H_INT_C4_CAPACITY');
+        assert(item.quantity == 7_u32, 'H_INT_C4_ITEM');
     }
 
     #[test]

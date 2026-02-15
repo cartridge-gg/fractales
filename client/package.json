@@ -1,18 +1,22 @@
 {
   "name": "@gen-dungeon/client-workspace",
   "private": true,
+  "packageManager": "bun@1.3.1",
   "workspaces": [
     "packages/*"
   ],
   "scripts": {
     "typecheck": "tsc -b packages/*",
-    "test": "npm run test:torii-views && npm run test:explorer-data && npm run test:proxy",
-    "test:torii-views": "npm --workspace @gen-dungeon/torii-views run test",
-    "test:explorer-data": "npm --workspace @gen-dungeon/explorer-data run test",
-    "test:proxy": "npm --workspace @gen-dungeon/explorer-proxy-node run test"
+    "test": "bun run test:torii-views && bun run test:explorer-data && bun run test:proxy",
+    "test:torii-views": "bun run --filter @gen-dungeon/torii-views test",
+    "test:explorer-data": "bun run --filter @gen-dungeon/explorer-data test",
+    "test:proxy": "bun run --filter @gen-dungeon/explorer-proxy-node test"
   },
   "devDependencies": {
+    "@dojoengine/core": "^1.8.8",
+    "@dojoengine/sdk": "^1.9.0",
     "@types/node": "^22.13.10",
+    "starknet": "^8.9.2",
     "typescript": "^5.7.3",
     "vitest": "^2.1.8"
   }

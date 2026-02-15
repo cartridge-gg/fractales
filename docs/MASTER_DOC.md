@@ -68,6 +68,8 @@ Long-term product vision and mechanics live in:
 - `mvp-prioritized-implementation-plan.md`: Execution-priority plan (`P0/P1/P2`) with edge-case hardening order
 - `deterministic-generation-plan.md`: Deterministic seed/noise rollout plan for hex -> area -> plant generation
 - `mining-fractal-prd-tdd.md`: Post-MVP deterministic mining PRD with TDD milestones and collapse dilemma loop
+- `construction-balance-scope.md`: 7-building construction balance envelope, thresholds, and simulator workflow
+- `construction-prd-tdd.md`: Construction module implementation PRD/TDD slices mapped to game files
 - `biome-20-expansion-checklist.md`: Execution checklist for 20-biome generation/profile rollout and guardrails
 - `development-plan.md`: Phased implementation plan
 - `dojo-setup-guide.md`: Dojo environment setup and patterns

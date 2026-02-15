@@ -14,6 +14,7 @@ pub mod libs {
     pub mod mining_math;
     pub mod conversion_math;
     pub mod decay_math;
+    pub mod construction_balance;
 }
 
 pub mod tests {
@@ -28,8 +29,13 @@ pub mod tests {
         mod world_gen_test;
         mod mining_gen_test;
         mod mining_math_test;
+        mod mining_manager_test;
         mod conversion_math_test;
         mod decay_math_test;
+        mod construction_balance_test;
+        mod construction_events_test;
+        mod construction_models_test;
+        mod construction_manager_test;
         mod world_models_test;
         mod world_events_test;
         mod adventurer_events_test;
@@ -54,9 +60,13 @@ pub mod tests {
         mod e2e_discover_harvest_convert_maintain;
         mod e2e_decay_claim_defend;
         mod e2e_permadeath_lockout;
+        mod e2e_mine_build_convert;
+        mod e2e_harvest_process_build;
+        mod e2e_claim_transfer_buildings;
         mod world_gen_manager_integration_test;
         mod smoke_generation_pipeline_integration_test;
         mod world_economy_bridge_integration_test;
         mod mining_manager_integration_test;
+        mod construction_manager_integration_test;
     }
 }

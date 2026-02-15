@@ -130,3 +130,5 @@ After every non-trivial task, update this file with at least one concise improve
 - 2026-02-13: For Torii view contracts, make schema-parity checks data-driven from view manifests (`requiredModelFields`) so drift detection remains deterministic as new views are added.
 - 2026-02-13: For explorer proxy contracts, validate and normalize API inputs (`chunk keys`, search mode, limits) at the boundary so websocket/store logic can assume canonical query shapes.
 - 2026-02-13: For proxy websocket determinism, sort outbound rows by `(block_number, tx_index, event_index)` before assigning sequences, so all clients converge on identical patch order.
+- 2026-02-15: In the client TypeScript workspace (`moduleResolution: NodeNext`), keep explicit `.js` suffixes on all relative imports/exports (including test files and barrel exports) or `tsc -b` fails before P0 gates can run.
+- 2026-02-15: For `@client` package-manager consistency, pin `packageManager` to Bun, keep internal workspace deps as `workspace:*`, and validate with `bun install && bun run typecheck && bun run test` after lockfile migrations.

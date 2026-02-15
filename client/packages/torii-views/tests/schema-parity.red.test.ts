@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { checkSchemaParity } from "../src/parity";
-import type { ToriiViewsManifest } from "../src/manifest";
+import { checkSchemaParity } from "../src/parity.js";
+import type { ToriiViewsManifest } from "../src/manifest.js";
 
 const manifestFixture: ToriiViewsManifest = {
   packageName: "@gen-dungeon/torii-views",

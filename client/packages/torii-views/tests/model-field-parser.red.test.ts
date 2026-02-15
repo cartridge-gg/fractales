@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { extractModelFieldSetFromSource } from "../src/model-field-parser";
+import { extractModelFieldSetFromSource } from "../src/model-field-parser.js";
 
 const sampleGeneratedModels = `
 export interface Hex {

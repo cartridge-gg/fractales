@@ -32,6 +32,7 @@ mod tests {
                 TestResource::Model("HexDecayState"),
                 TestResource::Model("ClaimEscrow"),
                 TestResource::Model("AreaOwnership"),
+                TestResource::Model("ConstructionBuildingNode"),
                 TestResource::Event("AreaDiscovered"),
                 TestResource::Event("AreaOwnershipAssigned"),
                 TestResource::Event("WorldActionRejected"),

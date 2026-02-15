@@ -1,0 +1,1 @@
+{"root":["./src/contracts.ts","./src/index.ts","./src/manifest.ts","./src/mapping.ts","./src/model-field-parser.ts","./src/parity.ts","./tests/model-field-parser.red.test.ts","./tests/schema-parity.red.test.ts"],"version":"5.9.3"}

@@ -71,7 +71,14 @@ export function validateSearchQuery(
     };
   }
 
-  const [mode, value] = modes[0];
+  const selectedMode = modes[0];
+  if (!selectedMode) {
+    return {
+      ok: false,
+      error: "search query must provide exactly one mode: coord, owner, or adventurer"
+    };
+  }
+  const [mode, value] = selectedMode;
   const limit = query.limit ?? DEFAULT_SEARCH_LIMIT;
 
   if (!Number.isInteger(limit) || limit < 1 || limit > MAX_SEARCH_LIMIT) {

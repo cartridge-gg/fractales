@@ -40,11 +40,16 @@ pub mod harvesting_manager {
         HARVEST_TIME_PER_UNIT, IHarvestingManager, PHASE_CANCEL, PHASE_COMPLETE, PHASE_INIT,
         PHASE_START, WORLD_GEN_VERSION_ACTIVE,
     };
+    use core::traits::TryInto;
     use dojo::event::EventStorage;
     use dojo::model::ModelStorage;
     use dojo_starter::events::harvesting_events::{
         HarvestingCancelled, HarvestingCompleted, HarvestingRejected, HarvestingStarted,
     };
+    use dojo_starter::libs::construction_balance::{
+        B_GREENHOUSE, B_STOREHOUSE, effect_bp_for_building,
+    };
+    use dojo_starter::models::construction::{ConstructionBuildingNode, is_building_effective};
     use dojo_starter::libs::world_gen::derive_plant_profile_with_config;
     use dojo_starter::models::adventurer::Adventurer;
     use dojo_starter::models::economics::AdventurerEconomics;
@@ -53,12 +58,115 @@ pub mod harvesting_manager {
         derive_plant_key,
     };
     use dojo_starter::models::inventory::{BackpackItem, Inventory};
-    use dojo_starter::models::world::{AreaType, Hex, HexArea, WorldGenConfig};
+    use dojo_starter::models::world::{AreaType, Hex, HexArea, WorldGenConfig, derive_area_id};
     use dojo_starter::systems::harvesting_manager::{
         CancelOutcome, CompleteOutcome, InitOutcome, StartOutcome, cancel_transition, complete_transition,
         init_transition, start_transition,
     };
     use starknet::{get_block_info, get_caller_address};
+
+    const BP_ONE: u16 = 10_000_u16;
+    const U16_MAX_U128: u128 = 65_535_u128;
+    const U32_MAX_U128: u128 = 4_294_967_295_u128;
+
+    fn apply_bp_floor_u16(value: u16, bp: u16) -> u16 {
+        if value == 0_u16 || bp == 0_u16 {
+            return 0_u16;
+        }
+
+        let scaled_u128: u128 = value.into() * bp.into() / BP_ONE.into();
+        if scaled_u128 > U16_MAX_U128 {
+            65_535_u16
+        } else {
+            scaled_u128.try_into().unwrap()
+        }
+    }
+
+    fn apply_bp_floor_u32(value: u32, bp: u16) -> u32 {
+        if value == 0_u32 || bp == 0_u16 {
+            return 0_u32;
+        }
+
+        let scaled_u128: u128 = value.into() * bp.into() / BP_ONE.into();
+        if scaled_u128 > U32_MAX_U128 {
+            4_294_967_295_u32
+        } else {
+            scaled_u128.try_into().unwrap()
+        }
+    }
+
+    fn bonus_extra_from_bp(base_value: u16, bp: u16) -> u16 {
+        if bp <= BP_ONE {
+            return 0_u16;
+        }
+        apply_bp_floor_u16(base_value, bp - BP_ONE)
+    }
+
+    fn active_hex_building_effect_bp(
+        ref world: dojo::world::WorldStorage, hex_coordinate: felt252, building_type: felt252,
+    ) -> u16 {
+        let base_bp = effect_bp_for_building(building_type);
+        if base_bp == 0_u16 {
+            return BP_ONE;
+        }
+
+        let hex: Hex = world.read_model(hex_coordinate);
+        let mut idx: u8 = 0_u8;
+        loop {
+            if idx >= hex.area_count {
+                break;
+            };
+
+            let area_id = derive_area_id(hex_coordinate, idx);
+            let mut building: ConstructionBuildingNode = world.read_model(area_id);
+            building.area_id = area_id;
+
+            if building.hex_coordinate == hex_coordinate && building.building_type == building_type
+                && is_building_effective(building) {
+                return base_bp;
+            }
+
+            idx += 1_u8;
+        };
+
+        BP_ONE
+    }
+
+    fn effective_capacity_with_storehouse(max_weight: u32, storehouse_bp: u16) -> u32 {
+        if storehouse_bp <= BP_ONE {
+            return max_weight;
+        }
+        let boosted = apply_bp_floor_u32(max_weight, storehouse_bp);
+        if boosted < max_weight { max_weight } else { boosted }
+    }
+
+    fn mint_bonus_item_with_capacity(
+        mut inventory: Inventory,
+        mut item: BackpackItem,
+        quantity: u16,
+        quality: u16,
+        effective_max_weight: u32,
+    ) -> (Inventory, BackpackItem, u16) {
+        if quantity == 0_u16 {
+            return (inventory, item, 0_u16);
+        }
+
+        let capacity_left = if effective_max_weight > inventory.current_weight {
+            effective_max_weight - inventory.current_weight
+        } else {
+            0_u32
+        };
+        let desired_u32: u32 = quantity.into();
+        let minted_u32 = if desired_u32 > capacity_left { capacity_left } else { desired_u32 };
+        if minted_u32 > 0_u32 {
+            inventory.current_weight += minted_u32;
+            item.quantity += minted_u32;
+            item.quality = quality;
+            item.weight_per_unit = 1_u16;
+        }
+
+        (inventory, item, minted_u32.try_into().unwrap())
+    }
 
     fn init_outcome_reason(outcome: InitOutcome) -> felt252 {
         match outcome {
@@ -275,6 +383,11 @@ pub mod harvesting_manager {
             let inventory: Inventory = world.read_model(adventurer_id);
             let plant_key = derive_plant_key(hex_coordinate, area_id, plant_id);
             let plant: PlantNode = world.read_model(plant_key);
+            let greenhouse_bp = active_hex_building_effect_bp(ref world, hex_coordinate, B_GREENHOUSE);
+            let storehouse_bp = active_hex_building_effect_bp(ref world, hex_coordinate, B_STOREHOUSE);
+            let effective_max_weight = effective_capacity_with_storehouse(inventory.max_weight, storehouse_bp);
+            let mut inventory_for_transition = inventory;
+            inventory_for_transition.max_weight = effective_max_weight;
 
             let reservation_id = derive_harvest_reservation_id(adventurer_id, plant_key);
             let mut reservation: HarvestReservation = world.read_model(reservation_id);
@@ -287,15 +400,30 @@ pub mod harvesting_manager {
             item.item_id = item_id;
 
             let completed = complete_transition(
-                adventurer, caller, plant, reservation, inventory, item, block_number,
+                adventurer, caller, plant, reservation, inventory_for_transition, item, block_number,
             );
             match completed.outcome {
                 CompleteOutcome::Applied => {
+                    let bonus_raw = bonus_extra_from_bp(completed.actual_yield, greenhouse_bp);
+                    let quality_for_bonus = if completed.item.quality == 0_u16 {
+                        completed.plant.health
+                    } else {
+                        completed.item.quality
+                    };
+                    let (mut inventory_with_bonus, item_with_bonus, _) = mint_bonus_item_with_capacity(
+                        completed.inventory,
+                        completed.item,
+                        bonus_raw,
+                        quality_for_bonus,
+                        effective_max_weight,
+                    );
+                    inventory_with_bonus.max_weight = inventory.max_weight;
+
                     world.write_model(@completed.adventurer);
                     world.write_model(@completed.plant);
                     world.write_model(@completed.reservation);
-                    world.write_model(@completed.inventory);
-                    world.write_model(@completed.item);
+                    world.write_model(@inventory_with_bonus);
+                    world.write_model(@item_with_bonus);
                     world.emit_event(
                         @HarvestingCompleted {
                             adventurer_id,
@@ -334,6 +462,11 @@ pub mod harvesting_manager {
             let inventory: Inventory = world.read_model(adventurer_id);
             let plant_key = derive_plant_key(hex_coordinate, area_id, plant_id);
             let plant: PlantNode = world.read_model(plant_key);
+            let greenhouse_bp = active_hex_building_effect_bp(ref world, hex_coordinate, B_GREENHOUSE);
+            let storehouse_bp = active_hex_building_effect_bp(ref world, hex_coordinate, B_STOREHOUSE);
+            let effective_max_weight = effective_capacity_with_storehouse(inventory.max_weight, storehouse_bp);
+            let mut inventory_for_transition = inventory;
+            inventory_for_transition.max_weight = effective_max_weight;
 
             let reservation_id = derive_harvest_reservation_id(adventurer_id, plant_key);
             let mut reservation: HarvestReservation = world.read_model(reservation_id);
@@ -346,15 +479,30 @@ pub mod harvesting_manager {
             item.item_id = item_id;
 
             let canceled = cancel_transition(
-                adventurer, caller, plant, reservation, inventory, item, block_number,
+                adventurer, caller, plant, reservation, inventory_for_transition, item, block_number,
             );
             match canceled.outcome {
                 CancelOutcome::Applied => {
+                    let bonus_raw = bonus_extra_from_bp(canceled.partial_yield, greenhouse_bp);
+                    let quality_for_bonus = if canceled.item.quality == 0_u16 {
+                        canceled.plant.health
+                    } else {
+                        canceled.item.quality
+                    };
+                    let (mut inventory_with_bonus, item_with_bonus, _) = mint_bonus_item_with_capacity(
+                        canceled.inventory,
+                        canceled.item,
+                        bonus_raw,
+                        quality_for_bonus,
+                        effective_max_weight,
+                    );
+                    inventory_with_bonus.max_weight = inventory.max_weight;
+
                     world.write_model(@canceled.adventurer);
                     world.write_model(@canceled.plant);
                     world.write_model(@canceled.reservation);
-                    world.write_model(@canceled.inventory);
-                    world.write_model(@canceled.item);
+                    world.write_model(@inventory_with_bonus);
+                    world.write_model(@item_with_bonus);
                     world.emit_event(
                         @HarvestingCancelled {
                             adventurer_id,

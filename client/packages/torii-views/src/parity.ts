@@ -1,4 +1,4 @@
-import type { ToriiViewsManifest } from "./manifest";
+import type { ToriiViewsManifest, ViewDefinition } from "./manifest.js";
 
 export interface SchemaParityResult {
   ok: boolean;
@@ -9,7 +9,7 @@ export function checkSchemaParity(
   manifest: ToriiViewsManifest,
   availableModelFields: Set<string>
 ): SchemaParityResult {
-  const required = manifest.views.flatMap((view) => view.requiredModelFields);
+  const required = manifest.views.flatMap((view: ViewDefinition) => view.requiredModelFields);
   const missing = required.filter((field) => !availableModelFields.has(field));
 
   return {

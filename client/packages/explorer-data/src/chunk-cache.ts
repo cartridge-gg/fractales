@@ -107,7 +107,11 @@ function evictIfNeeded(
   const nextEntries = new Map(entries);
   let cursor = 0;
   while (nextEntries.size > maxChunks && cursor < evictable.length) {
-    const [key] = evictable[cursor];
+    const candidate = evictable[cursor];
+    if (!candidate) {
+      break;
+    }
+    const [key] = candidate;
     nextEntries.delete(key);
     cursor += 1;
   }

@@ -15,6 +15,9 @@ mod tests {
         MineAccessGranted, MineAccessRevoked, MineCollapsed, MineInitialized, MineRepaired,
         MiningExited, MiningRejected, MiningStarted,
     };
+    use dojo_starter::libs::construction_balance::{B_SHORING_RIG, B_STOREHOUSE, effect_bp_for_building};
+    use dojo_starter::libs::mining_math::compute_stress_delta;
+    use dojo_starter::models::construction::ConstructionBuildingNode;
     use dojo_starter::models::adventurer::Adventurer;
     use dojo_starter::models::deaths::DeathRecord;
     use dojo_starter::models::economics::ConversionRate;
@@ -24,10 +27,11 @@ mod tests {
         derive_mine_key, derive_mining_item_id, derive_mining_shift_id,
     };
     use dojo_starter::models::ownership::AreaOwnership;
-    use dojo_starter::models::world::{AreaType, Biome, Hex, HexArea, SizeCategory};
+    use dojo_starter::models::world::{AreaType, Biome, Hex, HexArea, SizeCategory, derive_area_id};
     use dojo_starter::systems::mining_manager_contract::{
         IMiningManagerDispatcher, IMiningManagerDispatcherTrait,
     };
+    use dojo_starter::systems::mining_manager::apply_shoring_stress_delta;
 
     fn namespace_def() -> NamespaceDef {
         NamespaceDef {
@@ -45,6 +49,7 @@ mod tests {
                 TestResource::Model("MiningShift"),
                 TestResource::Model("MineAccessGrant"),
                 TestResource::Model("MineCollapseRecord"),
+                TestResource::Model("ConstructionBuildingNode"),
                 TestResource::Event("MineInitialized"),
                 TestResource::Event("MineAccessGranted"),
                 TestResource::Event("MineAccessRevoked"),
@@ -494,6 +499,129 @@ mod tests {
         assert(exited_count == 1_usize, 'MINT_LIFE_EVT_EXIT');
         assert(collapsed_count == 0_usize, 'MINT_LIFE_EVT_COLL_0');
         assert(rejected_count == 0_usize, 'MINT_LIFE_EVT_REJ_0');
+    }
+
+    #[test]
+    fn mining_manager_integration_storehouse_increases_exit_capacity() {
+        let caller = get_default_caller_address();
+        set_block_number(420_u64);
+
+        let mut world = spawn_test_world([namespace_def()].span());
+        world.sync_perms_and_inits(contract_defs());
+
+        let (contract_address, _) = world.dns(@"mining_manager").unwrap();
+        let manager = IMiningManagerDispatcher { contract_address };
+
+        let actor_id = 7261_felt252;
+        let hex_coordinate = 8261_felt252;
+        let area_id = derive_area_id(hex_coordinate, 2_u8);
+        let mine_id = 0_u8;
+        let mine_key = derive_mine_key(hex_coordinate, area_id, mine_id);
+        let shift_id = derive_mining_shift_id(actor_id, mine_key);
+
+        setup_actor(ref world, actor_id, caller, hex_coordinate, 2_000_u16);
+        world.write_model_test(@Inventory { adventurer_id: actor_id, current_weight: 0_u32, max_weight: 3_u32 });
+        setup_discovered_minefield(ref world, caller, actor_id, hex_coordinate, area_id);
+        world.write_model_test(
+            @ConstructionBuildingNode {
+                area_id: derive_area_id(hex_coordinate, 0_u8),
+                hex_coordinate,
+                owner_adventurer_id: actor_id,
+                building_type: B_STOREHOUSE,
+                tier: 1_u8,
+                condition_bp: 10_000_u16,
+                upkeep_reserve: 0_u32,
+                last_upkeep_block: 0_u64,
+                is_active: true,
+            },
+        );
+
+        let initialized = manager.init_mining(hex_coordinate, area_id, mine_id);
+        assert(initialized, 'MINT_STORE_INIT');
+        let started = manager.start_mining(actor_id, hex_coordinate, area_id, mine_id);
+        assert(started, 'MINT_STORE_START');
+
+        let seed_shift: MiningShift = world.read_model(shift_id);
+        world.write_model_test(@MiningShift { accrued_ore_unbanked: 5_u32, ..seed_shift });
+
+        let minted = manager.exit_mining(actor_id, mine_key);
+        assert(minted == 4_u16, 'MINT_STORE_EXIT');
+
+        let mine_after: MineNode = world.read_model(mine_key);
+        let item_id = derive_mining_item_id(mine_after.ore_id);
+        let item: BackpackItem = world.read_model((actor_id, item_id));
+        let inventory: Inventory = world.read_model(actor_id);
+        let shift_after: MiningShift = world.read_model(shift_id);
+        assert(inventory.current_weight == 4_u32, 'MINT_STORE_INV');
+        assert(item.quantity == 4_u32, 'MINT_STORE_ITEM');
+        assert(shift_after.status == MiningShiftStatus::Exited, 'MINT_STORE_SHIFT');
+    }
+
+    #[test]
+    fn mining_manager_integration_shoring_rig_reduces_stress_delta() {
+        let caller = get_default_caller_address();
+        set_block_number(400_u64);
+
+        let mut world = spawn_test_world([namespace_def()].span());
+        world.sync_perms_and_inits(contract_defs());
+
+        let (contract_address, _) = world.dns(@"mining_manager").unwrap();
+        let manager = IMiningManagerDispatcher { contract_address };
+
+        let actor_id = 7251_felt252;
+        let hex_coordinate = 8251_felt252;
+        let area_id = derive_area_id(hex_coordinate, 2_u8);
+        let mine_id = 0_u8;
+        let mine_key = derive_mine_key(hex_coordinate, area_id, mine_id);
+        let shift_id = derive_mining_shift_id(actor_id, mine_key);
+
+        setup_actor(ref world, actor_id, caller, hex_coordinate, 2_000_u16);
+        setup_discovered_minefield(ref world, caller, actor_id, hex_coordinate, area_id);
+        world.write_model_test(
+            @ConstructionBuildingNode {
+                area_id,
+                hex_coordinate,
+                owner_adventurer_id: actor_id,
+                building_type: B_SHORING_RIG,
+                tier: 1_u8,
+                condition_bp: 10_000_u16,
+                upkeep_reserve: 0_u32,
+                last_upkeep_block: 0_u64,
+                is_active: true,
+            },
+        );
+
+        let initialized = manager.init_mining(hex_coordinate, area_id, mine_id);
+        assert(initialized, 'MINT_SHORE_INIT');
+        let started = manager.start_mining(actor_id, hex_coordinate, area_id, mine_id);
+        assert(started, 'MINT_SHORE_START');
+
+        set_block_number(405_u64);
+        let mine_before: MineNode = world.read_model(mine_key);
+        let shift_before: MiningShift = world.read_model(shift_id);
+        let dt_blocks = 405_u64 - shift_before.last_settle_block;
+        let shift_elapsed_blocks = 405_u64 - shift_before.start_block;
+        let base_stress_delta = compute_stress_delta(
+            dt_blocks,
+            mine_before.base_stress_per_block,
+            mine_before.active_miners,
+            shift_elapsed_blocks,
+            mine_before.safe_shift_blocks,
+            mine_before.biome_risk_bp,
+            mine_before.rarity_risk_bp,
+            120_u16,
+            2_u16,
+        );
+        let expected_stress_delta = apply_shoring_stress_delta(
+            base_stress_delta, effect_bp_for_building(B_SHORING_RIG),
+        );
+        assert(base_stress_delta >= expected_stress_delta, 'MINT_SHORE_MONO');
+
+        let mined = manager.continue_mining(actor_id, mine_key);
+        assert(mined > 0_u16, 'MINT_SHORE_CONT');
+
+        let mine_after: MineNode = world.read_model(mine_key);
+        assert(mine_after.mine_stress == expected_stress_delta, 'MINT_SHORE_STRESS');
     }
 
     #[test]

@@ -4,7 +4,7 @@ import {
   comparePatchOrder,
   sortRowsForStreaming,
   type ProxyPatchRow
-} from "../src/patch-order";
+} from "../src/patch-order.js";
 
 const rows: ProxyPatchRow[] = [
   { blockNumber: 11, txIndex: 1, eventIndex: 0, kind: "hex_patch", payload: {} },
@@ -25,12 +25,17 @@ describe("proxy patch ordering (RED->GREEN)", () => {
     const sorted = sortRowsForStreaming(rows);
     const enveloped = assignSequences(sorted, 40);
 
-    expect(enveloped[0].sequence).toBe(41);
-    expect(enveloped[3].sequence).toBe(44);
+    expect(enveloped[0]?.sequence).toBe(41);
+    expect(enveloped[3]?.sequence).toBe(44);
   });
 
   it("comparePatchOrder is deterministic", () => {
-    expect(comparePatchOrder(rows[0], rows[1])).toBeGreaterThan(0);
-    expect(comparePatchOrder(rows[1], rows[0])).toBeLessThan(0);
+    const first = rows[0];
+    const second = rows[1];
+    if (!first || !second) {
+      throw new Error("expected fixture rows");
+    }
+    expect(comparePatchOrder(first, second)).toBeGreaterThan(0);
+    expect(comparePatchOrder(second, first)).toBeLessThan(0);
   });
 });

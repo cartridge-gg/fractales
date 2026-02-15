@@ -36,8 +36,14 @@ pub mod economic_manager {
         ItemsConverted,
     };
     use dojo_starter::events::ownership_events::OwnershipTransferred;
+    use dojo_starter::libs::construction_balance::{
+        B_HERBAL_PRESS, B_SMELTER, B_WATCHTOWER, I_ORE_COAL, I_ORE_COBALT, I_ORE_COPPER,
+        I_ORE_IRON, I_ORE_NICKEL, I_ORE_TIN, I_PLANT_COMPOUND, I_PLANT_FIBER, I_PLANT_RESIN,
+        effect_bp_for_building,
+    };
     use dojo_starter::libs::decay_math::{min_claim_energy, upkeep_for_biome};
     use dojo_starter::models::adventurer::Adventurer;
+    use dojo_starter::models::construction::{ConstructionBuildingNode, is_building_effective};
     use dojo_starter::models::economics::{
         AdventurerEconomics, ClaimEscrow, ClaimEscrowExpireOutcome, ClaimEscrowStatus,
         ConversionRate, HexDecayState, derive_hex_claim_id, expire_claim_escrow_once_with_status,
@@ -53,6 +59,17 @@ pub mod economic_manager {
     use starknet::{get_block_info, get_caller_address};
 
     const U64_MAX_U128: u128 = 18_446_744_073_709_551_615_u128;
+    const U16_MAX_U128: u128 = 65_535_u128;
+    const BP_ONE: u16 = 10_000_u16;
+
+    fn saturating_add_u16(lhs: u16, rhs: u16) -> u16 {
+        let sum_u128: u128 = lhs.into() + rhs.into();
+        if sum_u128 > U16_MAX_U128 {
+            65_535_u16
+        } else {
+            sum_u128.try_into().unwrap()
+        }
+    }
 
     fn saturating_add_u64(lhs: u64, rhs: u64) -> u64 {
         let sum_u128: u128 = lhs.into() + rhs.into();
@@ -61,6 +78,98 @@ pub mod economic_manager {
         } else {
             sum_u128.try_into().unwrap()
         }
+    }
+
+    fn apply_bp_floor_u16(value: u16, bp: u16) -> u16 {
+        if value == 0_u16 || bp == 0_u16 {
+            return 0_u16;
+        }
+
+        let scaled_u128: u128 = value.into() * bp.into() / BP_ONE.into();
+        if scaled_u128 > U16_MAX_U128 {
+            65_535_u16
+        } else {
+            scaled_u128.try_into().unwrap()
+        }
+    }
+
+    fn bonus_extra_from_bp(base_value: u16, bp: u16) -> u16 {
+        if bp <= BP_ONE {
+            return 0_u16;
+        }
+        apply_bp_floor_u16(base_value, bp - BP_ONE)
+    }
+
+    fn mint_bonus_energy_with_cap(
+        mut adventurer: Adventurer, mut economics: AdventurerEconomics, raw_bonus: u16,
+    ) -> (Adventurer, AdventurerEconomics, u16) {
+        if raw_bonus == 0_u16 {
+            return (adventurer, economics, 0_u16);
+        }
+
+        let cap_room = if adventurer.max_energy > adventurer.energy {
+            adventurer.max_energy - adventurer.energy
+        } else {
+            0_u16
+        };
+        let minted = if raw_bonus > cap_room { cap_room } else { raw_bonus };
+        if minted > 0_u16 {
+            adventurer.energy += minted;
+            economics.total_energy_earned = saturating_add_u64(economics.total_energy_earned, minted.into());
+        }
+        economics.energy_balance = adventurer.energy;
+        (adventurer, economics, minted)
+    }
+
+    fn is_ore_item(item_id: felt252) -> bool {
+        item_id == I_ORE_IRON || item_id == I_ORE_COAL || item_id == I_ORE_COPPER
+            || item_id == I_ORE_TIN || item_id == I_ORE_NICKEL || item_id == I_ORE_COBALT
+    }
+
+    fn is_plant_material_item(item_id: felt252) -> bool {
+        item_id == I_PLANT_FIBER || item_id == I_PLANT_RESIN || item_id == I_PLANT_COMPOUND
+    }
+
+    fn active_hex_building_effect_bp(
+        ref world: dojo::world::WorldStorage, hex_coordinate: felt252, building_type: felt252,
+    ) -> u16 {
+        let base_bp = effect_bp_for_building(building_type);
+        if base_bp == 0_u16 {
+            return BP_ONE;
+        }
+
+        let hex: Hex = world.read_model(hex_coordinate);
+        let mut idx: u8 = 0_u8;
+        loop {
+            if idx >= hex.area_count {
+                break;
+            };
+
+            let area_id = derive_area_id(hex_coordinate, idx);
+            let mut building: ConstructionBuildingNode = world.read_model(area_id);
+            building.area_id = area_id;
+
+            if building.hex_coordinate == hex_coordinate && building.building_type == building_type
+                && is_building_effective(building) {
+                return base_bp;
+            }
+
+            idx += 1_u8;
+        };
+
+        BP_ONE
+    }
+
+    fn conversion_bonus_bp_for_item(
+        ref world: dojo::world::WorldStorage, hex_coordinate: felt252, item_id: felt252,
+    ) -> u16 {
+        if is_ore_item(item_id) {
+            return active_hex_building_effect_bp(ref world, hex_coordinate, B_SMELTER);
+        }
+        if is_plant_material_item(item_id) {
+            return active_hex_building_effect_bp(ref world, hex_coordinate, B_HERBAL_PRESS);
+        }
+        BP_ONE
     }
 
     fn settle_expired_claim_if_needed(
@@ -142,6 +251,13 @@ pub mod economic_manager {
             }
             world.write_model(@ownership);
 
+            let mut building: ConstructionBuildingNode = world.read_model(area_id);
+            building.area_id = area_id;
+            if building.hex_coordinate == hex_coordinate && building.building_type != 0_felt252 {
+                building.owner_adventurer_id = controller_adventurer_id;
+                world.write_model(@building);
+            }
+
             if previous_owner != 0_felt252 && previous_owner != controller_adventurer_id {
                 world.emit_event(
                     @OwnershipTransferred {
@@ -190,8 +306,17 @@ pub mod economic_manager {
 
             match converted.outcome {
                 ConvertOutcome::Applied => {
-                    world.write_model(@converted.adventurer);
-                    world.write_model(@converted.economics);
+                    let bonus_bp = conversion_bonus_bp_for_item(
+                        ref world, converted.adventurer.current_hex, item_id,
+                    );
+                    let bonus_raw = bonus_extra_from_bp(converted.energy_gained, bonus_bp);
+                    let (bonus_adventurer, bonus_economics, _) = mint_bonus_energy_with_cap(
+                        converted.adventurer, converted.economics, bonus_raw,
+                    );
+                    let total_energy_gained = saturating_add_u16(converted.energy_gained, bonus_raw);
+
+                    world.write_model(@bonus_adventurer);
+                    world.write_model(@bonus_economics);
                     world.write_model(@converted.inventory);
                     world.write_model(@converted.item);
                     world.write_model(@converted.rate);
@@ -200,10 +325,10 @@ pub mod economic_manager {
                             adventurer_id,
                             item_id,
                             quantity,
-                            energy_gained: converted.energy_gained,
+                            energy_gained: total_energy_gained,
                         },
                     );
-                    converted.energy_gained
+                    total_energy_gained
                 },
                 _ => 0_u16,
             }
@@ -378,6 +503,8 @@ pub mod economic_manager {
 
             let claimant: Adventurer = world.read_model(escrow.claimant_adventurer_id);
             let claimant_economics: AdventurerEconomics = world.read_model(escrow.claimant_adventurer_id);
+            let watchtower_bp = active_hex_building_effect_bp(ref world, hex_coordinate, B_WATCHTOWER);
+            let defense_effective = apply_bp_floor_u16(defense_energy, watchtower_bp);
 
             let defended = defend_claim_transition(
                 defender,
@@ -388,6 +515,7 @@ pub mod economic_manager {
                 claimant,
                 claimant_economics,
                 defense_energy,
+                defense_effective,
                 now_block,
                 upkeep,
                 DECAY_RECOVERY_BP,

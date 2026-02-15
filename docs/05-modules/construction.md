@@ -1,375 +1,237 @@
-# Construction Module: Building Economic Infrastructure
+# Construction Module: 7-Building Hex Development Scope (Post-MVP)
 
-## Vision: Infrastructure Development on Owned Territory
+## Intent
 
-Players can construct **permanent buildings** on hexes they own, creating **economic infrastructure** that enhances their territories and generates new revenue streams. Buildings become **controllable assets** that integrate fully with the hook permission system.
+Add a deterministic construction loop that lets players build up controlled hexes using both mined ores and plant-derived materials.
 
-**Core Principle**: **Territory ownership enables infrastructure development**, creating compounding value and strategic depth.
+This module extends the live gameplay from:
 
-## Building System Integration
+`explore -> discover -> harvest/convert -> maintain -> defend/claim`
 
-### Ownership Requirements
+to:
 
-Only **area NFT holders** can construct buildings on their owned hexes:
+`explore -> discover -> harvest/mine -> process materials -> build -> upkeep -> defend/expand`
 
-```python
-fn construct_building(
-    builder_id: felt252,
-    hex_coord: felt252,
-    building_type: felt252,
-    construction_materials: Array<felt252>,
-    placement_location: HexLocation
-) -> ConstructionResult:
+## Scope Summary
 
-    # Verify ownership of the hex
-    let area_nft = get_area_nft_for_hex(hex_coord);
-    assert area_nft.owner == get_adventurer_owner(builder_id), "Not hex owner";
+- Status: post-MVP module design.
+- Build rights: current hex controller only (single-controller-per-hex semantics stay intact).
+- Placement model: one building slot per discovered `HexArea`.
+- Resource model: ore IDs + plant-derived construction materials.
+- Building count in scope: 7.
+- Balance workflow: `07-delivery/construction-balance-scope.md` using `04-economy/tools/construction_balance_sim.py`.
+- Implementation workflow: `07-delivery/construction-prd-tdd.md`.
 
-    # Check available building slots
-    let current_buildings = get_buildings_on_hex(hex_coord);
-    let max_buildings = calculate_max_buildings(hex_coord, area_nft.area_type);
-    assert current_buildings.len() < max_buildings, "Hex at building capacity";
+## Design Constraints
 
-    # Validate materials and blueprints
-    let blueprint = get_building_blueprint(building_type);
-    assert has_required_materials(builder_id, blueprint.materials), "Missing materials";
-    assert has_required_skill(builder_id, blueprint.construction_skill), "Insufficient skill";
+1. Deterministic and replay-safe transitions.
+2. No freeform geometry placement in v1 (slot-based via `area_id`).
+3. Buildings must require upkeep and can become inactive.
+4. Claim/defend transfer must move building control with hex control.
+5. No dependence on offchain simulation for core settlement.
 
-    # Start construction process
-    let construction_time = calculate_construction_time(building_type, builder_id);
-    let building_id = generate_building_id(hex_coord, placement_location);
+## Material Model
 
-    # Lock adventurer into construction activity
-    lock_adventurer_into_activity(builder_id, ActivityState.CONSTRUCTING(
-        building_id: building_id,
-        completion_block: block_number() + construction_time,
-        materials_consumed: construction_materials
-    ));
+### Inputs
 
-    # Register building ownership under area NFT
-    register_building_ownership(building_id, area_nft.token_id, builder_id);
+- Ore resources from mining (`ORE_IRON`, `ORE_COAL`, `ORE_COPPER`, `ORE_TIN`, `ORE_NICKEL`, `ORE_COBALT`, ...).
+- Plant-derived materials produced from harvested plant inventory via deterministic processing.
 
-    emit ConstructionStarted(building_id, hex_coord, building_type, construction_time);
-    ConstructionResult.Success(building_id, construction_time)
+### Plant Material Classes (for construction)
+
+To avoid recipe fragmentation across per-plant item IDs, construction consumes three fungible plant materials:
+
+- `PLANT_FIBER`
+- `PLANT_RESIN`
+- `PLANT_COMPOUND`
+
+Processing entrypoint (proposed):
+
+```text
+process_plant_material(adventurer_id, source_item_id, quantity, target_material) -> output_quantity
 ```
 
-## Building Categories & Functions
+## Core Loop
 
-### 1. Resource Processing Facilities
+`discover areas -> gather ores + plants -> process plant materials -> start construction -> complete construction -> fund upkeep -> leverage bonuses for economy/defense`
 
-**Smelters**: Convert raw ores to refined ingots with efficiency bonuses
+## Seven Buildings (Gameplay Fit)
 
-```python
-BuildingBlueprint.SMELTER = {
-    construction_materials: ["iron_ingot": 20, "stone": 50, "coal": 10],
-    construction_skill_required: ("engineering", 5),
-    construction_time_blocks: 500,
-    building_capacity: 3, # 3 concurrent smelting operations
-    efficiency_bonus: 25, # 25% faster smelting than portable methods
-    upkeep_cost_per_100_blocks: 5, # Coal consumption
+| Building | Primary Loop Impact | Deterministic Effect (v1) | Typical Inputs (T1) |
+|---|---|---|---|
+| `SMELTER` | Ore economy | Ore conversion multiplier on this hex | `ORE_IRON`, `ORE_COAL`, `ORE_COPPER` |
+| `SHORING_RIG` | Mining risk control | Reduces mine stress accumulation in this hex | `ORE_IRON`, `ORE_TIN`, `ORE_COBALT`, `PLANT_RESIN` |
+| `GREENHOUSE` | Harvest sustainability | Improves plant regrowth/available yield in this hex | `PLANT_FIBER`, `PLANT_COMPOUND`, `ORE_COPPER` |
+| `HERBAL_PRESS` | Plant monetization | Plant conversion multiplier on this hex | `PLANT_COMPOUND`, `PLANT_RESIN`, `ORE_TIN` |
+| `WORKSHOP` | Build acceleration | Material discount + build-time reduction on this hex | `ORE_IRON`, `ORE_NICKEL`, `PLANT_FIBER` |
+| `STOREHOUSE` | Logistics | Increases effective carry/storage capacity for controller operations in hex | `ORE_IRON`, `ORE_COAL`, `PLANT_FIBER` |
+| `WATCHTOWER` | Territorial defense | Defense efficiency bonus in `defend_hex_from_claim` | `ORE_IRON`, `ORE_COBALT`, `PLANT_RESIN` |
+
+## v1 Effect Formulas
+
+All effect bonuses are basis points and applied only when building is active.
+
+- `SMELTER`: `ore_energy_out = floor(base * smelter_bp / 10_000)` where `smelter_bp = 11_250`.
+- `SHORING_RIG`: `mine_stress_saved = floor(base_risk_loss * shoring_bp / 10_000)` where `shoring_bp = 14_000`.
+- `GREENHOUSE`: `regrowth_effective = floor(base_regrowth * greenhouse_bp / 10_000)` where `greenhouse_bp = 12_000`.
+- `HERBAL_PRESS`: `plant_energy_out = floor(base * herbal_press_bp / 10_000)` where `herbal_press_bp = 11_500`.
+- `WORKSHOP`: `recipe_cost = floor(base_cost * (10_000 - discount_bp)/10_000)` and `build_time = floor(base_time * (10_000 - time_cut_bp)/10_000)` where `discount_bp=1_200`, `time_cut_bp=1_800`.
+- `STOREHOUSE`: `hex_capacity_bonus = floor(base_capacity * storehouse_bp / 10_000)` where `storehouse_bp = 15_500`.
+- `WATCHTOWER`: `defense_effective = floor(defense_energy * watchtower_bp / 10_000)` where `watchtower_bp = 12_500`.
+
+## State Additions (Proposed)
+
+```text
+Construction.BuildingNode {
+  key area_id,
+  hex_coordinate,
+  owner_adventurer_id,
+  building_type,
+  tier,
+  condition_bp,
+  upkeep_reserve,
+  last_upkeep_block,
+  is_active
+}
+
+Construction.BuildProject {
+  key project_id,
+  adventurer_id,
+  hex_coordinate,
+  area_id,
+  building_type,
+  target_tier,
+  start_block,
+  completion_block,
+  energy_staked,
+  status
+}
+
+Construction.ProjectMaterialEscrow {
+  key project_id,
+  key item_id,
+  quantity
 }
 ```
 
-**Mills**: Process harvested plants into refined crafting materials
-**Workshops**: Advanced crafting stations for complex item combinations
-**Refineries**: Purify and enhance material quality
+## API Surface (Proposed)
 
-### 2. Economic Infrastructure
-
-**Trading Posts**: Facilitate commerce between players with automated systems
-
-```python
-BuildingBlueprint.TRADING_POST = {
-    construction_materials: ["timber": 30, "iron_ingot": 10, "gold": 100],
-    construction_skill_required: ("trading", 3),
-    functions: [
-        "automated_marketplace", # Players can list items for sale
-        "bulk_trading", # Handle large quantity transactions
-        "price_discovery", # Show market rates for different items
-        "escrow_services" # Secure trading between untrusted parties
-    ]
-}
+```text
+process_plant_material(adventurer_id, source_item_id, quantity, target_material) -> output_quantity
+start_construction(adventurer_id, hex_coordinate, area_id, building_type) -> project_id
+complete_construction(adventurer_id, project_id) -> bool
+pay_building_upkeep(adventurer_id, hex_coordinate, area_id, amount) -> bool
+repair_building(adventurer_id, hex_coordinate, area_id, amount) -> bool
+upgrade_building(adventurer_id, hex_coordinate, area_id) -> bool
+inspect_building(hex_coordinate, area_id) -> BuildingNode
 ```
 
-**Banks**: Store items and gold securely, provide lending services
-**Warehouses**: Mass storage for territorial logistics
-**Guild Halls**: Coordination centers for player organizations
+## Transition Rules
 
-### 3. Defensive Structures
+### `start_construction`
 
-**Watchtowers**: Provide early warning of approaching players/threats
-**Barriers**: Slow down movement through hex (with owner permission)
-**Guard Posts**: Hire NPC defenders for territorial protection
+Preconditions:
 
-### 4. Utility Buildings
+- adventurer alive and owned by caller
+- adventurer is current controller for target hex
+- `area_id` discovered and belongs to target hex
+- no active project for target slot
+- sufficient materials and energy stake
 
-**Inns**: Provide energy regeneration bonuses for visiting adventurers
-**Taverns**: Social hubs with information trading and reputation systems
-**Laboratories**: Research new blueprints and optimize existing processes
+Effects:
 
-## Building Placement & Hex Development
+- lock materials in `ProjectMaterialEscrow`
+- lock energy stake
+- set adventurer activity lock to `completion_block`
+- create active `BuildProject`
 
-### Hex Capacity System
+### `complete_construction`
 
-```python
-fn calculate_max_buildings(hex_coord: felt252, area_type: felt252) -> u32:
-    let base_capacity = match area_type:
-        'plains' => 8,      # Open land, easy to build
-        'forest' => 5,      # Trees limit construction
-        'mountain' => 6,    # Rocky terrain, moderate capacity
-        'desert' => 4,      # Harsh conditions, limited space
-        'swamp' => 3,       # Unstable ground, very limited
-        'coastal' => 10,    # Prime real estate, maximum capacity
-        _ => 5
-    };
+Preconditions:
 
-    # Capacity can be increased through infrastructure development
-    let infrastructure_bonus = get_infrastructure_development_bonus(hex_coord);
-    base_capacity + infrastructure_bonus
-```
+- project active
+- `now_block >= completion_block`
+- ownership check still valid for caller/adventurer pair
 
-### Strategic Placement
+Effects:
 
-Buildings have **placement effects** that create strategic decisions:
+- create or upgrade `BuildingNode`
+- initialize or refresh `condition_bp`
+- clear project escrow and active project status
+- unlock adventurer
 
-```python
-enum PlacementLocation:
-    HEX_CENTER,     # Maximum accessibility, higher construction cost
-    HEX_EDGE,       # Cheaper to build, easier for travelers to access
-    RESOURCE_NODE,  # Next to specific mines/plants, processing bonuses
-    DEFENSIVE_POINT, # Strategic chokepoints, military advantages
-    TRANSPORT_HUB   # Near roads/portals, trade bonuses
-```
+### Upkeep and Deterioration
 
-## Buildings as Controllable Assets
+- upkeep is paid in energy into `upkeep_reserve`
+- if reserve is insufficient at checkpoint, `condition_bp` decreases deterministically
+- below disable threshold, building stays placed but `is_active=false`
 
-### Integration with Hook System
+## Claim/Defend and Death Interactions
 
-Each building becomes a **controllable object** in the permission system:
+- successful claim transfer updates building owner fields for all buildings in hex.
+- active projects are not canceled by transfer; completion resolves to current controller.
+- if builder dies during an active project, project is canceled and escrowed materials are burned in v1.
 
-```python
-# Building owners can set access rules just like area owners
-fn set_building_access_hook(
-    building_id: felt252,
-    hook_contract: felt252
-) -> ():
-    # Verify caller owns the building (through area NFT ownership)
-    let building = buildings.read(building_id);
-    let area_nft_owner = get_area_nft_owner(building.hex_coord);
-    assert caller_address() == area_nft_owner, "Not building owner";
+## Implementation Scope Proposal
 
-    # Set hook for building access
-    object_hooks.write(building_id, array![hook_contract]);
+### Phase 1 (ship first)
 
-# Example: Trading Post with membership tiers
-#[starknet::contract]
-mod TradingPostHook:
-    impl IUniversalHook:
-        fn before_action(
-            caller: felt252,
-            target_id: felt252, # building_id
-            action_type: felt252, # "list_item", "buy_item", "bulk_trade"
-            action_params: Span<felt252>
-        ) -> PermissionResult:
-            match action_type:
-                'list_item' => {
-                    # Free for basic listings, fee for premium placement
-                    if is_premium_listing(action_params):
-                        PermissionResult.RequiresPayment(50, building_owner())
-                    } else {
-                        PermissionResult.Approved
-                    }
-                },
-                'bulk_trade' => {
-                    # Only guild members can access bulk trading
-                    if is_guild_member(caller):
-                        PermissionResult.Approved
-                    } else {
-                        PermissionResult.RequiresPayment(200, building_owner())
-                    }
-                },
-                _ => PermissionResult.Approved
-            }
-```
+- Foundation models and project lifecycle
+- `SMELTER`, `GREENHOUSE`, `WORKSHOP`
+- `process_plant_material`
+- upkeep + deterioration for active/inactive states
 
-## Construction Economics
+### Phase 2
 
-### Material Requirements & Supply Chains
+- `SHORING_RIG`, `HERBAL_PRESS`, `STOREHOUSE`
+- mining/harvest modifier plumbing and balancing
 
-Buildings require **processed materials**, creating demand for the resource processing pipeline:
+### Phase 3
 
-```python
-building_material_chains = {
-    "basic_timber": {
-        source: "forest_trees",
-        processing: "lumber_mill",
-        volume_multiplier: 0.5  # 2 logs = 1 timber
-    },
+- `WATCHTOWER`
+- claim/defend modifier integration and anti-snowball tuning
 
-    "iron_ingot": {
-        source: "iron_ore",
-        processing: "smelter",
-        fuel_required: "coal",
-        volume_multiplier: 0.3  # 3 ore + 1 coal = 1 ingot
-    },
+## In Scope
 
-    "reinforced_stone": {
-        source: "stone_quarry",
-        processing: "mason_workshop",
-        additives: ["mortar", "iron_fragments"],
-        volume_multiplier: 0.8
-    }
-}
-```
+- 7 building types and deterministic formulas
+- ore + plant material recipes
+- slot-based build model via `HexArea`
+- project escrow/settlement, upkeep, deterioration, upgrade path
+- ownership transfer coherence with claim/defend
 
-### Construction Skill Development
+## Out Of Scope (v1)
 
-```python
-# Construction develops specialized skills
-construction_skills = {
-    "engineering": {
-        affects: ["smelter", "mill", "refinery"],
-        bonuses: ["construction_speed", "efficiency_bonus", "upkeep_reduction"]
-    },
+- freeform XY placement inside hexes
+- player-authored custom building scripts/hooks
+- NPC worker automation
+- global market/orderbook mechanics for construction resources
+- cross-hex aura stacking systems
 
-    "architecture": {
-        affects: ["trading_post", "bank", "guild_hall"],
-        bonuses: ["building_capacity", "aesthetic_value", "social_functions"]
-    },
+## TDD Coverage
 
-    "fortification": {
-        affects: ["watchtower", "barrier", "guard_post"],
-        bonuses: ["defensive_effectiveness", "range", "durability"]
-    }
-}
-```
+Unit:
 
-## Economic Impact & Strategy
+- recipe checks and cost modifiers
+- project timing and lock/unlock logic
+- upkeep deterioration and reactivation
+- per-building formula correctness
 
-### Territory Development Progression
+Integration:
 
-```python
-# Hex development creates compounding value
-hex_development_stages = {
-    "undeveloped": {
-        building_capacity: "base",
-        property_value_multiplier: 1.0,
-        attractiveness_to_visitors: 0.5
-    },
+- mine -> build `SMELTER` -> improved ore conversion
+- harvest -> process plants -> build `GREENHOUSE` -> improved regrowth path
+- build `WORKSHOP` -> discounted/faster second construction
+- claim transfer with mixed active/inactive buildings
 
-    "basic_infrastructure": {
-        requirements: ["1+ resource_processing", "1+ utility"],
-        building_capacity: "base + 2",
-        property_value_multiplier: 1.5,
-        attractiveness_to_visitors: 1.0
-    },
+Property:
 
-    "economic_hub": {
-        requirements: ["3+ buildings", "1+ trading_post", "road_connection"],
-        building_capacity: "base + 4",
-        property_value_multiplier: 2.5,
-        attractiveness_to_visitors: 2.0,
-        special_bonuses: ["bulk_trading", "faster_travel_through_hex"]
-    },
+- deterministic replay of build outcomes
+- escrow conservation and single-settlement guarantees
+- no negative inventory/energy states under interleavings
 
-    "territorial_capital": {
-        requirements: ["6+ buildings", "defensive_structures", "guild_hall"],
-        building_capacity: "base + 8",
-        property_value_multiplier: 5.0,
-        attractiveness_to_visitors: 3.0,
-        special_bonuses: ["territorial_administration", "diplomatic_immunity"]
-    }
-}
-```
+## Success Criteria
 
-### Building Synergies
-
-Buildings create **synergy bonuses** when built in combination:
-
-```python
-building_synergies = {
-    ("smelter", "mine"): {
-        bonus: "processing_efficiency_+20%",
-        description: "Direct ore pipeline reduces transport costs"
-    },
-
-    ("trading_post", "warehouse", "inn"): {
-        bonus: "commercial_district_+50%_trade_volume",
-        description: "Complete commercial infrastructure attracts more traders"
-    },
-
-    ("watchtower", "guard_post", "barrier"): {
-        bonus: "defensive_network_+100%_security",
-        description: "Coordinated defenses provide maximum protection"
-    }
-}
-```
-
-## Building Maintenance & Lifecycle
-
-### Upkeep Requirements
-
-```python
-fn process_building_upkeep(building_id: felt252) -> UpkeepResult:
-    let building = buildings.read(building_id);
-    let blocks_since_upkeep = block_number() - building.last_upkeep_block;
-
-    if blocks_since_upkeep >= UPKEEP_INTERVAL:
-        let upkeep_cost = calculate_upkeep_cost(building.building_type, building.tier);
-        let owner = get_building_owner(building_id);
-
-        if can_pay_upkeep(owner, upkeep_cost):
-            charge_upkeep(owner, upkeep_cost);
-            building.last_upkeep_block = block_number();
-            UpkeepResult.Maintained
-        } else {
-            # Building begins deteriorating
-            building.condition -= DETERIORATION_RATE;
-            if building.condition <= 0:
-                return UpkeepResult.Abandoned;
-            }
-            UpkeepResult.Deteriorating
-        }
-    }
-
-    UpkeepResult.NoUpkeepNeeded
-```
-
-### Building Upgrades
-
-```python
-# Buildings can be upgraded for enhanced functionality
-fn upgrade_building(
-    building_id: felt252,
-    upgrade_materials: Array<felt252>,
-    target_tier: u32
-) -> UpgradeResult:
-    let building = buildings.read(building_id);
-    let upgrade_blueprint = get_upgrade_blueprint(building.building_type, target_tier);
-
-    assert has_required_materials(caller(), upgrade_blueprint.materials), "Missing upgrade materials";
-    assert building.tier + 1 == target_tier, "Can only upgrade one tier at a time";
-
-    # Upgrade process locks building temporarily
-    lock_building_for_upgrade(building_id, upgrade_blueprint.upgrade_time);
-
-    UpgradeResult.Success(upgrade_blueprint.upgrade_time)
-```
-
-## Strategic Implications
-
-### Territorial Specialization
-
-**🏭 Industrial Hubs**: Focus on resource processing and manufacturing  
-**🏪 Commercial Centers**: Maximize trading and economic activity  
-**🏰 Fortress Territories**: Emphasize defense and territorial control  
-**🔬 Research Complexes**: Innovation and blueprint development
-
-### Economic Warfare Through Infrastructure
-
-**🎯 Infrastructure Targeting**: Disrupt competitor supply chains by blocking access to key buildings  
-**💰 Economic Blockades**: Control critical trading posts and transportation hubs  
-**🏗️ Development Racing**: Rush to build key infrastructure before competitors  
-**🤝 Infrastructure Alliances**: Share building access through diplomatic agreements
-
-Building construction transforms the game from simple resource extraction to **comprehensive territorial development**, where players become **urban planners and economic architects** building the infrastructure that drives the entire game economy.
+1. Construction is a meaningful sink for both ore and plant resources.
+2. Developed hexes have measurable strategic advantage but still require upkeep discipline.
+3. Claim/defend remains coherent with no ownership drift.
+4. The first release (Phase 1) is shippable without requiring all seven buildings at once.

@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { ChunkKey, ChunkSnapshot } from "@gen-dungeon/explorer-types";
-import { createChunkCache, getChunk, pinChunk, upsertChunk } from "../src/chunk-cache";
+import { createChunkCache, getChunk, pinChunk, upsertChunk } from "../src/chunk-cache.js";
 
 function snapshot(key: ChunkKey, headBlock: number): ChunkSnapshot {
-  const [q, r] = key.split(":").map((value) => Number.parseInt(value, 10));
+  const [qRaw, rRaw] = key.split(":").map((value) => Number.parseInt(value, 10));
+  const q = qRaw ?? 0;
+  const r = rRaw ?? 0;
   return {
     schemaVersion: "explorer-v1",
     chunk: { key, chunkQ: q, chunkR: r },

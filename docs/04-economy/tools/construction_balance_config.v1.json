@@ -1,0 +1,167 @@
+{
+  "resource_energy_values": {
+    "ORE_IRON": 8,
+    "ORE_COAL": 12,
+    "ORE_COPPER": 9,
+    "ORE_TIN": 10,
+    "ORE_NICKEL": 18,
+    "ORE_COBALT": 22,
+    "PLANT_FIBER": 7,
+    "PLANT_RESIN": 11,
+    "PLANT_COMPOUND": 13
+  },
+  "default_targets": {
+    "payback_min_blocks": 450,
+    "payback_max_blocks": 1800,
+    "min_net_benefit_per_100": 40
+  },
+  "effect_coefficients": {
+    "greenhouse_realization": 0.75,
+    "shoring_risk_capture": 1.8,
+    "watchtower_loss_capture": 2.2
+  },
+  "buildings": [
+    {
+      "id": "SMELTER",
+      "recipe": {
+        "ORE_IRON": 80,
+        "ORE_COAL": 40,
+        "ORE_COPPER": 20
+      },
+      "energy_stake": 40,
+      "build_time_blocks": 120,
+      "upkeep_per_100_blocks": 9,
+      "effect": {
+        "kind": "ore_conversion_multiplier",
+        "bp": 11250
+      }
+    },
+    {
+      "id": "SHORING_RIG",
+      "recipe": {
+        "ORE_IRON": 60,
+        "ORE_TIN": 35,
+        "ORE_COBALT": 18,
+        "PLANT_RESIN": 28,
+        "ORE_COAL": 15
+      },
+      "energy_stake": 45,
+      "build_time_blocks": 130,
+      "upkeep_per_100_blocks": 11,
+      "effect": {
+        "kind": "mining_stress_reduction",
+        "bp": 14000
+      }
+    },
+    {
+      "id": "GREENHOUSE",
+      "recipe": {
+        "PLANT_FIBER": 80,
+        "PLANT_COMPOUND": 30,
+        "ORE_COPPER": 20
+      },
+      "energy_stake": 35,
+      "build_time_blocks": 110,
+      "upkeep_per_100_blocks": 7,
+      "effect": {
+        "kind": "plant_regrowth_multiplier",
+        "bp": 12000
+      }
+    },
+    {
+      "id": "HERBAL_PRESS",
+      "recipe": {
+        "PLANT_COMPOUND": 70,
+        "PLANT_RESIN": 35,
+        "ORE_TIN": 15
+      },
+      "energy_stake": 35,
+      "build_time_blocks": 105,
+      "upkeep_per_100_blocks": 8,
+      "effect": {
+        "kind": "plant_conversion_multiplier",
+        "bp": 11500
+      }
+    },
+    {
+      "id": "WORKSHOP",
+      "recipe": {
+        "ORE_IRON": 45,
+        "ORE_NICKEL": 15,
+        "PLANT_FIBER": 45
+      },
+      "energy_stake": 40,
+      "build_time_blocks": 115,
+      "upkeep_per_100_blocks": 10,
+      "effect": {
+        "kind": "construction_efficiency",
+        "discount_bp": 1200,
+        "time_cut_bp": 1800
+      }
+    },
+    {
+      "id": "STOREHOUSE",
+      "recipe": {
+        "ORE_IRON": 45,
+        "ORE_COAL": 40,
+        "PLANT_FIBER": 90,
+        "ORE_COPPER": 20
+      },
+      "energy_stake": 30,
+      "build_time_blocks": 100,
+      "upkeep_per_100_blocks": 6,
+      "effect": {
+        "kind": "logistics_capacity",
+        "bp": 15500
+      }
+    },
+    {
+      "id": "WATCHTOWER",
+      "recipe": {
+        "ORE_IRON": 55,
+        "ORE_COBALT": 20,
+        "PLANT_RESIN": 30,
+        "ORE_NICKEL": 10
+      },
+      "energy_stake": 45,
+      "build_time_blocks": 140,
+      "upkeep_per_100_blocks": 12,
+      "effect": {
+        "kind": "defense_efficiency",
+        "bp": 12500
+      }
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "frontier",
+      "ore_energy_base_per_100": 1400,
+      "plant_energy_base_per_100": 900,
+      "collapse_risk_loss_energy_per_100": 260,
+      "construction_spend_energy_per_100": 500,
+      "build_delay_value_energy_per_100": 200,
+      "capacity_choke_energy_per_100": 300,
+      "claim_loss_energy_per_100": 220
+    },
+    {
+      "id": "growth",
+      "ore_energy_base_per_100": 2600,
+      "plant_energy_base_per_100": 1700,
+      "collapse_risk_loss_energy_per_100": 450,
+      "construction_spend_energy_per_100": 900,
+      "build_delay_value_energy_per_100": 420,
+      "capacity_choke_energy_per_100": 520,
+      "claim_loss_energy_per_100": 300
+    },
+    {
+      "id": "fortress",
+      "ore_energy_base_per_100": 2100,
+      "plant_energy_base_per_100": 1400,
+      "collapse_risk_loss_energy_per_100": 350,
+      "construction_spend_energy_per_100": 650,
+      "build_delay_value_energy_per_100": 300,
+      "capacity_choke_energy_per_100": 380,
+      "claim_loss_energy_per_100": 520
+    }
+  ]
+}

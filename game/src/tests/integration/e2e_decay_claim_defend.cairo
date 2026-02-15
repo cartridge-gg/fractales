@@ -33,6 +33,7 @@ mod tests {
                 TestResource::Model("HexDecayState"),
                 TestResource::Model("ClaimEscrow"),
                 TestResource::Model("AreaOwnership"),
+                TestResource::Model("ConstructionBuildingNode"),
                 TestResource::Event("HexBecameClaimable"),
                 TestResource::Event("ClaimInitiated"),
                 TestResource::Event("ClaimExpired"),

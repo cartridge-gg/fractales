@@ -25,6 +25,7 @@ pub mod mining_manager {
         MineAccessGranted, MineAccessRevoked, MineCollapsed, MineInitialized, MineRepaired,
         MiningContinued, MiningExited, MiningRejected, MiningStarted, MineStabilized,
     };
+    use dojo_starter::libs::construction_balance::{B_SHORING_RIG, B_STOREHOUSE, effect_bp_for_building};
     use dojo_starter::libs::mining_gen::{derive_area_mine_slot_count, derive_mine_profile};
     use dojo_starter::libs::mining_math::{
         compute_stress_delta, compute_tick_energy_cost, compute_tick_yield, will_collapse,
@@ -32,6 +33,7 @@ pub mod mining_manager {
     use dojo_starter::models::adventurer::{
         Adventurer, AdventurerWriteStatus, kill_once_with_status, spend_energy,
     };
+    use dojo_starter::models::construction::{ConstructionBuildingNode, is_building_effective};
     use dojo_starter::models::deaths::{build_death_record, derive_inventory_loss_hash};
     use dojo_starter::models::economics::ConversionRate;
     use dojo_starter::models::inventory::{BackpackItem, Inventory, clear_inventory};
@@ -40,9 +42,10 @@ pub mod mining_manager {
         derive_mining_item_id, derive_mining_shift_id,
     };
     use dojo_starter::models::ownership::AreaOwnership;
-    use dojo_starter::models::world::{AreaType, Hex, HexArea};
+    use dojo_starter::models::world::{AreaType, Hex, HexArea, derive_area_id};
     use dojo_starter::systems::mining_manager::{
-        DENSITY_K_BP, MAX_STRESS_PENALTY_BP, OVERSTAY_K_BP, SWARM_K_LOCKED, can_control_alive,
+        DENSITY_K_BP, MAX_STRESS_PENALTY_BP, OVERSTAY_K_BP, SWARM_K_LOCKED, apply_shoring_stress_delta,
+        can_control_alive,
     };
     use starknet::{get_block_info, get_caller_address};
 
@@ -57,6 +60,8 @@ pub mod mining_manager {
     const ACTION_EXIT: felt252 = 'MINE_EXIT'_felt252;
     const ACTION_REPAIR: felt252 = 'MINE_REPAIR'_felt252;
     const MINE_COLLAPSE_CAUSE: felt252 = 'MINE_COLLAPSE'_felt252;
+    const BP_ONE: u16 = 10_000_u16;
+    const U32_MAX_U128: u128 = 4_294_967_295_u128;
 
     fn saturating_add_u32(lhs: u32, rhs: u32) -> u32 {
         let sum_u128: u128 = lhs.into() + rhs.into();
@@ -72,6 +77,19 @@ pub mod mining_manager {
             65_535_u16
         } else {
             value.try_into().unwrap()
+        }
+    }
+
+    fn apply_bp_floor_u32(value: u32, bp: u16) -> u32 {
+        if value == 0_u32 || bp == 0_u16 {
+            return 0_u32;
+        }
+
+        let scaled_u128: u128 = value.into() * bp.into() / BP_ONE.into();
+        if scaled_u128 > U32_MAX_U128 {
+            4_294_967_295_u32
+        } else {
+            scaled_u128.try_into().unwrap()
         }
     }
 
@@ -112,6 +130,35 @@ pub mod mining_manager {
         grant.mine_key = mine.mine_key;
         grant.grantee_adventurer_id = adventurer_id;
         grant.is_allowed
+    }
+
+    fn active_hex_building_effect_bp(
+        ref world: dojo::world::WorldStorage, hex_coordinate: felt252, building_type: felt252,
+    ) -> u16 {
+        let base_bp = effect_bp_for_building(building_type);
+        if base_bp == 0_u16 {
+            return 10_000_u16;
+        }
+
+        let hex: Hex = world.read_model(hex_coordinate);
+        let mut idx: u8 = 0_u8;
+        loop {
+            if idx >= hex.area_count {
+                break;
+            };
+
+            let area_id = derive_area_id(hex_coordinate, idx);
+            let mut building: ConstructionBuildingNode = world.read_model(area_id);
+            building.area_id = area_id;
+            if building.hex_coordinate == hex_coordinate && building.building_type == building_type
+                && is_building_effective(building) {
+                return base_bp;
+            }
+
+            idx += 1_u8;
+        };
+
+        10_000_u16
     }
 
     fn remove_shift_from_active_list(
@@ -538,12 +585,14 @@ pub mod mining_manager {
                 OVERSTAY_K_BP,
                 DENSITY_K_BP,
             );
+            let shoring_bp = active_hex_building_effect_bp(ref world, mine.hex_coordinate, B_SHORING_RIG);
+            let stress_delta_effective = apply_shoring_stress_delta(stress_delta, shoring_bp);
 
             mine.remaining_reserve -= tick_yield;
             if mine.remaining_reserve == 0_u32 {
                 mine.is_depleted = true;
             }
-            mine.mine_stress = saturating_add_u32(mine.mine_stress, stress_delta);
+            mine.mine_stress = saturating_add_u32(mine.mine_stress, stress_delta_effective);
             mine.last_update_block = now_block;
 
             shift.accrued_ore_unbanked = saturating_add_u32(shift.accrued_ore_unbanked, tick_yield);
@@ -655,8 +704,15 @@ pub mod mining_manager {
             item.adventurer_id = adventurer_id;
             item.item_id = item_id;
 
-            let capacity_left = if inventory.max_weight > inventory.current_weight {
-                inventory.max_weight - inventory.current_weight
+            let storehouse_bp = active_hex_building_effect_bp(ref world, mine.hex_coordinate, B_STOREHOUSE);
+            let effective_max_weight = if storehouse_bp <= BP_ONE {
+                inventory.max_weight
+            } else {
+                let boosted = apply_bp_floor_u32(inventory.max_weight, storehouse_bp);
+                if boosted < inventory.max_weight { inventory.max_weight } else { boosted }
+            };
+            let capacity_left = if effective_max_weight > inventory.current_weight {
+                effective_max_weight - inventory.current_weight
             } else {
                 0_u32
             };

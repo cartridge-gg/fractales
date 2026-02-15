@@ -14,7 +14,9 @@ mod tests {
     use dojo_starter::events::economic_events::{
         ClaimExpired, ClaimInitiated, ClaimRefunded, HexDefended, HexEnergyPaid, ItemsConverted,
     };
+    use dojo_starter::libs::construction_balance::{B_SMELTER, B_WATCHTOWER, I_ORE_IRON};
     use dojo_starter::models::adventurer::Adventurer;
+    use dojo_starter::models::construction::ConstructionBuildingNode;
     use dojo_starter::models::economics::{
         AdventurerEconomics, ClaimEscrow, ClaimEscrowStatus, ConversionRate, HexDecayState,
         derive_hex_claim_id,
@@ -40,6 +42,7 @@ mod tests {
                 TestResource::Model("ClaimEscrow"),
                 TestResource::Model("ConversionRate"),
                 TestResource::Model("AreaOwnership"),
+                TestResource::Model("ConstructionBuildingNode"),
                 TestResource::Event("ItemsConverted"),
                 TestResource::Event("HexEnergyPaid"),
                 TestResource::Event("HexBecameClaimable"),
@@ -635,6 +638,32 @@ mod tests {
                 claim_block: 0_u64,
             },
         );
+        world.write_model_test(
+            @ConstructionBuildingNode {
+                area_id: derive_area_id(hex_coordinate, 0_u8),
+                hex_coordinate,
+                owner_adventurer_id: owner_id,
+                building_type: B_SMELTER,
+                tier: 1_u8,
+                condition_bp: 10_000_u16,
+                upkeep_reserve: 0_u32,
+                last_upkeep_block: 0_u64,
+                is_active: true,
+            },
+        );
+        world.write_model_test(
+            @ConstructionBuildingNode {
+                area_id: derive_area_id(hex_coordinate, 2_u8),
+                hex_coordinate,
+                owner_adventurer_id: owner_id,
+                building_type: B_WATCHTOWER,
+                tier: 1_u8,
+                condition_bp: 10_000_u16,
+                upkeep_reserve: 0_u32,
+                last_upkeep_block: 0_u64,
+                is_active: true,
+            },
+        );
 
         let initiated = manager.initiate_hex_claim(claimant_id, hex_coordinate, 250_u16);
         assert(initiated, 'S5_INT_CLAIM_IMM');
@@ -651,6 +680,155 @@ mod tests {
         assert(own0.claim_block == 700_u64, 'S5_INT_ROW0_BLOCK');
         assert(own1.claim_block == 700_u64, 'S5_INT_ROW1_BLOCK');
         assert(own2.claim_block == 700_u64, 'S5_INT_ROW2_BLOCK');
+
+        let b0: ConstructionBuildingNode = world.read_model(derive_area_id(hex_coordinate, 0_u8));
+        let b2: ConstructionBuildingNode = world.read_model(derive_area_id(hex_coordinate, 2_u8));
+        assert(b0.owner_adventurer_id == claimant_id, 'S5_INT_BLD0_OWNER');
+        assert(b2.owner_adventurer_id == claimant_id, 'S5_INT_BLD2_OWNER');
+    }
+
+    #[test]
+    fn economic_manager_integration_construction_bonuses_apply_for_convert_and_defend() {
+        let caller = get_default_caller_address();
+        set_block_number(100_u64);
+        let mut world = spawn_test_world([namespace_def()].span());
+        world.sync_perms_and_inits(contract_defs());
+
+        let (contract_address, _) = world.dns(@"economic_manager").unwrap();
+        let manager = IEconomicManagerDispatcher { contract_address };
+
+        let owner_id = 9591_felt252;
+        let claimant_id = 9592_felt252;
+        let hex_coordinate = 9690_felt252;
+        setup_actor(ref world, owner_id, caller, 500_u16, hex_coordinate);
+        world.write_model_test(
+            @Adventurer {
+                adventurer_id: claimant_id,
+                owner: caller,
+                name: 'C4BONUS'_felt252,
+                energy: 200_u16,
+                max_energy: 500_u16,
+                current_hex: hex_coordinate,
+                activity_locked_until: 0_u64,
+                is_alive: true,
+            },
+        );
+        world.write_model_test(
+            @AdventurerEconomics {
+                adventurer_id: claimant_id,
+                energy_balance: 200_u16,
+                total_energy_spent: 0_u64,
+                total_energy_earned: 0_u64,
+                last_regen_block: 0_u64,
+            },
+        );
+        world.write_model_test(
+            @Inventory { adventurer_id: claimant_id, current_weight: 10_u32, max_weight: 100_u32 },
+        );
+        world.write_model_test(
+            @BackpackItem {
+                adventurer_id: claimant_id,
+                item_id: I_ORE_IRON,
+                quantity: 10_u32,
+                quality: 100_u16,
+                weight_per_unit: 1_u16,
+            },
+        );
+        world.write_model_test(
+            @ConversionRate {
+                item_type: I_ORE_IRON,
+                base_rate: 10_u16,
+                current_rate: 10_u16,
+                last_update_block: 0_u64,
+                units_converted_in_window: 0_u32,
+            },
+        );
+
+        world.write_model_test(
+            @Hex {
+                coordinate: hex_coordinate,
+                biome: Biome::Forest,
+                is_discovered: true,
+                discovery_block: 1_u64,
+                discoverer: caller,
+                area_count: 2_u8,
+            },
+        );
+        world.write_model_test(
+            @HexDecayState {
+                hex_coordinate,
+                owner_adventurer_id: owner_id,
+                current_energy_reserve: 0_u32,
+                last_energy_payment_block: 0_u64,
+                last_decay_processed_block: 0_u64,
+                decay_level: 85_u16,
+                claimable_since_block: 100_u64,
+            },
+        );
+        world.write_model_test(
+            @AreaOwnership {
+                area_id: derive_area_id(hex_coordinate, 0_u8),
+                owner_adventurer_id: owner_id,
+                discoverer_adventurer_id: owner_id,
+                discovery_block: 10_u64,
+                claim_block: 0_u64,
+            },
+        );
+        world.write_model_test(
+            @AreaOwnership {
+                area_id: derive_area_id(hex_coordinate, 1_u8),
+                owner_adventurer_id: owner_id,
+                discoverer_adventurer_id: owner_id,
+                discovery_block: 11_u64,
+                claim_block: 0_u64,
+            },
+        );
+        world.write_model_test(
+            @ConstructionBuildingNode {
+                area_id: derive_area_id(hex_coordinate, 0_u8),
+                hex_coordinate,
+                owner_adventurer_id: owner_id,
+                building_type: B_SMELTER,
+                tier: 1_u8,
+                condition_bp: 10_000_u16,
+                upkeep_reserve: 0_u32,
+                last_upkeep_block: 0_u64,
+                is_active: true,
+            },
+        );
+        world.write_model_test(
+            @ConstructionBuildingNode {
+                area_id: derive_area_id(hex_coordinate, 1_u8),
+                hex_coordinate,
+                owner_adventurer_id: owner_id,
+                building_type: B_WATCHTOWER,
+                tier: 1_u8,
+                condition_bp: 10_000_u16,
+                upkeep_reserve: 0_u32,
+                last_upkeep_block: 0_u64,
+                is_active: true,
+            },
+        );
+
+        let gained = manager.convert_items_to_energy(claimant_id, I_ORE_IRON, 5_u16);
+        assert(gained == 56_u16, 'S5_INT_BONUS_CONV');
+        let claimant_after_convert: Adventurer = world.read_model(claimant_id);
+        assert(claimant_after_convert.energy == 256_u16, 'S5_INT_BONUS_CONV_ENE');
+
+        let initiated = manager.initiate_hex_claim(claimant_id, hex_coordinate, 200_u16);
+        assert(initiated, 'S5_INT_BONUS_CLAIM');
+
+        let defended = manager.defend_hex_from_claim(owner_id, hex_coordinate, 180_u16);
+        assert(defended, 'S5_INT_BONUS_DEFEND');
+
+        let owner_after_defend: Adventurer = world.read_model(owner_id);
+        let claimant_after_defend: Adventurer = world.read_model(claimant_id);
+        let state_after_defend: HexDecayState = world.read_model(hex_coordinate);
+        let escrow_after_defend: ClaimEscrow = world.read_model(derive_hex_claim_id(hex_coordinate));
+        assert(owner_after_defend.energy == 320_u16, 'S5_INT_BONUS_DEF_ENE');
+        assert(claimant_after_defend.energy == 256_u16, 'S5_INT_BONUS_REFUND');
+        assert(state_after_defend.current_energy_reserve == 180_u32, 'S5_INT_BONUS_RESV');
+        assert(escrow_after_defend.status == ClaimEscrowStatus::Resolved, 'S5_INT_BONUS_ESC');
     }
 
     #[test]

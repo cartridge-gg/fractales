@@ -12,3 +12,5 @@ pub mod world_gen_manager;
 pub mod world_gen_manager_contract;
 pub mod mining_manager;
 pub mod mining_manager_contract;
+pub mod construction_manager;
+pub mod construction_manager_contract;
