@@ -9,9 +9,15 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "test": "vitest run tests"
+    "test": "vitest run tests",
+    "test:watch": "vitest tests"
   },
   "dependencies": {
     "@gen-dungeon/explorer-types": "workspace:*"
+  },
+  "devDependencies": {
+    "better-sqlite3": "^11.0.0",
+    "@types/better-sqlite3": "^7.6.11",
+    "vitest": "^2.0.0"
   }
 }
