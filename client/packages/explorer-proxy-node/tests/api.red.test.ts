@@ -43,6 +43,10 @@ function makeInspectPayload(hexCoordinate: string): HexInspectPayload {
     constructionProjects: [],
     constructionEscrows: [],
     deathRecords: [],
+    mineNodes: [],
+    miningShifts: [],
+    mineAccessGrants: [],
+    mineCollapseRecords: [],
     eventTail: []
   };
 }
@@ -91,6 +95,23 @@ describe("proxy API adapter (RED)", () => {
     const api = createExplorerProxyApi({ reader });
 
     await expect(api.getHex("0xabc")).resolves.toEqual(payload);
+  });
+
+  it("hex.endpoint.includes_mining_inspect_families.red", async () => {
+    const payload = makeInspectPayload("0xabc");
+    const reader: ToriiViewsReader = {
+      getChunks: async () => [],
+      getHexInspect: async () => payload,
+      search: async () => [],
+      getEventTail: async () => []
+    };
+    const api = createExplorerProxyApi({ reader });
+
+    const result = (await api.getHex("0xabc")) as unknown as Record<string, unknown>;
+    expect(Array.isArray(result.mineNodes)).toBe(true);
+    expect(Array.isArray(result.miningShifts)).toBe(true);
+    expect(Array.isArray(result.mineAccessGrants)).toBe(true);
+    expect(Array.isArray(result.mineCollapseRecords)).toBe(true);
   });
 
   it("hex.endpoint.merges_ordered_event_tail_from_reader.red", async () => {

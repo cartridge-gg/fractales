@@ -1006,6 +1006,10 @@ function makeProxyInspectPayload(hexCoordinate: string): HexInspectPayload {
     buildings: [],
     constructionProjects: [],
     constructionEscrows: [],
+    mineNodes: [],
+    miningShifts: [],
+    mineAccessGrants: [],
+    mineCollapseRecords: [],
     deathRecords: [],
     eventTail: []
   } as HexInspectPayload;

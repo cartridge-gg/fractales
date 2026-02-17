@@ -32,6 +32,10 @@ import type {
   HexDecayState,
   Inventory,
   LayerToggleState,
+  MineAccessGrant,
+  MineCollapseRecord,
+  MineNode,
+  MiningShift,
   PlantNode,
   SearchQuery,
   SearchResult,
@@ -252,6 +256,76 @@ query LiveSnapshot($hexLimit: Int!, $modelLimit: Int!) {
         project_id
         item_id
         quantity
+      }
+    }
+  }
+  dojoStarterMineNodeModels(limit: $modelLimit) {
+    edges {
+      node {
+        mine_key
+        hex_coordinate
+        area_id
+        mine_id
+        ore_id
+        rarity_tier
+        depth_tier
+        richness_bp
+        remaining_reserve
+        base_stress_per_block
+        collapse_threshold
+        mine_stress
+        safe_shift_blocks
+        active_miners
+        last_update_block
+        collapsed_until_block
+        repair_energy_needed
+        is_depleted
+        active_head_shift_id
+        active_tail_shift_id
+        biome_risk_bp
+        rarity_risk_bp
+        base_tick_energy
+        ore_energy_weight
+        conversion_energy_per_unit
+      }
+    }
+  }
+  dojoStarterMiningShiftModels(limit: $modelLimit) {
+    edges {
+      node {
+        shift_id
+        adventurer_id
+        mine_key
+        status
+        start_block
+        last_settle_block
+        accrued_ore_unbanked
+        accrued_stabilization_work
+        prev_active_shift_id
+        next_active_shift_id
+      }
+    }
+  }
+  dojoStarterMineAccessGrantModels(limit: $modelLimit) {
+    edges {
+      node {
+        mine_key
+        grantee_adventurer_id
+        is_allowed
+        granted_by_adventurer_id
+        grant_block
+        revoked_block
+      }
+    }
+  }
+  dojoStarterMineCollapseRecordModels(limit: $modelLimit) {
+    edges {
+      node {
+        mine_key
+        collapse_count
+        last_collapse_block
+        trigger_stress
+        trigger_active_miners
       }
     }
   }
@@ -478,6 +552,64 @@ export interface ToriiConstructionMaterialEscrowRow {
   quantity: unknown;
 }
 
+export interface ToriiMineNodeRow {
+  mine_key: string;
+  hex_coordinate: HexCoordinate;
+  area_id: string;
+  mine_id: unknown;
+  ore_id: unknown;
+  rarity_tier: unknown;
+  depth_tier: unknown;
+  richness_bp: unknown;
+  remaining_reserve: unknown;
+  base_stress_per_block: unknown;
+  collapse_threshold: unknown;
+  mine_stress: unknown;
+  safe_shift_blocks: unknown;
+  active_miners: unknown;
+  last_update_block: unknown;
+  collapsed_until_block: unknown;
+  repair_energy_needed: unknown;
+  is_depleted: boolean | number | string;
+  active_head_shift_id: unknown;
+  active_tail_shift_id: unknown;
+  biome_risk_bp: unknown;
+  rarity_risk_bp: unknown;
+  base_tick_energy: unknown;
+  ore_energy_weight: unknown;
+  conversion_energy_per_unit: unknown;
+}
+
+export interface ToriiMiningShiftRow {
+  shift_id: string;
+  adventurer_id: string;
+  mine_key: string;
+  status: unknown;
+  start_block: unknown;
+  last_settle_block: unknown;
+  accrued_ore_unbanked: unknown;
+  accrued_stabilization_work: unknown;
+  prev_active_shift_id: unknown;
+  next_active_shift_id: unknown;
+}
+
+export interface ToriiMineAccessGrantRow {
+  mine_key: string;
+  grantee_adventurer_id: string;
+  is_allowed: boolean | number | string;
+  granted_by_adventurer_id: string;
+  grant_block: unknown;
+  revoked_block: unknown;
+}
+
+export interface ToriiMineCollapseRecordRow {
+  mine_key: string;
+  collapse_count: unknown;
+  last_collapse_block: unknown;
+  trigger_stress: unknown;
+  trigger_active_miners: unknown;
+}
+
 export interface ToriiSnapshotRows {
   hexes: ToriiHexRow[];
   areas: ToriiHexAreaRow[];
@@ -494,6 +626,10 @@ export interface ToriiSnapshotRows {
   buildings: ToriiConstructionBuildingRow[];
   constructionProjects: ToriiConstructionProjectRow[];
   constructionEscrows: ToriiConstructionMaterialEscrowRow[];
+  mineNodes: ToriiMineNodeRow[];
+  miningShifts: ToriiMiningShiftRow[];
+  mineAccessGrants: ToriiMineAccessGrantRow[];
+  mineCollapseRecords: ToriiMineCollapseRecordRow[];
 }
 
 interface SnapshotBundle extends ToriiSnapshotRows {
@@ -531,6 +667,10 @@ interface SnapshotQueryData {
   dojoStarterConstructionBuildingNodeModels?: GraphqlConnection<ToriiConstructionBuildingRow>;
   dojoStarterConstructionProjectModels?: GraphqlConnection<ToriiConstructionProjectRow>;
   dojoStarterConstructionMaterialEscrowModels?: GraphqlConnection<ToriiConstructionMaterialEscrowRow>;
+  dojoStarterMineNodeModels?: GraphqlConnection<ToriiMineNodeRow>;
+  dojoStarterMiningShiftModels?: GraphqlConnection<ToriiMiningShiftRow>;
+  dojoStarterMineAccessGrantModels?: GraphqlConnection<ToriiMineAccessGrantRow>;
+  dojoStarterMineCollapseRecordModels?: GraphqlConnection<ToriiMineCollapseRecordRow>;
 }
 
 interface GraphqlResponse<TData> {
@@ -1218,6 +1358,20 @@ export class LiveToriiProxyClient implements ExplorerProxyClient {
       (row) => normalizeHex(row.hex_coordinate) === normalizeHex(hexCoordinate)
     );
 
+    const mineNodes = snapshot.mineNodes.filter(
+      (row) => normalizeHex(row.hex_coordinate) === normalizeHex(hexCoordinate)
+    );
+    const mineKeys = new Set(mineNodes.map((row) => normalizeHex(row.mine_key)));
+    const miningShifts = snapshot.miningShifts.filter((row) =>
+      mineKeys.has(normalizeHex(row.mine_key))
+    );
+    const mineAccessGrants = snapshot.mineAccessGrants.filter((row) =>
+      mineKeys.has(normalizeHex(row.mine_key))
+    );
+    const mineCollapseRecords = snapshot.mineCollapseRecords.filter((row) =>
+      mineKeys.has(normalizeHex(row.mine_key))
+    );
+
     const plantKeys = new Set(plants.map((row) => normalizeHex(row.plant_key)));
     const activeReservations = snapshot.reservations.filter((row) => {
       return plantKeys.has(normalizeHex(row.plant_key)) && isActiveEnumStatus(row.status);
@@ -1260,6 +1414,13 @@ export class LiveToriiProxyClient implements ExplorerProxyClient {
     for (const row of constructionProjects) {
       relatedAdventurerIds.add(normalizeHex(row.adventurer_id));
     }
+    for (const row of miningShifts) {
+      relatedAdventurerIds.add(normalizeHex(row.adventurer_id));
+    }
+    for (const row of mineAccessGrants) {
+      relatedAdventurerIds.add(normalizeHex(row.grantee_adventurer_id));
+      relatedAdventurerIds.add(normalizeHex(row.granted_by_adventurer_id));
+    }
     if (decayState) {
       relatedAdventurerIds.add(normalizeHex(decayState.owner_adventurer_id));
     }
@@ -1295,6 +1456,10 @@ export class LiveToriiProxyClient implements ExplorerProxyClient {
       constructionProjects: constructionProjects as unknown as ConstructionProject[],
       constructionEscrows: constructionEscrows as unknown as ConstructionMaterialEscrow[],
       deathRecords: deathRecords as unknown as DeathRecord[],
+      mineNodes: mineNodes as unknown as MineNode[],
+      miningShifts: miningShifts as unknown as MiningShift[],
+      mineAccessGrants: mineAccessGrants as unknown as MineAccessGrant[],
+      mineCollapseRecords: mineCollapseRecords as unknown as MineCollapseRecord[],
       eventTail: []
     };
   }
@@ -1454,7 +1619,11 @@ export class LiveToriiProxyClient implements ExplorerProxyClient {
       deathRecords: toNodes(payload.dojoStarterDeathRecordModels),
       buildings: toNodes(payload.dojoStarterConstructionBuildingNodeModels),
       constructionProjects: toNodes(payload.dojoStarterConstructionProjectModels),
-      constructionEscrows: toNodes(payload.dojoStarterConstructionMaterialEscrowModels)
+      constructionEscrows: toNodes(payload.dojoStarterConstructionMaterialEscrowModels),
+      mineNodes: toNodes(payload.dojoStarterMineNodeModels),
+      miningShifts: toNodes(payload.dojoStarterMiningShiftModels),
+      mineAccessGrants: toNodes(payload.dojoStarterMineAccessGrantModels),
+      mineCollapseRecords: toNodes(payload.dojoStarterMineCollapseRecordModels)
     };
 
     return {
