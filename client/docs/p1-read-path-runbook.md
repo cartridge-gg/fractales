@@ -1,7 +1,7 @@
 # Explorer P1 Read-Path Runbook
 
 Status: Draft  
-Last updated: 2026-02-16  
+Last updated: 2026-02-17  
 Owners: Client Platform + Game Infra
 
 ## 1. Scope
@@ -9,6 +9,7 @@ Owners: Client Platform + Game Infra
 This runbook covers P1 read-path operation for:
 - `@gen-dungeon/torii-views` v1 logical views
 - `@gen-dungeon/explorer-proxy-node` read endpoints and stream contract
+- sidebar inspect payload/read-path stability used by `@gen-dungeon/explorer-app`
 
 Covered routes:
 - `GET /v1/chunks`
@@ -36,6 +37,15 @@ Required package checks:
   - API adapter contracts (`api.red.test.ts`)
   - HTTP route contracts (`http-routes.red.test.ts`)
   - websocket contract (`ws-stream.red.test.ts`)
+- sidebar operations smoke checks:
+  - app flows/inspect rendering (`flow.red.test.ts`, `inspect-format.red.test.ts`)
+  - runtime hydration (`live-runtime.red.test.ts`)
+
+Sidebar-focused validation command:
+
+```bash
+bun run typecheck && bun run test:app && bun run test:proxy
+```
 
 ## 3. Version and Contract Invariants
 
@@ -45,6 +55,12 @@ Must stay true:
 - `explorer_hex_render_v1` remains discovered-only.
 - `explorer_claim_active_v1` keeps ACTIVE filtering (`status = 1`).
 - stream emits `resync_required` before patch emission when `sourceSequence` gaps are detected.
+- inspect payload includes mining families:
+  - `mineNodes`
+  - `miningShifts`
+  - `mineAccessGrants`
+  - `mineCollapseRecords`
+- selected inspect refreshes on operation-relevant patches when payload carries selected-hex coordinates.
 
 ## 4. Route Contract Summary
 
@@ -61,6 +77,9 @@ Must stay true:
 - Returns:
   - `200` inspect payload (`HexInspectPayload`)
   - `400` for malformed coordinate path
+
+Sidebar operations requirement:
+- payload must preserve mining rows and deterministic event-tail merge for compact operations cards.
 
 ### `GET /v1/search?coord|owner|adventurer=<value>[&limit=n]`
 
@@ -115,6 +134,26 @@ Actions:
 1. inspect stream state from `createExplorerProxyStream().snapshot()`.
 2. validate gap behavior in `ws-stream.red.test.ts`.
 3. ensure producer sends monotonic `sourceSequence` per stream partition.
+
+### Sidebar inspect not updating on live operations
+
+Symptoms:
+- selected hex inspect remains stale after mining/harvest/claim/adventurer updates.
+
+Actions:
+1. verify patch payload includes hex-bearing fields (`hexCoordinate`, `hex_coordinate`, `current_hex`).
+2. validate refresh behavior in `explorer-app/tests/flow.red.test.ts`.
+3. run `bun run --filter @gen-dungeon/explorer-app test`.
+
+### Dense inspect cards silently truncate rows
+
+Symptoms:
+- large row sections clip entries without user-visible notice.
+
+Actions:
+1. verify capped-table rendering in `explorer-app/src/inspect-format.ts`.
+2. validate truncation assertions in `explorer-app/tests/inspect-format.red.test.ts`.
+3. run `bun run --filter @gen-dungeon/explorer-app test`.
 
 ## 7. Handoff Checklist
 
