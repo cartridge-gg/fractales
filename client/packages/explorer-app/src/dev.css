@@ -69,6 +69,7 @@ body {
   padding: 5px 8px;
   border-radius: 999px;
   border: 1px solid transparent;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
 }
 
 .status-pill.live {
@@ -91,10 +92,70 @@ body {
   color: var(--accent);
 }
 
+/* --- Collapse toggle --- */
+
+.controls-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 4px 0;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.controls-toggle:hover {
+  color: var(--accent);
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.controls-toggle::before {
+  content: "▾";
+  display: inline-block;
+  transition: transform 0.2s;
+}
+
+.controls-toggle.is-collapsed::before {
+  transform: rotate(-90deg);
+}
+
+.controls-toggle-line {
+  flex: 1;
+  height: 1px;
+  background: var(--line-soft);
+}
+
+/* --- Control grid --- */
+
 .control-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
+  overflow: hidden;
+  transition: grid-template-rows 0.25s ease, opacity 0.2s ease;
+  grid-template-rows: 1fr;
+}
+
+.control-grid.is-collapsed {
+  grid-template-rows: 0fr;
+  opacity: 0;
+  pointer-events: none;
+  gap: 0;
+}
+
+.control-grid.is-collapsed > * {
+  min-height: 0;
+  overflow: hidden;
+  padding-top: 0;
+  padding-bottom: 0;
+  border-width: 0;
+  margin: 0;
 }
 
 .control-card {
@@ -103,6 +164,8 @@ body {
   border-radius: 4px;
   background: var(--bg-panel);
   padding: 12px;
+  transition: border-color 0.15s, background 0.15s;
+  min-height: 0;
 }
 
 .control-card h2 {
@@ -129,6 +192,7 @@ select {
   color: var(--text);
   background: #0d0d0d;
   font-family: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
 }
 
 button {
@@ -140,18 +204,83 @@ button:hover {
   box-shadow: 0 0 8px rgba(255, 140, 0, 0.15);
 }
 
+button:active {
+  background: rgba(255, 140, 0, 0.1);
+}
+
+input:focus,
+select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px rgba(255, 140, 0, 0.2);
+}
+
 input,
 select {
   min-width: 0;
   flex: 1 1 auto;
 }
 
+/* --- Layer checkboxes --- */
+
 .layer-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  gap: 4px;
   margin-bottom: 8px;
   font-size: 0.86rem;
+}
+
+.layer-grid label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  color: var(--muted);
+}
+
+.layer-grid label:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+}
+
+.layer-grid label:has(input:checked) {
+  color: var(--accent);
+}
+
+.layer-grid input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: #0d0d0d;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  transition: border-color 0.15s, background 0.15s;
+  padding: 0;
+}
+
+.layer-grid input[type="checkbox"]:checked {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.layer-grid input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 1px;
+  width: 5px;
+  height: 8px;
+  border: solid #000;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
 }
 
 .search-results {
@@ -184,11 +313,15 @@ select {
   background: #080808;
 }
 
+/* --- Inspect panel --- */
+
 .inspect-panel {
   border: 1px solid var(--line-soft);
   border-radius: 4px;
   background: var(--bg-panel);
   padding: 12px;
+  display: flex;
+  flex-direction: column;
 }
 
 .inspect-panel h2 {
@@ -211,6 +344,7 @@ select {
 }
 
 #inspect-details {
+  position: relative;
   margin: 0 0 10px;
   padding: 8px;
   border: 1px solid var(--line-soft);
@@ -220,6 +354,23 @@ select {
   overflow: auto;
   display: grid;
   gap: 8px;
+  flex: 1;
+}
+
+.inspect-scroll-fade {
+  position: sticky;
+  bottom: 0;
+  height: 24px;
+  margin: -8px -8px -8px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.6));
+  pointer-events: none;
+  border-radius: 0 0 4px 4px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.inspect-scroll-fade.is-visible {
+  opacity: 1;
 }
 
 .inspect-empty {

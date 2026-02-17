@@ -21,6 +21,8 @@ const routeInput = getRequiredElement<HTMLInputElement>("#route-input");
 const searchMode = getRequiredElement<HTMLSelectElement>("#search-mode");
 const searchInput = getRequiredElement<HTMLInputElement>("#search-input");
 const viewportGrid = getRequiredElement<HTMLElement>(".viewport-grid");
+const controlsToggle = getRequiredElement<HTMLButtonElement>("#controls-toggle");
+const controlGrid = getRequiredElement<HTMLElement>("#control-grid");
 
 const params = new URLSearchParams(window.location.search);
 const runtimeMode = params.get("source") === "mock" ? "mock" : "live";
@@ -121,7 +123,7 @@ getRequiredElement<HTMLButtonElement>("#zoom-out").addEventListener("click", asy
   syncSnapshot();
 });
 
-getRequiredElement<HTMLButtonElement>("#search-run").addEventListener("click", async () => {
+async function runSearch(): Promise<void> {
   const mode = searchMode.value;
   const value = searchInput.value.trim();
   if (!value) {
@@ -136,6 +138,17 @@ getRequiredElement<HTMLButtonElement>("#search-run").addEventListener("click", a
     await app.jumpTo({ adventurer: value });
   }
   syncSnapshot();
+}
+
+getRequiredElement<HTMLButtonElement>("#search-run").addEventListener("click", () => {
+  void runSearch();
+});
+
+searchInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    void runSearch();
+  }
 });
 
 searchMode.addEventListener("change", () => {
@@ -179,13 +192,24 @@ getRequiredElement<HTMLButtonElement>("#layers-off").addEventListener("click", (
   syncSnapshot();
 });
 
-getRequiredElement<HTMLButtonElement>("#route-hydrate").addEventListener("click", async () => {
+async function hydrateRoute(): Promise<void> {
   const value = routeInput.value.trim();
   if (!value) {
     return;
   }
   await app.hydrateFromUrl(value);
   syncSnapshot();
+}
+
+getRequiredElement<HTMLButtonElement>("#route-hydrate").addEventListener("click", () => {
+  void hydrateRoute();
+});
+
+routeInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    void hydrateRoute();
+  }
 });
 
 getRequiredElement<HTMLButtonElement>("#mobile-layout").addEventListener("click", async () => {
@@ -205,6 +229,30 @@ window.addEventListener("resize", () => {
 window.addEventListener("beforeunload", () => {
   cleanup();
 });
+
+// --- Collapsible controls ---
+controlsToggle.addEventListener("click", () => {
+  const collapsed = controlGrid.classList.toggle("is-collapsed");
+  controlsToggle.classList.toggle("is-collapsed", collapsed);
+});
+
+// --- Inspect scroll fade indicator ---
+function updateScrollFade(): void {
+  let fade = inspectDetails.querySelector<HTMLElement>(".inspect-scroll-fade");
+  if (!fade) {
+    fade = document.createElement("div");
+    fade.className = "inspect-scroll-fade";
+    inspectDetails.append(fade);
+  }
+  const hasOverflow = inspectDetails.scrollHeight > inspectDetails.clientHeight + 4;
+  const atBottom = inspectDetails.scrollTop + inspectDetails.clientHeight >= inspectDetails.scrollHeight - 4;
+  fade.classList.toggle("is-visible", hasOverflow && !atBottom);
+}
+
+inspectDetails.addEventListener("scroll", updateScrollFade);
+
+const inspectObserver = new MutationObserver(updateScrollFade);
+inspectObserver.observe(inspectDetails, { childList: true, subtree: true });
 
 function syncSnapshot(): void {
   const snapshot = app.snapshot();

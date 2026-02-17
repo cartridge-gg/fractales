@@ -78,6 +78,59 @@ sozo migrate
 torii --world <WORLD_ADDRESS> --http.cors_origins "*"
 ```
 
+## Explorer UI Usage (Bun)
+
+The explorer dev harness lives in the sibling `client/` workspace and runs with Bun.
+
+### Start locally
+
+```bash
+cd ../client
+bun install
+bun run dev:app
+```
+
+Open:
+- Live mode (default): `http://127.0.0.1:4173`
+- Mock mode: `http://127.0.0.1:4173/?source=mock`
+- Live mode with explicit Torii endpoint:
+  `http://127.0.0.1:4173/?torii=https://api.cartridge.gg/x/<slot>/torii/graphql`
+
+### Using the UI
+
+- `Navigation`: pan/zoom and mobile/desktop viewport presets.
+- `Layers`: toggle biome/ownership/claims/adventurers/resources/decay overlays.
+- `Search + Deep Link`: jump by `coord`, `owner`, or `adventurer`; hydrate from URL.
+- `Stream Status`: simulate `live`, `catching_up`, and `degraded` states.
+- `Inspect`: click a discovered hex to view structured details (hex, areas, ownership, decay, claims, plants, reservations, adventurers, economics, inventory, construction, deaths, events).
+
+Note: current live runtime updates are GraphQL polling (heartbeat-style), not a direct websocket stream.
+
+## Explorer UI Deployment
+
+Build the static app bundle:
+
+```bash
+cd ../client
+bun install
+bun run --filter @gen-dungeon/explorer-app build
+```
+
+Build output:
+- `../client/packages/explorer-app/dist`
+
+Smoke check the built bundle locally:
+
+```bash
+cd ../client
+bun run --filter @gen-dungeon/explorer-app preview
+```
+
+Deploy `../client/packages/explorer-app/dist` to any static host (Vercel/Netlify/S3+CloudFront/Nginx).  
+After deploy, pass your production Torii GraphQL endpoint with the `torii` query param, for example:
+
+`https://<your-ui-domain>/?torii=https://api.cartridge.gg/x/<slot>/torii/graphql`
+
 ## Docker
 You can start stack using docker compose. [Here are the installation instruction](https://docs.docker.com/engine/install/)
 
