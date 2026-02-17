@@ -61,6 +61,10 @@ function inspectPayload(hexCoordinate: string): HexInspectPayload {
     constructionProjects: [],
     constructionEscrows: [],
     deathRecords: [],
+    mineNodes: [],
+    miningShifts: [],
+    mineAccessGrants: [],
+    mineCollapseRecords: [],
     eventTail: []
   };
 }
@@ -494,6 +498,112 @@ describe("explorer app flows (RED)", () => {
 
     expect(app.snapshot().visibleHexes.map((hex) => hex.hexCoordinate)).toContain("0x30");
     expect(proxy.chunkCalls.length).toBe(initialLoads);
+  });
+
+  it("flow.selected_inspect_refreshes_on_operation_relevant_patch.red", async () => {
+    const { app, proxy, renderer, ui } = createHarness();
+    await app.mount();
+    renderer.emitSelect("0x11");
+    await Promise.resolve();
+
+    const beforeCalls = proxy.inspectCalls.length;
+
+    proxy.emitPatch({
+      schemaVersion: "explorer-v1",
+      sequence: 2,
+      blockNumber: 112,
+      txIndex: 0,
+      eventIndex: 1,
+      kind: "plant_patch",
+      payload: {
+        row: {
+          hex_coordinate: "0x11",
+          plant_key: "0xplant",
+          reserved_yield: 5
+        }
+      },
+      emittedAtMs: 112
+    });
+    await Promise.resolve();
+
+    expect(proxy.inspectCalls.length).toBe(beforeCalls + 1);
+    expect(proxy.inspectCalls.at(-1)).toBe("0x11");
+    expect(ui.inspectPayloads.at(-1)?.hex.coordinate).toBe("0x11");
+  });
+
+  it("flow.selected_inspect_refreshes_on_adventurer_and_claim_patch.red", async () => {
+    const { app, proxy, renderer } = createHarness();
+    await app.mount();
+    renderer.emitSelect("0x11");
+    await Promise.resolve();
+
+    const beforeCalls = proxy.inspectCalls.length;
+
+    proxy.emitPatch({
+      schemaVersion: "explorer-v1",
+      sequence: 3,
+      blockNumber: 113,
+      txIndex: 0,
+      eventIndex: 1,
+      kind: "adventurer_patch",
+      payload: {
+        row: {
+          adventurer_id: "0xadv",
+          current_hex: "0x11"
+        }
+      },
+      emittedAtMs: 113
+    });
+    await Promise.resolve();
+
+    proxy.emitPatch({
+      schemaVersion: "explorer-v1",
+      sequence: 4,
+      blockNumber: 114,
+      txIndex: 0,
+      eventIndex: 1,
+      kind: "claim_patch",
+      payload: {
+        row: {
+          hexCoordinate: "0x11",
+          claim_id: "0xclaim",
+          status: "Active"
+        }
+      },
+      emittedAtMs: 114
+    });
+    await Promise.resolve();
+
+    expect(proxy.inspectCalls.length).toBe(beforeCalls + 2);
+    expect(proxy.inspectCalls.at(-1)).toBe("0x11");
+  });
+
+  it("flow.selected_inspect_does_not_refresh_on_unrelated_operation_patch.red", async () => {
+    const { app, proxy, renderer } = createHarness();
+    await app.mount();
+    renderer.emitSelect("0x11");
+    await Promise.resolve();
+
+    const beforeCalls = proxy.inspectCalls.length;
+
+    proxy.emitPatch({
+      schemaVersion: "explorer-v1",
+      sequence: 5,
+      blockNumber: 115,
+      txIndex: 0,
+      eventIndex: 1,
+      kind: "plant_patch",
+      payload: {
+        row: {
+          hex_coordinate: "0x20",
+          plant_key: "0xplant"
+        }
+      },
+      emittedAtMs: 115
+    });
+    await Promise.resolve();
+
+    expect(proxy.inspectCalls.length).toBe(beforeCalls);
   });
 
   it("flow.deep_link_restore_coord_owner_adventurer.red", async () => {

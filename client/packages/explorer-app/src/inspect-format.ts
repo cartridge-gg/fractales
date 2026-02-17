@@ -23,6 +23,11 @@ export function renderInspectPanelHtml(
 
   const compact = [
     renderHero(payload),
+    renderOperationsSummaryCard(payload),
+    renderAreaSlotsCard(payload),
+    renderMineOperationsCard(payload),
+    renderAdventurerAssignmentsCard(payload),
+    renderProductionFeedCard(payload),
     renderAreasCard(payload),
     renderOwnershipCard(payload),
     renderDecayCard(payload),
@@ -206,35 +211,296 @@ function renderHero(payload: HexInspectPayload): string {
   ].join("");
 }
 
-function renderAreasCard(payload: HexInspectPayload): string {
+function renderOperationsSummaryCard(payload: HexInspectPayload): string {
+  const activeReservations = payload.activeReservations.filter((row) => isActiveEnumStatus(row.status));
+  const activeMiningShifts = payload.miningShifts.filter((row) => isActiveEnumStatus(row.status));
+  const collapsedOrDepletedCount = payload.mineNodes.filter((mine) => {
+    const collapsed =
+      toSafeNumber(mine.repair_energy_needed, 0) > 0 ||
+      toSafeNumber(mine.collapsed_until_block, 0) > toSafeNumber(payload.headBlock, 0);
+    return collapsed || isTrueValue(mine.is_depleted);
+  }).length;
+  const unbankedOre = activeMiningShifts.reduce((sum, row) => {
+    return sum + toSafeNumber(row.accrued_ore_unbanked, 0);
+  }, 0);
+
   return renderCard(
-    `Areas (${payload.areas.length})`,
+    "Operations Summary",
     renderTable(
-      ["Idx", "Type", "Quality", "Slots"],
-      payload.areas.slice(0, MAX_ROWS_PER_SECTION).map((area) => {
-        const areaAny = area as unknown as Record<string, unknown>;
-        return [
-          renderNumber(areaAny.area_index),
-          escapeHtml(formatValue(areaAny.area_type)),
-          renderNumber(areaAny.resource_quality),
-          renderNumber(areaAny.plant_slot_count)
-        ];
-      })
+      ["Metric", "Value"],
+      [
+        ["Adventurers", renderNumber(payload.adventurers.length)],
+        ["Active Harvest", renderNumber(activeReservations.length)],
+        ["Active Mining", renderNumber(activeMiningShifts.length)],
+        ["Initialized Mines", renderNumber(payload.mineNodes.length)],
+        ["Collapsed/Depleted", renderNumber(collapsedOrDepletedCount)],
+        ["Unbanked Ore", renderNumber(unbankedOre)]
+      ]
     )
   );
 }
 
+function renderAreaSlotsCard(payload: HexInspectPayload): string {
+  const areaRows = [...payload.areas].sort(compareAreaRows);
+  const plantByKey = new Map<string, HexInspectPayload["plants"][number]>();
+  const mineByKey = new Map<string, HexInspectPayload["mineNodes"][number]>();
+  const plantCountByArea = new Map<string, number>();
+  const mineCountByArea = new Map<string, number>();
+  const activeWorkersByArea = new Map<string, Set<string>>();
+
+  for (const plant of payload.plants) {
+    const plantKey = normalizeKey(plant.plant_key);
+    const areaKey = normalizeKey(plant.area_id);
+    plantByKey.set(plantKey, plant);
+    plantCountByArea.set(areaKey, (plantCountByArea.get(areaKey) ?? 0) + 1);
+  }
+
+  for (const mine of payload.mineNodes) {
+    const mineKey = normalizeKey(mine.mine_key);
+    const areaKey = normalizeKey(mine.area_id);
+    mineByKey.set(mineKey, mine);
+    mineCountByArea.set(areaKey, (mineCountByArea.get(areaKey) ?? 0) + 1);
+  }
+
+  for (const reservation of payload.activeReservations) {
+    if (!isActiveEnumStatus(reservation.status)) {
+      continue;
+    }
+    const plant = plantByKey.get(normalizeKey(reservation.plant_key));
+    if (!plant) {
+      continue;
+    }
+    const areaKey = normalizeKey(plant.area_id);
+    const workers = activeWorkersByArea.get(areaKey) ?? new Set<string>();
+    workers.add(normalizeKey(reservation.adventurer_id));
+    activeWorkersByArea.set(areaKey, workers);
+  }
+
+  for (const shift of payload.miningShifts) {
+    if (!isActiveEnumStatus(shift.status)) {
+      continue;
+    }
+    const mine = mineByKey.get(normalizeKey(shift.mine_key));
+    if (!mine) {
+      continue;
+    }
+    const areaKey = normalizeKey(mine.area_id);
+    const workers = activeWorkersByArea.get(areaKey) ?? new Set<string>();
+    workers.add(normalizeKey(shift.adventurer_id));
+    activeWorkersByArea.set(areaKey, workers);
+  }
+
+  const rows = areaRows.map((area) => {
+    const areaAny = area as unknown as Record<string, unknown>;
+    const areaKey = normalizeKey(area.area_id);
+    const initializedPlants = plantCountByArea.get(areaKey) ?? 0;
+    const initializedMines = mineCountByArea.get(areaKey) ?? 0;
+    const activeWorkers = activeWorkersByArea.get(areaKey)?.size ?? 0;
+
+    return [
+      renderNumber(areaAny.area_index),
+      escapeHtml(formatValue(areaAny.area_type)),
+      `${renderNumber(initializedPlants)}/${renderNumber(areaAny.plant_slot_count)}`,
+      renderNumber(initializedMines),
+      renderNumber(activeWorkers)
+    ];
+  });
+
+  return renderCard(
+    "Area Slots",
+    [
+      renderTable(["Area", "Type", "Plants", "Mines", "Workers"], rows.slice(0, MAX_ROWS_PER_SECTION)),
+      renderTruncationNote(rows.length)
+    ].join("")
+  );
+}
+
+function renderMineOperationsCard(payload: HexInspectPayload): string {
+  const activeShiftCountByMine = new Map<string, number>();
+  for (const shift of payload.miningShifts) {
+    if (!isActiveEnumStatus(shift.status)) {
+      continue;
+    }
+    const mineKey = normalizeKey(shift.mine_key);
+    activeShiftCountByMine.set(mineKey, (activeShiftCountByMine.get(mineKey) ?? 0) + 1);
+  }
+
+  const sortedMines = [...payload.mineNodes].sort(compareMineRows);
+  const rows = sortedMines.map((mine) => {
+    const mineKey = normalizeKey(mine.mine_key);
+    const activeShiftCount = activeShiftCountByMine.get(mineKey) ?? 0;
+    const status = deriveMineStatus(mine, activeShiftCount, payload.headBlock);
+
+    return [
+      renderFelt(mine.mine_key),
+      renderFelt(mine.area_id),
+      escapeHtml(status),
+      renderNumber(Math.max(activeShiftCount, toSafeNumber(mine.active_miners, 0))),
+      renderNumber(mine.remaining_reserve),
+      `${renderNumber(mine.mine_stress)}/${renderNumber(mine.collapse_threshold)}`,
+      renderNumber(mine.repair_energy_needed)
+    ];
+  });
+
+  const content =
+    rows.length === 0
+      ? '<p class="inspect-muted">No mine operations in this hex.</p>'
+      : [
+          renderTable(
+            ["Mine", "Area", "Status", "Miners", "Reserve", "Stress", "Repair"],
+            rows.slice(0, MAX_ROWS_PER_SECTION)
+          ),
+          renderTruncationNote(rows.length)
+        ].join("");
+
+  return renderCard("Mine Operations", content);
+}
+
+function renderAdventurerAssignmentsCard(payload: HexInspectPayload): string {
+  const adventurerById = new Map<string, HexInspectPayload["adventurers"][number]>();
+  const economicsById = new Map<string, HexInspectPayload["adventurerEconomics"][number]>();
+  const activeReservationByAdventurer = new Map<string, HexInspectPayload["activeReservations"][number]>();
+  const activeShiftByAdventurer = new Map<string, HexInspectPayload["miningShifts"][number]>();
+  const relevantAdventurerIds = new Set<string>();
+
+  for (const adventurer of payload.adventurers) {
+    const key = normalizeKey(adventurer.adventurer_id);
+    adventurerById.set(key, adventurer);
+    relevantAdventurerIds.add(key);
+  }
+
+  for (const economics of payload.adventurerEconomics) {
+    const key = normalizeKey(economics.adventurer_id);
+    economicsById.set(key, economics);
+    relevantAdventurerIds.add(key);
+  }
+
+  for (const reservation of payload.activeReservations) {
+    if (!isActiveEnumStatus(reservation.status)) {
+      continue;
+    }
+    const key = normalizeKey(reservation.adventurer_id);
+    activeReservationByAdventurer.set(key, reservation);
+    relevantAdventurerIds.add(key);
+  }
+
+  for (const shift of payload.miningShifts) {
+    if (!isActiveEnumStatus(shift.status)) {
+      continue;
+    }
+    const key = normalizeKey(shift.adventurer_id);
+    activeShiftByAdventurer.set(key, shift);
+    relevantAdventurerIds.add(key);
+  }
+
+  const rows = [...relevantAdventurerIds]
+    .sort((left, right) => left.localeCompare(right))
+    .map((adventurerIdKey) => {
+      const adventurer = adventurerById.get(adventurerIdKey);
+      const economics = economicsById.get(adventurerIdKey);
+      const activeShift = activeShiftByAdventurer.get(adventurerIdKey);
+      const activeReservation = activeReservationByAdventurer.get(adventurerIdKey);
+
+      const activity = activeShift ? "mining" : activeReservation ? "harvesting" : "idle";
+      const target = activeShift
+        ? renderFelt(activeShift.mine_key)
+        : activeReservation
+          ? renderFelt(activeReservation.plant_key)
+          : '<span class="inspect-muted">none</span>';
+      const energy = adventurer
+        ? `${renderNumber(adventurer.energy)}/${renderNumber(adventurer.max_energy)}`
+        : renderNumber(economics?.energy_balance ?? 0);
+      const lockState = adventurer
+        ? toSafeNumber(adventurer.activity_locked_until, 0) > toSafeNumber(payload.headBlock, 0)
+          ? `locked@${renderNumber(adventurer.activity_locked_until)}`
+          : "open"
+        : "unknown";
+      const unbankedOre = activeShift ? renderNumber(activeShift.accrued_ore_unbanked) : "0";
+      const displayAdventurerId =
+        adventurer?.adventurer_id ?? economics?.adventurer_id ?? adventurerIdKey;
+
+      return [
+        renderFelt(displayAdventurerId),
+        escapeHtml(activity),
+        target,
+        energy,
+        escapeHtml(lockState),
+        unbankedOre
+      ];
+    });
+
+  return renderCard(
+    "Adventurer Assignments",
+    [
+      renderTable(
+        ["Adventurer", "Activity", "Target", "Energy", "Lock", "Ore"],
+        rows.slice(0, MAX_ROWS_PER_SECTION)
+      ),
+      renderTruncationNote(rows.length)
+    ].join("")
+  );
+}
+
+function renderProductionFeedCard(payload: HexInspectPayload): string {
+  const interestingEvents = new Set<string>([
+    "miningstarted",
+    "miningcontinued",
+    "miningexited",
+    "minecollapsed",
+    "minerepaired",
+    "harvestingstarted",
+    "harvestingcompleted",
+    "harvestingcancelled",
+    "itemsconverted"
+  ]);
+
+  const rows = [...payload.eventTail]
+    .filter((event) => interestingEvents.has(event.eventName.trim().toLowerCase()))
+    .sort(compareEventsDesc)
+    .map((event) => [
+      escapeHtml(`${event.blockNumber}/${event.txIndex}/${event.eventIndex}`),
+      escapeHtml(event.eventName),
+      escapeHtml(event.payloadJson)
+    ]);
+
+  const content =
+    rows.length === 0
+      ? '<p class="inspect-muted">No production events in tail.</p>'
+      : [
+          renderTable(["Pos", "Event", "Payload"], rows.slice(0, MAX_ROWS_PER_SECTION)),
+          renderTruncationNote(rows.length)
+        ].join("");
+
+  return renderCard("Production Feed", content);
+}
+
+function renderAreasCard(payload: HexInspectPayload): string {
+  const rows = payload.areas.map((area) => {
+    const areaAny = area as unknown as Record<string, unknown>;
+    return [
+      renderNumber(areaAny.area_index),
+      escapeHtml(formatValue(areaAny.area_type)),
+      renderNumber(areaAny.resource_quality),
+      renderNumber(areaAny.plant_slot_count)
+    ];
+  });
+
+  return renderCard(
+    `Areas (${payload.areas.length})`,
+    renderCappedTable(["Idx", "Type", "Quality", "Slots"], rows, payload.areas.length)
+  );
+}
+
 function renderOwnershipCard(payload: HexInspectPayload): string {
+  const rows = payload.ownership.map((row) => [
+    renderFelt(row.area_id),
+    renderFelt(row.owner_adventurer_id),
+    renderNumber(row.claim_block)
+  ]);
+
   return renderCard(
     `Ownership (${payload.ownership.length})`,
-    renderTable(
-      ["Area", "Owner", "Claim Block"],
-      payload.ownership.slice(0, MAX_ROWS_PER_SECTION).map((row) => [
-        renderFelt(row.area_id),
-        renderFelt(row.owner_adventurer_id),
-        renderNumber(row.claim_block)
-      ])
-    )
+    renderCappedTable(["Area", "Owner", "Claim Block"], rows, payload.ownership.length)
   );
 }
 
@@ -257,142 +523,154 @@ function renderDecayCard(payload: HexInspectPayload): string {
 }
 
 function renderClaimsCard(payload: HexInspectPayload): string {
+  const rows = payload.activeClaims.map((claim) => [
+    renderFelt(claim.claim_id),
+    renderFelt(claim.claimant_adventurer_id),
+    renderNumber(claim.energy_locked),
+    renderNumber(claim.expiry_block),
+    escapeHtml(formatValue(claim.status))
+  ]);
+
   return renderCard(
     `Claims (${payload.activeClaims.length})`,
-    renderTable(
+    renderCappedTable(
       ["Claim", "Claimant", "Locked", "Expiry", "Status"],
-      payload.activeClaims.slice(0, MAX_ROWS_PER_SECTION).map((claim) => [
-        renderFelt(claim.claim_id),
-        renderFelt(claim.claimant_adventurer_id),
-        renderNumber(claim.energy_locked),
-        renderNumber(claim.expiry_block),
-        escapeHtml(formatValue(claim.status))
-      ])
+      rows,
+      payload.activeClaims.length
     )
   );
 }
 
 function renderPlantsCard(payload: HexInspectPayload): string {
+  const rows = payload.plants.map((plant) => [
+    renderNumber(plant.plant_id),
+    renderFelt(plant.species),
+    `${renderNumber(plant.current_yield)}/${renderNumber(plant.max_yield)}`,
+    renderNumber(plant.reserved_yield)
+  ]);
+
   return renderCard(
     `Plants (${payload.plants.length})`,
-    renderTable(
-      ["Plant", "Species", "Yield", "Reserved"],
-      payload.plants.slice(0, MAX_ROWS_PER_SECTION).map((plant) => [
-        renderNumber(plant.plant_id),
-        renderFelt(plant.species),
-        `${renderNumber(plant.current_yield)}/${renderNumber(plant.max_yield)}`,
-        renderNumber(plant.reserved_yield)
-      ])
-    )
+    renderCappedTable(["Plant", "Species", "Yield", "Reserved"], rows, payload.plants.length)
   );
 }
 
 function renderReservationsCard(payload: HexInspectPayload): string {
+  const rows = payload.activeReservations.map((reservation) => [
+    renderFelt(reservation.reservation_id),
+    renderFelt(reservation.adventurer_id),
+    renderNumber(reservation.reserved_amount),
+    escapeHtml(formatValue(reservation.status))
+  ]);
+
   return renderCard(
     `Reservations (${payload.activeReservations.length})`,
-    renderTable(
+    renderCappedTable(
       ["Reservation", "Adventurer", "Amount", "Status"],
-      payload.activeReservations.slice(0, MAX_ROWS_PER_SECTION).map((reservation) => [
-        renderFelt(reservation.reservation_id),
-        renderFelt(reservation.adventurer_id),
-        renderNumber(reservation.reserved_amount),
-        escapeHtml(formatValue(reservation.status))
-      ])
+      rows,
+      payload.activeReservations.length
     )
   );
 }
 
 function renderAdventurersCard(payload: HexInspectPayload): string {
+  const rows = payload.adventurers.map((adventurer) => [
+    renderFelt(adventurer.adventurer_id),
+    `${renderNumber(adventurer.energy)}/${renderNumber(adventurer.max_energy)}`,
+    renderNumber(adventurer.activity_locked_until),
+    escapeHtml(formatValue(adventurer.is_alive))
+  ]);
+
   return renderCard(
     `Adventurers (${payload.adventurers.length})`,
-    renderTable(
-      ["ID", "Energy", "Locked Until", "Alive"],
-      payload.adventurers.slice(0, MAX_ROWS_PER_SECTION).map((adventurer) => [
-        renderFelt(adventurer.adventurer_id),
-        `${renderNumber(adventurer.energy)}/${renderNumber(adventurer.max_energy)}`,
-        renderNumber(adventurer.activity_locked_until),
-        escapeHtml(formatValue(adventurer.is_alive))
-      ])
-    )
+    renderCappedTable(["ID", "Energy", "Locked Until", "Alive"], rows, payload.adventurers.length)
   );
 }
 
 function renderEconomicsCard(payload: HexInspectPayload): string {
+  const rows = payload.adventurerEconomics.map((economics) => [
+    renderFelt(economics.adventurer_id),
+    renderNumber(economics.energy_balance),
+    renderNumber(economics.total_energy_spent),
+    renderNumber(economics.total_energy_earned)
+  ]);
+
   return renderCard(
     `Economics (${payload.adventurerEconomics.length})`,
-    renderTable(
+    renderCappedTable(
       ["ID", "Balance", "Spent", "Earned"],
-      payload.adventurerEconomics.slice(0, MAX_ROWS_PER_SECTION).map((economics) => [
-        renderFelt(economics.adventurer_id),
-        renderNumber(economics.energy_balance),
-        renderNumber(economics.total_energy_spent),
-        renderNumber(economics.total_energy_earned)
-      ])
+      rows,
+      payload.adventurerEconomics.length
     )
   );
 }
 
 function renderInventoryCard(payload: HexInspectPayload): string {
+  const rows = payload.inventories.map((inventory) => [
+    renderFelt(inventory.adventurer_id),
+    `${renderNumber(inventory.current_weight)}/${renderNumber(inventory.max_weight)}`
+  ]);
+
   return renderCard(
     `Inventory (${payload.inventories.length})`,
-    renderTable(
-      ["ID", "Weight"],
-      payload.inventories.slice(0, MAX_ROWS_PER_SECTION).map((inventory) => [
-        renderFelt(inventory.adventurer_id),
-        `${renderNumber(inventory.current_weight)}/${renderNumber(inventory.max_weight)}`
-      ])
-    )
+    renderCappedTable(["ID", "Weight"], rows, payload.inventories.length)
   );
 }
 
 function renderBackpackCard(payload: HexInspectPayload): string {
+  const rows = payload.backpackItems.map((item) => [
+    renderFelt(item.adventurer_id),
+    renderFelt(item.item_id),
+    renderNumber(item.quantity),
+    renderNumber(item.quality)
+  ]);
+
   return renderCard(
     `Backpack (${payload.backpackItems.length})`,
-    renderTable(
-      ["ID", "Item", "Qty", "Quality"],
-      payload.backpackItems.slice(0, MAX_ROWS_PER_SECTION).map((item) => [
-        renderFelt(item.adventurer_id),
-        renderFelt(item.item_id),
-        renderNumber(item.quantity),
-        renderNumber(item.quality)
-      ])
-    )
+    renderCappedTable(["ID", "Item", "Qty", "Quality"], rows, payload.backpackItems.length)
   );
 }
 
 function renderBuildingsCard(payload: HexInspectPayload): string {
+  const rows = payload.buildings.map((building) => [
+    renderFelt(building.area_id),
+    renderFelt(building.building_type),
+    renderNumber(building.tier),
+    renderNumber(building.condition_bp),
+    escapeHtml(formatValue(building.is_active))
+  ]);
+
   return renderCard(
     `Buildings (${payload.buildings.length})`,
-    renderTable(
+    renderCappedTable(
       ["Area", "Type", "Tier", "Condition", "Active"],
-      payload.buildings.slice(0, MAX_ROWS_PER_SECTION).map((building) => [
-        renderFelt(building.area_id),
-        renderFelt(building.building_type),
-        renderNumber(building.tier),
-        renderNumber(building.condition_bp),
-        escapeHtml(formatValue(building.is_active))
-      ])
+      rows,
+      payload.buildings.length
     )
   );
 }
 
 function renderConstructionCard(payload: HexInspectPayload): string {
-  const projectTable = renderTable(
+  const projectRows = payload.constructionProjects.map((project) => [
+    renderFelt(project.project_id),
+    renderFelt(project.adventurer_id),
+    renderNumber(project.target_tier),
+    escapeHtml(formatValue(project.status))
+  ]);
+  const projectTable = renderCappedTable(
     ["Project", "Adventurer", "Tier", "Status"],
-    payload.constructionProjects.slice(0, MAX_ROWS_PER_SECTION).map((project) => [
-      renderFelt(project.project_id),
-      renderFelt(project.adventurer_id),
-      renderNumber(project.target_tier),
-      escapeHtml(formatValue(project.status))
-    ])
+    projectRows,
+    payload.constructionProjects.length
   );
-  const escrowTable = renderTable(
+  const escrowRows = payload.constructionEscrows.map((escrow) => [
+    renderFelt(escrow.project_id),
+    renderFelt(escrow.item_id),
+    renderNumber(escrow.quantity)
+  ]);
+  const escrowTable = renderCappedTable(
     ["Project", "Item", "Qty"],
-    payload.constructionEscrows.slice(0, MAX_ROWS_PER_SECTION).map((escrow) => [
-      renderFelt(escrow.project_id),
-      renderFelt(escrow.item_id),
-      renderNumber(escrow.quantity)
-    ])
+    escrowRows,
+    payload.constructionEscrows.length
   );
 
   return renderCard(
@@ -407,29 +685,27 @@ function renderConstructionCard(payload: HexInspectPayload): string {
 }
 
 function renderDeathsCard(payload: HexInspectPayload): string {
+  const rows = payload.deathRecords.map((death) => [
+    renderFelt(death.adventurer_id),
+    renderNumber(death.death_block),
+    renderFelt(death.death_cause)
+  ]);
+
   return renderCard(
     `Deaths (${payload.deathRecords.length})`,
-    renderTable(
-      ["Adventurer", "Block", "Cause"],
-      payload.deathRecords.slice(0, MAX_ROWS_PER_SECTION).map((death) => [
-        renderFelt(death.adventurer_id),
-        renderNumber(death.death_block),
-        renderFelt(death.death_cause)
-      ])
-    )
+    renderCappedTable(["Adventurer", "Block", "Cause"], rows, payload.deathRecords.length)
   );
 }
 
 function renderEventsCard(payload: HexInspectPayload): string {
+  const rows = payload.eventTail.map((event) => [
+    escapeHtml(`${event.blockNumber}/${event.txIndex}/${event.eventIndex}`),
+    escapeHtml(event.eventName)
+  ]);
+
   return renderCard(
     `Events (${payload.eventTail.length})`,
-    renderTable(
-      ["Pos", "Name"],
-      payload.eventTail.slice(0, MAX_ROWS_PER_SECTION).map((event) => [
-        escapeHtml(`${event.blockNumber}/${event.txIndex}/${event.eventIndex}`),
-        escapeHtml(event.eventName)
-      ])
-    )
+    renderCappedTable(["Pos", "Name"], rows, payload.eventTail.length)
   );
 }
 
@@ -449,6 +725,10 @@ function renderRawPayloadCards(payload: HexInspectPayload): string {
     renderRawRowsCard("Buildings Raw Fields", payload.buildings),
     renderRawRowsCard("Construction Projects Raw Fields", payload.constructionProjects),
     renderRawRowsCard("Construction Escrows Raw Fields", payload.constructionEscrows),
+    renderRawRowsCard("Mine Nodes Raw Fields", payload.mineNodes),
+    renderRawRowsCard("Mining Shifts Raw Fields", payload.miningShifts),
+    renderRawRowsCard("Mine Access Grants Raw Fields", payload.mineAccessGrants),
+    renderRawRowsCard("Mine Collapse Records Raw Fields", payload.mineCollapseRecords),
     renderRawRowsCard("Deaths Raw Fields", payload.deathRecords),
     renderRawRowsCard("Events Raw Fields", payload.eventTail)
   ].join("");
@@ -499,6 +779,131 @@ function renderTable(headers: string[], rows: string[][]): string {
     "</table>",
     "</div>"
   ].join("");
+}
+
+function renderCappedTable(
+  headers: string[],
+  rows: string[][],
+  totalRows: number
+): string {
+  return [
+    renderTable(headers, rows.slice(0, MAX_ROWS_PER_SECTION)),
+    renderTruncationNote(totalRows)
+  ].join("");
+}
+
+function renderTruncationNote(totalRows: number): string {
+  if (totalRows <= MAX_ROWS_PER_SECTION) {
+    return "";
+  }
+  return `<p class="inspect-muted">Showing ${MAX_ROWS_PER_SECTION} of ${totalRows} rows.</p>`;
+}
+
+function compareAreaRows(
+  left: HexInspectPayload["areas"][number],
+  right: HexInspectPayload["areas"][number]
+): number {
+  const leftAny = left as unknown as Record<string, unknown>;
+  const rightAny = right as unknown as Record<string, unknown>;
+  const leftIndex = toSafeNumber(leftAny.area_index, 0);
+  const rightIndex = toSafeNumber(rightAny.area_index, 0);
+  if (leftIndex !== rightIndex) {
+    return leftIndex - rightIndex;
+  }
+  return normalizeKey(left.area_id).localeCompare(normalizeKey(right.area_id));
+}
+
+function compareMineRows(
+  left: HexInspectPayload["mineNodes"][number],
+  right: HexInspectPayload["mineNodes"][number]
+): number {
+  const mineIdDiff = toSafeNumber(left.mine_id, 0) - toSafeNumber(right.mine_id, 0);
+  if (mineIdDiff !== 0) {
+    return mineIdDiff;
+  }
+  return normalizeKey(left.mine_key).localeCompare(normalizeKey(right.mine_key));
+}
+
+function compareEventsDesc(
+  left: HexInspectPayload["eventTail"][number],
+  right: HexInspectPayload["eventTail"][number]
+): number {
+  if (left.blockNumber !== right.blockNumber) {
+    return right.blockNumber - left.blockNumber;
+  }
+  if (left.txIndex !== right.txIndex) {
+    return right.txIndex - left.txIndex;
+  }
+  return right.eventIndex - left.eventIndex;
+}
+
+function deriveMineStatus(
+  mine: HexInspectPayload["mineNodes"][number],
+  activeShiftCount: number,
+  headBlock: number
+): "active" | "collapsed" | "depleted" | "idle" {
+  if (isTrueValue(mine.is_depleted)) {
+    return "depleted";
+  }
+
+  if (
+    toSafeNumber(mine.repair_energy_needed, 0) > 0 ||
+    toSafeNumber(mine.collapsed_until_block, 0) > toSafeNumber(headBlock, 0)
+  ) {
+    return "collapsed";
+  }
+
+  if (activeShiftCount > 0 || toSafeNumber(mine.active_miners, 0) > 0) {
+    return "active";
+  }
+
+  return "idle";
+}
+
+function normalizeKey(value: unknown): string {
+  return String(value).trim().toLowerCase();
+}
+
+function isActiveEnumStatus(status: unknown): boolean {
+  const normalized = normalizeKey(extractEnumTag(status));
+  return normalized === "active" || normalized === "1";
+}
+
+function extractEnumTag(value: unknown): string {
+  if (
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean" ||
+    typeof value === "bigint"
+  ) {
+    return String(value);
+  }
+
+  if (value && typeof value === "object") {
+    const keys = Object.keys(value as Record<string, unknown>);
+    if (keys.length === 1) {
+      return keys[0] ?? "unknown";
+    }
+  }
+
+  return "unknown";
+}
+
+function isTrueValue(value: unknown): boolean {
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  if (typeof value === "number") {
+    return value !== 0;
+  }
+
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    return normalized === "true" || normalized === "1";
+  }
+
+  return false;
 }
 
 function renderFelt(value: unknown): string {
