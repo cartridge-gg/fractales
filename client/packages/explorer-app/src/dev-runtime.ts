@@ -435,12 +435,19 @@ export class CanvasMockRenderer implements ExplorerRenderer {
       context.fill();
       const isSelected = hex.isDiscovered && hex.hexCoordinate === this.selectedHex;
       context.lineWidth = isSelected ? 3 : 1.2;
-      context.strokeStyle = isSelected ? "#ffe08a" : hex.isDiscovered ? "#284f6b" : "#1a3347";
+      context.strokeStyle = isSelected ? "#ff8c00" : hex.isDiscovered ? "#333333" : "#1a1a1a";
       context.stroke();
+      if (isSelected) {
+        context.shadowColor = "rgba(255, 140, 0, 0.3)";
+        context.shadowBlur = 8;
+        context.stroke();
+        context.shadowColor = "transparent";
+        context.shadowBlur = 0;
+      }
 
       const labelSize = clampLabelSize(hex.radius);
       context.font = `${labelSize}px 'IBM Plex Mono', ui-monospace, monospace`;
-      context.fillStyle = hex.isDiscovered ? "#dce9f7" : "#7f9ab0";
+      context.fillStyle = hex.isDiscovered ? "#e0e0e0" : "#555555";
       context.textAlign = "center";
       context.fillText(hex.label, hex.x, hex.y + 4);
     }
@@ -542,7 +549,7 @@ function buildLayout(
         y: resolved.y,
         radius: resolved.radius,
         vertices: resolved.vertices,
-        fill: discovered ? hexFillForLayer(discovered, layerState) : "#0d1f30",
+        fill: discovered ? hexFillForLayer(discovered, layerState) : "#0d0d0d",
         label: formatCubeLabel(resolved.cube),
         isDiscovered: discovered !== null
       };
@@ -612,28 +619,28 @@ function hexFillForLayer(
 ): string {
   if (layerState.claims) {
     if (hex.activeClaimCount > 0) {
-      return "#b14644";
+      return "#991a1a";
     }
     if (hex.isClaimable) {
-      return "#d48f4e";
+      return "#806000";
     }
-    return "#4b5e73";
+    return "#2a2a2a";
   }
 
   if (layerState.ownership) {
-    return hex.ownerAdventurerId ? "#5483b3" : "#445a70";
+    return hex.ownerAdventurerId ? "#0a6628" : "#222222";
   }
 
   if (layerState.adventurers) {
-    return hex.adventurerCount > 0 ? "#6dad68" : "#435d45";
+    return hex.adventurerCount > 0 ? "#00802b" : "#1a1a1a";
   }
 
   if (layerState.resources) {
-    return hex.plantCount > 0 ? "#6d8c60" : "#455844";
+    return hex.plantCount > 0 ? "#2d5a1e" : "#1a1a1a";
   }
 
   if (layerState.decay) {
-    return hex.decayLevel > 0 ? "#8c6d59" : "#505056";
+    return hex.decayLevel > 0 ? "#5c3a1e" : "#1e1e1e";
   }
 
   return biomeColor(hex.biome);
@@ -642,21 +649,21 @@ function hexFillForLayer(
 function biomeColor(biome: string): string {
   switch (biome) {
     case "Plains":
-      return "#577c93";
+      return "#2a2a2a";
     case "Forest":
-      return "#4f7d64";
+      return "#1a3d1a";
     case "Desert":
-      return "#9b8459";
+      return "#3a3020";
     case "Swamp":
-      return "#637267";
+      return "#1e2e1e";
     case "Taiga":
-      return "#64808a";
+      return "#2a3333";
     case "Highlands":
-      return "#7d6f8e";
+      return "#333333";
     case "Coast":
-      return "#5f86a6";
+      return "#1e2e33";
     default:
-      return "#50667b";
+      return "#252525";
   }
 }
 
@@ -665,15 +672,12 @@ function paintBackground(
   width: number,
   height: number
 ): void {
-  const gradient = context.createLinearGradient(0, 0, 0, height);
-  gradient.addColorStop(0, "#081523");
-  gradient.addColorStop(1, "#0a1b2d");
-  context.fillStyle = gradient;
+  context.fillStyle = "#080808";
   context.fillRect(0, 0, width, height);
 
   const glow = context.createRadialGradient(width * 0.48, height * 0.44, 50, width * 0.48, height * 0.44, width);
-  glow.addColorStop(0, "rgba(42, 88, 126, 0.16)");
-  glow.addColorStop(1, "rgba(42, 88, 126, 0)");
+  glow.addColorStop(0, "rgba(255, 140, 0, 0.04)");
+  glow.addColorStop(1, "rgba(255, 140, 0, 0)");
   context.fillStyle = glow;
   context.fillRect(0, 0, width, height);
 }

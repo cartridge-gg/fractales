@@ -1,13 +1,13 @@
 :root {
-  --bg: #09121e;
-  --bg-panel: #122235;
-  --line: #2a4f70;
-  --line-soft: #20405b;
-  --text: #d9e5f3;
-  --muted: #95abc0;
-  --accent: #6fc8ff;
-  --accent-warn: #ff8f70;
-  --accent-okay: #9cf39f;
+  --bg: #0a0a0a;
+  --bg-panel: #111111;
+  --line: #2a2a2a;
+  --line-soft: #1e1e1e;
+  --text: #e0e0e0;
+  --muted: #777777;
+  --accent: #ff8c00;
+  --accent-warn: #ff3333;
+  --accent-okay: #00ff41;
 }
 
 * {
@@ -17,12 +17,9 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background:
-    radial-gradient(circle at 20% 15%, #1f3a57 0%, transparent 35%),
-    radial-gradient(circle at 90% 10%, #15334f 0%, transparent 30%),
-    linear-gradient(180deg, #07111c 0%, #081521 100%);
+  background: #050505;
   color: var(--text);
-  font-family: "IBM Plex Sans", "Avenir Next", "Segoe UI", sans-serif;
+  font-family: "IBM Plex Mono", "JetBrains Mono", "Fira Code", ui-monospace, monospace;
 }
 
 #app-root {
@@ -38,14 +35,16 @@ body {
   justify-content: space-between;
   align-items: center;
   border: 1px solid var(--line);
-  background: linear-gradient(180deg, #13273d, #0f1f30);
-  border-radius: 12px;
+  background: var(--bg-panel);
+  border-radius: 4px;
   padding: 16px;
 }
 
 .app-header h1 {
   margin: 4px 0 0;
   font-size: 1.4rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .eyebrow {
@@ -73,13 +72,14 @@ body {
 }
 
 .status-pill.live {
-  color: #103320;
-  background: var(--accent-okay);
+  color: #000;
+  background: var(--accent);
+  box-shadow: 0 0 8px rgba(255, 140, 0, 0.15);
 }
 
 .status-pill.catching_up {
-  color: #271900;
-  background: #ffd36f;
+  color: #000;
+  background: #ffcc00;
 }
 
 .status-pill.degraded {
@@ -89,7 +89,6 @@ body {
 
 #url-label {
   color: var(--accent);
-  font-family: "IBM Plex Mono", "JetBrains Mono", ui-monospace, monospace;
 }
 
 .control-grid {
@@ -100,14 +99,17 @@ body {
 
 .control-card {
   border: 1px solid var(--line-soft);
-  border-radius: 10px;
-  background: linear-gradient(180deg, #12253a, #0f1f30);
+  border-left: 2px solid var(--accent);
+  border-radius: 4px;
+  background: var(--bg-panel);
   padding: 12px;
 }
 
 .control-card h2 {
   margin: 0 0 10px;
   font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 .button-row,
@@ -122,10 +124,11 @@ button,
 input,
 select {
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 4px;
   padding: 7px 10px;
   color: var(--text);
-  background: #13283f;
+  background: #0d0d0d;
+  font-family: inherit;
 }
 
 button {
@@ -134,6 +137,7 @@ button {
 
 button:hover {
   border-color: var(--accent);
+  box-shadow: 0 0 8px rgba(255, 140, 0, 0.15);
 }
 
 input,
@@ -157,14 +161,12 @@ select {
   max-height: 85px;
   overflow: auto;
   color: var(--muted);
-  font-family: "IBM Plex Mono", "JetBrains Mono", ui-monospace, monospace;
   font-size: 0.82rem;
 }
 
 .snapshot-line {
   margin: 0;
   color: var(--muted);
-  font-family: "IBM Plex Mono", "JetBrains Mono", ui-monospace, monospace;
   font-size: 0.82rem;
 }
 
@@ -178,24 +180,25 @@ select {
   width: 100%;
   height: 68vh;
   border: 1px solid var(--line);
-  border-radius: 12px;
-  background: #0b1826;
+  border-radius: 4px;
+  background: #080808;
 }
 
 .inspect-panel {
   border: 1px solid var(--line-soft);
-  border-radius: 10px;
-  background: linear-gradient(180deg, #12253a, #0f1f30);
+  border-radius: 4px;
+  background: var(--bg-panel);
   padding: 12px;
 }
 
 .inspect-panel h2 {
   margin-top: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 .inspect-panel p {
   margin: 0 0 8px;
-  font-family: "IBM Plex Mono", "JetBrains Mono", ui-monospace, monospace;
   color: var(--muted);
 }
 
@@ -204,7 +207,6 @@ select {
   padding-left: 18px;
   max-height: 16vh;
   overflow: auto;
-  font-family: "IBM Plex Mono", "JetBrains Mono", ui-monospace, monospace;
   font-size: 0.84rem;
 }
 
@@ -212,8 +214,8 @@ select {
   margin: 0 0 10px;
   padding: 8px;
   border: 1px solid var(--line-soft);
-  border-radius: 8px;
-  background: rgba(8, 20, 33, 0.55);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.3);
   max-height: 48vh;
   overflow: auto;
   display: grid;
@@ -222,7 +224,7 @@ select {
 
 .inspect-empty {
   border: 1px dashed var(--line);
-  border-radius: 8px;
+  border-radius: 4px;
   padding: 10px;
   color: var(--muted);
 }
@@ -240,9 +242,9 @@ select {
 
 .inspect-hero {
   border: 1px solid var(--line-soft);
-  border-radius: 8px;
+  border-radius: 4px;
   padding: 10px;
-  background: linear-gradient(180deg, rgba(18, 39, 62, 0.7), rgba(12, 27, 43, 0.7));
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .inspect-hero-grid {
@@ -255,7 +257,6 @@ select {
 .inspect-hero-item {
   display: grid;
   gap: 2px;
-  font-family: "IBM Plex Mono", "JetBrains Mono", ui-monospace, monospace;
   font-size: 0.78rem;
   color: var(--text);
 }
@@ -276,31 +277,30 @@ select {
 .inspect-badge {
   border-radius: 999px;
   border: 1px solid var(--line);
-  background: rgba(19, 40, 63, 0.92);
+  background: rgba(255, 255, 255, 0.04);
   padding: 4px 8px;
   font-size: 0.72rem;
-  font-family: "IBM Plex Mono", "JetBrains Mono", ui-monospace, monospace;
   color: var(--text);
 }
 
 .inspect-badge.biome {
-  border-color: #3f7aa8;
+  border-color: var(--accent);
 }
 
 .inspect-badge.discovered.is-yes {
-  border-color: #5fa97a;
-  color: #b8efc8;
+  border-color: #cc7000;
+  color: #ffaa44;
 }
 
 .inspect-badge.discovered.is-no {
-  border-color: #9b5963;
-  color: #ffb6bd;
+  border-color: #993333;
+  color: #ff6666;
 }
 
 .inspect-card {
   border: 1px solid var(--line-soft);
-  border-radius: 8px;
-  background: rgba(14, 31, 49, 0.82);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.02);
   padding: 10px;
 }
 
@@ -326,7 +326,6 @@ select {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.74rem;
-  font-family: "IBM Plex Mono", "JetBrains Mono", ui-monospace, monospace;
 }
 
 .inspect-table thead th {
@@ -340,8 +339,8 @@ select {
 
 .inspect-table tbody td {
   padding: 5px 6px;
-  border-bottom: 1px solid rgba(32, 64, 91, 0.45);
-  color: #d3e2f1;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--text);
   vertical-align: top;
 }
 
@@ -350,14 +349,13 @@ select {
 }
 
 .inspect-felt {
-  color: #8cd2ff;
+  color: var(--accent);
   word-break: break-all;
 }
 
 .inspect-muted {
   margin: 0;
   color: var(--muted);
-  font-family: "IBM Plex Mono", "JetBrains Mono", ui-monospace, monospace;
   font-size: 0.74rem;
 }
 
@@ -377,7 +375,8 @@ select {
 
 @media (max-width: 760px) {
   #app-root {
-    padding: 12px;
+    padding: 10px;
+    gap: 10px;
   }
 
   .app-header {
