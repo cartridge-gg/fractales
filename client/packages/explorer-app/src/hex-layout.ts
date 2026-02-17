@@ -71,6 +71,42 @@ export function decodeHexCoordinateCube(
   return { x, y, z };
 }
 
+export function encodeHexCoordinateCube(cube: CubeCoordinate): HexCoordinate | null {
+  if (
+    !Number.isSafeInteger(cube.x) ||
+    !Number.isSafeInteger(cube.y) ||
+    !Number.isSafeInteger(cube.z)
+  ) {
+    return null;
+  }
+
+  if (cube.x + cube.y + cube.z !== 0) {
+    return null;
+  }
+
+  const xShifted = BigInt(cube.x) + AXIS_OFFSET;
+  const yShifted = BigInt(cube.y) + AXIS_OFFSET;
+  const zShifted = BigInt(cube.z) + AXIS_OFFSET;
+
+  if (
+    xShifted < 0n ||
+    yShifted < 0n ||
+    zShifted < 0n ||
+    xShifted > AXIS_MASK ||
+    yShifted > AXIS_MASK ||
+    zShifted > AXIS_MASK
+  ) {
+    return null;
+  }
+
+  const packed = xShifted * PACK_X_MULT + yShifted * PACK_Y_MULT + zShifted;
+  if (packed < 0n || packed > MAX_PACKED) {
+    return null;
+  }
+
+  return `0x${packed.toString(16)}`;
+}
+
 export function buildHexPolygonVertices(
   centerX: number,
   centerY: number,
@@ -189,6 +225,56 @@ export function layoutHexCoordinates(
         normalizeHexCoordinate(right.hexCoordinate)
       )
     );
+}
+
+export function expandHexWindowCoordinates(
+  coordinates: readonly HexCoordinate[],
+  padding: number = 2
+): HexCoordinate[] {
+  const deduped = dedupeCoordinates(coordinates);
+  const decoded = deduped
+    .map((hexCoordinate) => decodeHexCoordinateCube(hexCoordinate))
+    .filter((entry): entry is CubeCoordinate => entry !== null);
+
+  if (decoded.length === 0) {
+    return deduped;
+  }
+
+  const minX = Math.min(...decoded.map((entry) => entry.x));
+  const maxX = Math.max(...decoded.map((entry) => entry.x));
+  const minY = Math.min(...decoded.map((entry) => entry.y));
+  const maxY = Math.max(...decoded.map((entry) => entry.y));
+  const minZ = Math.min(...decoded.map((entry) => entry.z));
+  const maxZ = Math.max(...decoded.map((entry) => entry.z));
+  const safePadding = Math.max(0, Math.floor(padding));
+
+  const byNormalized = new Map<string, HexCoordinate>();
+  for (const coordinate of deduped) {
+    byNormalized.set(normalizeHexCoordinate(coordinate), coordinate);
+  }
+
+  for (let x = minX - safePadding; x <= maxX + safePadding; x += 1) {
+    for (let z = minZ - safePadding; z <= maxZ + safePadding; z += 1) {
+      const y = -x - z;
+      if (y < minY - safePadding || y > maxY + safePadding) {
+        continue;
+      }
+
+      const encoded = encodeHexCoordinateCube({ x, y, z });
+      if (!encoded) {
+        continue;
+      }
+
+      const normalized = normalizeHexCoordinate(encoded);
+      if (!byNormalized.has(normalized)) {
+        byNormalized.set(normalized, encoded);
+      }
+    }
+  }
+
+  return Array.from(byNormalized.values()).sort((left, right) =>
+    normalizeHexCoordinate(left).localeCompare(normalizeHexCoordinate(right))
+  );
 }
 
 function dedupeCoordinates(

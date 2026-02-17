@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   decodeHexCoordinateCube,
+  encodeHexCoordinateCube,
+  expandHexWindowCoordinates,
   isPointInHexPolygon,
   layoutHexCoordinates
 } from "../src/hex-layout.js";
@@ -54,5 +56,23 @@ describe("hex layout geometry (RED)", () => {
         left.vertices
       )
     ).toBe(false);
+  });
+
+  it("expands discovered map into explored plus unexplored hex window.red", () => {
+    const discovered = [HEX_LEFT, HEX_TOP_LEFT, HEX_TOP_RIGHT, HEX_RIGHT, HEX_BOTTOM_RIGHT];
+    const expanded = expandHexWindowCoordinates(discovered, 2);
+
+    expect(expanded.length).toBeGreaterThan(discovered.length);
+    for (const coordinate of discovered) {
+      expect(expanded).toContain(coordinate);
+    }
+
+    const center = encodeHexCoordinateCube({ x: 0, y: 0, z: 0 });
+    expect(center).toBeDefined();
+    if (!center) {
+      throw new Error("center coordinate should encode");
+    }
+    expect(expanded).toContain(center);
+    expect(decodeHexCoordinateCube(center)).toEqual({ x: 0, y: 0, z: 0 });
   });
 });

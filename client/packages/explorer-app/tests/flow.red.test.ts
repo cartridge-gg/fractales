@@ -290,10 +290,8 @@ function createHarness() {
     visibleChunkKeys(viewport) {
       return viewport.center.x >= 10 ? ["1:0"] : ["0:0"];
     },
-    visibleHexes(viewport, layers) {
-      const selectedChunkKey = viewport.center.x >= 10 ? "1:0" : "0:0";
-      const selectedChunk = chunksByKey[selectedChunkKey];
-      return selectedChunk ? layerFilteredHexes([selectedChunk], layers) : [];
+    visibleHexes(_viewport, layers) {
+      return layerFilteredHexes(store.snapshot().loadedChunks, layers);
     }
   };
 
@@ -334,6 +332,15 @@ describe("explorer app flows (RED)", () => {
     expect(proxy.inspectCalls).toContain("0x20");
     expect(ui.selectedHexes).toContain("0x20");
     expect(ui.inspectPayloads.at(-1)?.hex.coordinate).toBe("0x20");
+  });
+
+  it("flow.pan_updates_visible_window.red", async () => {
+    const { app } = createHarness();
+    await app.mount();
+    expect(app.snapshot().visibleHexes.map((hex) => hex.hexCoordinate)).toEqual(["0x10", "0x11"]);
+
+    await app.panBy(12, 0);
+    expect(app.snapshot().visibleHexes.map((hex) => hex.hexCoordinate)).toEqual(["0x20"]);
   });
 
   it("flow.toggle_all_layers_and_render_deltas.red", async () => {

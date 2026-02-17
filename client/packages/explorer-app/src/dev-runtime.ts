@@ -20,6 +20,7 @@ import type {
 import type { ExplorerAppDependencies } from "./contracts.js";
 import {
   buildHexPolygonVertices,
+  expandHexWindowCoordinates,
   isPointInHexPolygon,
   layoutHexCoordinates
 } from "./hex-layout.js";
@@ -335,6 +336,7 @@ interface HexLayoutEntry {
   vertices: Array<{ x: number; y: number }>;
   fill: string;
   label: string;
+  isDiscovered: boolean;
 }
 
 export class CanvasMockRenderer implements ExplorerRenderer {
@@ -353,6 +355,7 @@ export class CanvasMockRenderer implements ExplorerRenderer {
   private cssHeight = 720;
   private dpr = 1;
   private layout: HexLayoutEntry[] = [];
+  private knownDiscoveredHexes = new Map<string, ChunkSnapshot["hexes"][number]>();
 
   constructor(private readonly canvas: HTMLCanvasElement) {
     this.onPointerDown = this.onPointerDown.bind(this);
@@ -369,7 +372,18 @@ export class CanvasMockRenderer implements ExplorerRenderer {
 
   replaceChunks(chunks: ChunkSnapshot[]): void {
     this.chunks = chunks;
-    this.layout = buildLayout(chunks, this.cssWidth, this.cssHeight, this.layerState);
+    for (const chunk of chunks) {
+      for (const hex of chunk.hexes) {
+        this.knownDiscoveredHexes.set(normalizeHexCoordinate(hex.hexCoordinate), hex);
+      }
+    }
+    this.layout = buildLayout(
+      chunks,
+      this.cssWidth,
+      this.cssHeight,
+      this.layerState,
+      this.knownDiscoveredHexes
+    );
   }
 
   applyPatch(_patch: StreamPatchEnvelope): void {}
@@ -386,7 +400,13 @@ export class CanvasMockRenderer implements ExplorerRenderer {
     this.canvas.style.height = `${this.cssHeight}px`;
     this.canvas.width = Math.floor(this.cssWidth * this.dpr);
     this.canvas.height = Math.floor(this.cssHeight * this.dpr);
-    this.layout = buildLayout(this.chunks, this.cssWidth, this.cssHeight, this.layerState);
+    this.layout = buildLayout(
+      this.chunks,
+      this.cssWidth,
+      this.cssHeight,
+      this.layerState,
+      this.knownDiscoveredHexes
+    );
   }
 
   renderFrame(_nowMs: number): void {
@@ -413,12 +433,14 @@ export class CanvasMockRenderer implements ExplorerRenderer {
       }
       context.fillStyle = hex.fill;
       context.fill();
-      context.lineWidth = hex.hexCoordinate === this.selectedHex ? 3 : 1.2;
-      context.strokeStyle = hex.hexCoordinate === this.selectedHex ? "#ffe08a" : "#284f6b";
+      const isSelected = hex.isDiscovered && hex.hexCoordinate === this.selectedHex;
+      context.lineWidth = isSelected ? 3 : 1.2;
+      context.strokeStyle = isSelected ? "#ffe08a" : hex.isDiscovered ? "#284f6b" : "#1a3347";
       context.stroke();
 
-      context.font = "11px 'IBM Plex Mono', ui-monospace, monospace";
-      context.fillStyle = "#dce9f7";
+      const labelSize = clampLabelSize(hex.radius);
+      context.font = `${labelSize}px 'IBM Plex Mono', ui-monospace, monospace`;
+      context.fillStyle = hex.isDiscovered ? "#dce9f7" : "#7f9ab0";
       context.textAlign = "center";
       context.fillText(hex.label, hex.x, hex.y + 4);
     }
@@ -433,6 +455,9 @@ export class CanvasMockRenderer implements ExplorerRenderer {
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
     const hit = this.layout.find((entry) => {
+      if (!entry.isDiscovered) {
+        return false;
+      }
       if (entry.vertices.length > 0 && isPointInHexPolygon(x, y, entry.vertices)) {
         return true;
       }
@@ -477,21 +502,30 @@ function buildLayout(
   chunks: ChunkSnapshot[],
   width: number,
   height: number,
-  layerState: LayerToggleState
+  layerState: LayerToggleState,
+  knownDiscoveredHexes: ReadonlyMap<string, ChunkSnapshot["hexes"][number]> = new Map()
 ): HexLayoutEntry[] {
   const orderedChunks = [...chunks].sort((a, b) => compareChunkKeys(a.chunk.key, b.chunk.key));
   const orderedHexes = orderedChunks
     .flatMap((chunk) => chunk.hexes)
     .sort((a, b) => normalizeHexCoordinate(a.hexCoordinate).localeCompare(normalizeHexCoordinate(b.hexCoordinate)));
 
-  const geometry = layoutHexCoordinates(
+  const discoveredByCoordinate = new Map(knownDiscoveredHexes);
+  for (const hex of orderedHexes) {
+    discoveredByCoordinate.set(normalizeHexCoordinate(hex.hexCoordinate), hex);
+  }
+  const surfaceCoordinates = expandHexWindowCoordinates(
     orderedHexes.map((hex) => hex.hexCoordinate),
+    4
+  );
+  const geometry = layoutHexCoordinates(
+    surfaceCoordinates,
     width,
     height,
     {
       padding: 42,
-      minRadius: 20,
-      maxRadius: 48
+      minRadius: 14,
+      maxRadius: 40
     }
   );
 
@@ -499,29 +533,29 @@ function buildLayout(
     return buildLegacyLayout(orderedChunks, width, height, layerState);
   }
 
-  const geometryByCoordinate = new Map(
-    geometry.map((entry) => [normalizeHexCoordinate(entry.hexCoordinate), entry] as const)
-  );
-
-  const entries: HexLayoutEntry[] = [];
-  for (const hex of orderedHexes) {
-    const resolved = geometryByCoordinate.get(normalizeHexCoordinate(hex.hexCoordinate));
-    if (!resolved) {
-      continue;
-    }
-
-    entries.push({
-      hexCoordinate: hex.hexCoordinate,
-      x: resolved.x,
-      y: resolved.y,
-      radius: resolved.radius,
-      vertices: resolved.vertices,
-      fill: hexFillForLayer(hex, layerState),
-      label: hex.hexCoordinate.slice(-3).toUpperCase()
+  return geometry
+    .map((resolved) => {
+      const discovered = discoveredByCoordinate.get(normalizeHexCoordinate(resolved.hexCoordinate)) ?? null;
+      return {
+        hexCoordinate: resolved.hexCoordinate,
+        x: resolved.x,
+        y: resolved.y,
+        radius: resolved.radius,
+        vertices: resolved.vertices,
+        fill: discovered ? hexFillForLayer(discovered, layerState) : "#0d1f30",
+        label: formatCubeLabel(resolved.cube),
+        isDiscovered: discovered !== null
+      };
+    })
+    .sort((left, right) => {
+      if (left.isDiscovered !== right.isDiscovered) {
+        return Number(left.isDiscovered) - Number(right.isDiscovered);
+      }
+      if (left.y !== right.y) {
+        return left.y - right.y;
+      }
+      return left.x - right.x;
     });
-  }
-
-  return entries;
 }
 
 function buildLegacyLayout(
@@ -559,7 +593,8 @@ function buildLegacyLayout(
         radius,
         vertices: buildHexPolygonVertices(x, y, radius),
         fill: hexFillForLayer(hex, layerState),
-        label: hex.hexCoordinate.slice(-3).toUpperCase()
+        label: hex.hexCoordinate.slice(-3).toUpperCase(),
+        isDiscovered: true
       });
     }
   }
@@ -636,19 +671,26 @@ function paintBackground(
   context.fillStyle = gradient;
   context.fillRect(0, 0, width, height);
 
-  context.strokeStyle = "rgba(98, 150, 194, 0.18)";
-  context.lineWidth = 1;
-  const gap = 36;
-  for (let x = 0; x < width; x += gap) {
-    context.beginPath();
-    context.moveTo(x, 0);
-    context.lineTo(x, height);
-    context.stroke();
+  const glow = context.createRadialGradient(width * 0.48, height * 0.44, 50, width * 0.48, height * 0.44, width);
+  glow.addColorStop(0, "rgba(42, 88, 126, 0.16)");
+  glow.addColorStop(1, "rgba(42, 88, 126, 0)");
+  context.fillStyle = glow;
+  context.fillRect(0, 0, width, height);
+}
+
+function formatCubeLabel(cube: { x: number; z: number }): string {
+  return `${cube.x},${cube.z}`;
+}
+
+function clampLabelSize(radius: number): number {
+  if (!Number.isFinite(radius)) {
+    return 10;
   }
-  for (let y = 0; y < height; y += gap) {
-    context.beginPath();
-    context.moveTo(0, y);
-    context.lineTo(width, y);
-    context.stroke();
+  if (radius < 16) {
+    return 7;
   }
+  if (radius > 36) {
+    return 11;
+  }
+  return Math.floor(radius * 0.3);
 }
