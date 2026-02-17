@@ -65,6 +65,12 @@ export class LiveWebglRendererAdapter implements ExplorerRenderer {
     });
   }
 
+  setViewport(viewport: ViewportWindow): void {
+    this.viewport = viewport;
+    this.delegate.setViewport(viewport);
+    this.recomputeWebglScene();
+  }
+
   setLayerState(layerState: LayerToggleState): void {
     this.layerState = layerState;
     this.delegate.setLayerState(layerState);

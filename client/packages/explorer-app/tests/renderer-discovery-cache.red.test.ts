@@ -104,6 +104,16 @@ describe("renderer discovery cache (RED)", () => {
     expect(topLeft?.isDiscovered).toBe(true);
   });
 
+  it("fills viewport with full hex lattice instead of sparse cluster.red", () => {
+    const renderer = new CanvasMockRenderer(fakeCanvas());
+    renderer.replaceChunks([chunk([HEX_LEFT])]);
+
+    const layout = (
+      renderer as unknown as { layout: Array<{ hexCoordinate: string }> }
+    ).layout;
+    expect(layout.length).toBeGreaterThan(120);
+  });
+
   it("composites multiple active layers without hiding claim or ownership signal.red", () => {
     const renderer = new CanvasMockRenderer(fakeCanvas());
     renderer.setLayerState({

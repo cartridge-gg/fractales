@@ -84,6 +84,7 @@ export function createExplorerApp(
       });
 
       dependencies.renderer.setLayerState(state.layerState);
+      dependencies.renderer.setViewport(state.viewport);
       ui.setLayerState(state.layerState);
       ui.setConnectionStatus(state.status);
       ui.setInspectPayload(null);
@@ -227,6 +228,7 @@ export function createExplorerApp(
 
   async function setViewport(nextViewport: ViewportWindow): Promise<void> {
     state.viewport = nextViewport;
+    dependencies.renderer.setViewport(nextViewport);
     await reloadVisibleChunks();
     refreshVisibleHexes();
   }

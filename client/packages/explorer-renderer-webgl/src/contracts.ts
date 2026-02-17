@@ -25,6 +25,7 @@ export interface RendererHandlers {
 
 export interface ExplorerRenderer {
   setHandlers(handlers: RendererHandlers): void;
+  setViewport(viewport: ViewportWindow): void;
   setLayerState(layerState: LayerToggleState): void;
   replaceChunks(chunks: ChunkSnapshot[]): void;
   applyPatch(patch: StreamPatchEnvelope): void;

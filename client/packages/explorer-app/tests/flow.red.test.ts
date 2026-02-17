@@ -13,7 +13,8 @@ import type {
   SearchQuery,
   SearchResult,
   StreamPatchEnvelope,
-  StreamStatus
+  StreamStatus,
+  ViewportWindow
 } from "@gen-dungeon/explorer-types";
 import { createExplorerApp, type ExplorerUiBindings } from "../src/index.js";
 
@@ -128,10 +129,15 @@ class FakeRenderer implements ExplorerRenderer {
   appliedPatches: StreamPatchEnvelope[] = [];
   selectedHexes: (string | null)[] = [];
   resizeCalls: Array<{ width: number; height: number; dpr: number }> = [];
+  viewportUpdates: ViewportWindow[] = [];
   disposedCount = 0;
 
   setHandlers(handlers: RendererHandlers): void {
     this.handlers = handlers;
+  }
+
+  setViewport(viewport: ViewportWindow): void {
+    this.viewportUpdates.push(viewport);
   }
 
   setLayerState(layerState: LayerToggleState): void {
@@ -403,12 +409,13 @@ describe("explorer app flows (RED)", () => {
   });
 
   it("flow.pan_updates_visible_window.red", async () => {
-    const { app } = createHarness();
+    const { app, renderer } = createHarness();
     await app.mount();
     expect(app.snapshot().visibleHexes.map((hex) => hex.hexCoordinate)).toEqual(["0x10", "0x11"]);
 
     await app.panBy(12, 0);
     expect(app.snapshot().visibleHexes.map((hex) => hex.hexCoordinate)).toEqual(["0x20"]);
+    expect(renderer.viewportUpdates.at(-1)?.center.x).toBe(12);
   });
 
   it("flow.toggle_all_layers_and_render_deltas.red", async () => {

@@ -15,14 +15,15 @@ import type {
   LayerToggleState,
   SearchQuery,
   SearchResult,
-  StreamPatchEnvelope
+  StreamPatchEnvelope,
+  ViewportWindow
 } from "@gen-dungeon/explorer-types";
 import type { ExplorerAppDependencies } from "./contracts.js";
 import {
   buildHexPolygonVertices,
-  expandHexWindowCoordinates,
-  isPointInHexPolygon,
-  layoutHexCoordinates
+  decodeHexCoordinateCube,
+  encodeHexCoordinateCube,
+  isPointInHexPolygon
 } from "./hex-layout.js";
 
 export interface DevRuntimeBundle {
@@ -45,6 +46,15 @@ const BIOMES = [
   "Highlands",
   "Coast"
 ];
+
+const SQRT3 = Math.sqrt(3);
+
+const DEFAULT_VIEWPORT: ViewportWindow = {
+  center: { x: 0, y: 0 },
+  width: 1280,
+  height: 720,
+  zoom: 1
+};
 
 export function createDevRuntime(canvas: HTMLCanvasElement): DevRuntimeBundle {
   const fixtures = createFixtureChunks();
@@ -357,6 +367,7 @@ export class CanvasMockRenderer implements ExplorerRenderer {
   private layout: HexLayoutEntry[] = [];
   private knownDiscoveredHexes = new Map<string, ChunkSnapshot["hexes"][number]>();
   private lastAppliedSequence = 0;
+  private viewport: ViewportWindow = DEFAULT_VIEWPORT;
 
   constructor(private readonly canvas: HTMLCanvasElement) {
     this.onPointerDown = this.onPointerDown.bind(this);
@@ -365,6 +376,11 @@ export class CanvasMockRenderer implements ExplorerRenderer {
 
   setHandlers(handlers: RendererHandlers): void {
     this.handlers = handlers;
+  }
+
+  setViewport(viewport: ViewportWindow): void {
+    this.viewport = viewport;
+    this.rebuildLayout();
   }
 
   setLayerState(layerState: LayerToggleState): void {
@@ -504,7 +520,8 @@ export class CanvasMockRenderer implements ExplorerRenderer {
       this.cssWidth,
       this.cssHeight,
       this.layerState,
-      this.knownDiscoveredHexes
+      this.knownDiscoveredHexes,
+      this.viewport
     );
   }
 }
@@ -719,7 +736,8 @@ function buildLayout(
   width: number,
   height: number,
   layerState: LayerToggleState,
-  knownDiscoveredHexes: ReadonlyMap<string, ChunkSnapshot["hexes"][number]> = new Map()
+  knownDiscoveredHexes: ReadonlyMap<string, ChunkSnapshot["hexes"][number]> = new Map(),
+  viewport: ViewportWindow = DEFAULT_VIEWPORT
 ): HexLayoutEntry[] {
   const orderedChunks = [...chunks].sort((a, b) => compareChunkKeys(a.chunk.key, b.chunk.key));
   const orderedHexes = orderedChunks
@@ -730,39 +748,48 @@ function buildLayout(
   for (const hex of orderedHexes) {
     discoveredByCoordinate.set(normalizeHexCoordinate(hex.hexCoordinate), hex);
   }
-  const surfaceCoordinates = expandHexWindowCoordinates(
-    orderedHexes.map((hex) => hex.hexCoordinate),
-    4
-  );
-  const geometry = layoutHexCoordinates(
-    surfaceCoordinates,
+
+  const safeZoom = Math.min(3, Math.max(0.5, viewport.zoom));
+  const radius = clampViewportRadius(26 * safeZoom);
+  const surfaceCoordinates = buildViewportSurfaceCoordinates(
+    viewport,
     width,
     height,
-    {
-      padding: 42,
-      minRadius: 14,
-      maxRadius: 40
-    }
+    radius
   );
-
-  if (geometry.length === 0) {
+  if (surfaceCoordinates.length === 0) {
     return buildLegacyLayout(orderedChunks, width, height, layerState);
   }
 
-  return geometry
-    .map((resolved) => {
-      const discovered = discoveredByCoordinate.get(normalizeHexCoordinate(resolved.hexCoordinate)) ?? null;
-      return {
-        hexCoordinate: resolved.hexCoordinate,
-        x: resolved.x,
-        y: resolved.y,
-        radius: resolved.radius,
-        vertices: resolved.vertices,
-        fill: discovered ? hexFillForLayer(discovered, layerState) : "#0d0d0d",
-        label: formatCubeLabel(resolved.cube),
-        isDiscovered: discovered !== null
-      };
-    })
+  const centerQ = viewport.center.x;
+  const centerR = viewport.center.y;
+  const centerUnitX = SQRT3 * (centerQ + centerR / 2);
+  const centerUnitY = 1.5 * centerR;
+  const entries: HexLayoutEntry[] = [];
+
+  for (const surface of surfaceCoordinates) {
+    const hexCoordinate = surface.hexCoordinate;
+    const cube = surface.cube;
+    const unitX = SQRT3 * (cube.x + cube.z / 2);
+    const unitY = 1.5 * cube.z;
+    const x = width / 2 + (unitX - centerUnitX) * radius;
+    const y = height / 2 + (unitY - centerUnitY) * radius;
+
+    const discovered =
+      discoveredByCoordinate.get(normalizeHexCoordinate(hexCoordinate)) ?? null;
+    entries.push({
+      hexCoordinate,
+      x,
+      y,
+      radius,
+      vertices: buildHexPolygonVertices(x, y, radius),
+      fill: discovered ? hexFillForLayer(discovered, layerState) : "#0d0d0d",
+      label: formatCubeLabel({ x: cube.x, z: cube.z }),
+      isDiscovered: discovered !== null
+    });
+  }
+
+  return entries
     .sort((left, right) => {
       if (left.isDiscovered !== right.isDiscovered) {
         return Number(left.isDiscovered) - Number(right.isDiscovered);
@@ -952,4 +979,72 @@ function clampLabelSize(radius: number): number {
     return 11;
   }
   return Math.floor(radius * 0.3);
+}
+
+function clampViewportRadius(value: number): number {
+  if (!Number.isFinite(value)) {
+    return 20;
+  }
+  if (value < 10) {
+    return 10;
+  }
+  if (value > 48) {
+    return 48;
+  }
+  return value;
+}
+
+interface ViewportSurfaceCoordinate {
+  hexCoordinate: HexCoordinate;
+  cube: { x: number; y: number; z: number };
+}
+
+function buildViewportSurfaceCoordinates(
+  viewport: ViewportWindow,
+  width: number,
+  height: number,
+  radius: number
+): ViewportSurfaceCoordinate[] {
+  const safeWidth = Math.max(1, width);
+  const safeHeight = Math.max(1, height);
+  const safeRadius = Math.max(1, radius);
+  const centerQ = viewport.center.x;
+  const centerR = viewport.center.y;
+
+  const qHalfSpan = safeWidth / (2 * safeRadius * SQRT3) + 2;
+  const rHalfSpan = safeHeight / (2 * safeRadius * 1.5) + 2;
+  const centerAxial = centerQ + centerR / 2;
+  const minR = Math.floor(centerR - rHalfSpan);
+  const maxR = Math.ceil(centerR + rHalfSpan);
+
+  const byCoordinate = new Map<string, ViewportSurfaceCoordinate>();
+
+  for (let z = minR; z <= maxR; z += 1) {
+    const minQ = Math.floor(centerAxial - qHalfSpan - z / 2);
+    const maxQ = Math.ceil(centerAxial + qHalfSpan - z / 2);
+
+    for (let x = minQ; x <= maxQ; x += 1) {
+      const y = -x - z;
+      const hexCoordinate = encodeHexCoordinateCube({ x, y, z });
+      if (!hexCoordinate) {
+        continue;
+      }
+
+      const normalized = normalizeHexCoordinate(hexCoordinate);
+      if (byCoordinate.has(normalized)) {
+        continue;
+      }
+      byCoordinate.set(normalized, {
+        hexCoordinate,
+        cube: { x, y, z }
+      });
+    }
+  }
+
+  return Array.from(byCoordinate.values()).sort((left, right) => {
+    if (left.cube.z !== right.cube.z) {
+      return left.cube.z - right.cube.z;
+    }
+    return left.cube.x - right.cube.x;
+  });
 }
