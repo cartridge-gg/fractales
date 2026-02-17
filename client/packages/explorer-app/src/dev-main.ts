@@ -1,7 +1,7 @@
 import { createExplorerApp } from "./app.js";
 import type { ExplorerUiBindings } from "./contracts.js";
 import { createDevRuntime } from "./dev-runtime.js";
-import { formatInspectPanelText } from "./inspect-format.js";
+import { renderInspectPanelHtml } from "./inspect-format.js";
 import {
   createLiveToriiRuntime,
   DEFAULT_LIVE_TORII_GRAPHQL_URL
@@ -56,7 +56,7 @@ const ui: ExplorerUiBindings = {
     inspectSelected.textContent = `selected: ${hexCoordinate ?? "none"}`;
   },
   setInspectPayload(payload) {
-    inspectDetails.textContent = formatInspectPanelText(payload);
+    inspectDetails.innerHTML = renderInspectPanelHtml(payload);
   },
   setSearchResults(results) {
     searchResults.innerHTML = "";

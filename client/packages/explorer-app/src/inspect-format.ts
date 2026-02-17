@@ -1,5 +1,36 @@
 import type { HexInspectPayload } from "@gen-dungeon/explorer-types";
 
+const MAX_ROWS_PER_SECTION = 8;
+
+export function renderInspectPanelHtml(payload: HexInspectPayload | null): string {
+  if (!payload) {
+    return [
+      '<section class="inspect-empty">',
+      "<h3>No Selection</h3>",
+      "<p>Select a discovered hex to load full inspect details.</p>",
+      "</section>"
+    ].join("");
+  }
+
+  return [
+    renderHero(payload),
+    renderAreasCard(payload),
+    renderOwnershipCard(payload),
+    renderDecayCard(payload),
+    renderClaimsCard(payload),
+    renderPlantsCard(payload),
+    renderReservationsCard(payload),
+    renderAdventurersCard(payload),
+    renderEconomicsCard(payload),
+    renderInventoryCard(payload),
+    renderBackpackCard(payload),
+    renderBuildingsCard(payload),
+    renderConstructionCard(payload),
+    renderDeathsCard(payload),
+    renderEventsCard(payload)
+  ].join("");
+}
+
 export function formatInspectPanelText(payload: HexInspectPayload | null): string {
   if (!payload) {
     return "No inspect payload. Select a hex.";
@@ -140,6 +171,326 @@ export function formatInspectPanelText(payload: HexInspectPayload | null): strin
   }
 
   return lines.join("\n");
+}
+
+function renderHero(payload: HexInspectPayload): string {
+  const discoveredClass = payload.hex.is_discovered ? "is-yes" : "is-no";
+  return [
+    '<section class="inspect-hero">',
+    '<div class="inspect-hero-grid">',
+    `<div class="inspect-hero-item"><span class="inspect-k">Hex</span>${renderFelt(payload.hex.coordinate)}</div>`,
+    `<div class="inspect-hero-item"><span class="inspect-k">Head Block</span>${renderNumber(payload.headBlock)}</div>`,
+    `<div class="inspect-hero-item"><span class="inspect-k">Discoverer</span>${renderFelt(payload.hex.discoverer)}</div>`,
+    `<div class="inspect-hero-item"><span class="inspect-k">Area Count</span>${renderNumber(payload.hex.area_count)}</div>`,
+    "</div>",
+    '<div class="inspect-badges">',
+    `<span class="inspect-badge biome">Biome: ${escapeHtml(formatValue(payload.hex.biome))}</span>`,
+    `<span class="inspect-badge discovered ${discoveredClass}">Discovered: ${escapeHtml(formatValue(payload.hex.is_discovered))}</span>`,
+    "</div>",
+    "</section>"
+  ].join("");
+}
+
+function renderAreasCard(payload: HexInspectPayload): string {
+  return renderCard(
+    `Areas (${payload.areas.length})`,
+    renderTable(
+      ["Idx", "Type", "Quality", "Slots"],
+      payload.areas.slice(0, MAX_ROWS_PER_SECTION).map((area) => {
+        const areaAny = area as unknown as Record<string, unknown>;
+        return [
+          renderNumber(areaAny.area_index),
+          escapeHtml(formatValue(areaAny.area_type)),
+          renderNumber(areaAny.resource_quality),
+          renderNumber(areaAny.plant_slot_count)
+        ];
+      })
+    )
+  );
+}
+
+function renderOwnershipCard(payload: HexInspectPayload): string {
+  return renderCard(
+    `Ownership (${payload.ownership.length})`,
+    renderTable(
+      ["Area", "Owner", "Claim Block"],
+      payload.ownership.slice(0, MAX_ROWS_PER_SECTION).map((row) => [
+        renderFelt(row.area_id),
+        renderFelt(row.owner_adventurer_id),
+        renderNumber(row.claim_block)
+      ])
+    )
+  );
+}
+
+function renderDecayCard(payload: HexInspectPayload): string {
+  const content = payload.decayState
+    ? renderTable(
+        ["Owner", "Reserve", "Decay", "Claimable Since"],
+        [
+          [
+            renderFelt(payload.decayState.owner_adventurer_id),
+            renderNumber(payload.decayState.current_energy_reserve),
+            renderNumber(payload.decayState.decay_level),
+            renderNumber(payload.decayState.claimable_since_block)
+          ]
+        ]
+      )
+    : '<p class="inspect-muted">No decay state for this hex.</p>';
+
+  return renderCard("Decay", content);
+}
+
+function renderClaimsCard(payload: HexInspectPayload): string {
+  return renderCard(
+    `Claims (${payload.activeClaims.length})`,
+    renderTable(
+      ["Claim", "Claimant", "Locked", "Expiry", "Status"],
+      payload.activeClaims.slice(0, MAX_ROWS_PER_SECTION).map((claim) => [
+        renderFelt(claim.claim_id),
+        renderFelt(claim.claimant_adventurer_id),
+        renderNumber(claim.energy_locked),
+        renderNumber(claim.expiry_block),
+        escapeHtml(formatValue(claim.status))
+      ])
+    )
+  );
+}
+
+function renderPlantsCard(payload: HexInspectPayload): string {
+  return renderCard(
+    `Plants (${payload.plants.length})`,
+    renderTable(
+      ["Plant", "Species", "Yield", "Reserved"],
+      payload.plants.slice(0, MAX_ROWS_PER_SECTION).map((plant) => [
+        renderNumber(plant.plant_id),
+        renderFelt(plant.species),
+        `${renderNumber(plant.current_yield)}/${renderNumber(plant.max_yield)}`,
+        renderNumber(plant.reserved_yield)
+      ])
+    )
+  );
+}
+
+function renderReservationsCard(payload: HexInspectPayload): string {
+  return renderCard(
+    `Reservations (${payload.activeReservations.length})`,
+    renderTable(
+      ["Reservation", "Adventurer", "Amount", "Status"],
+      payload.activeReservations.slice(0, MAX_ROWS_PER_SECTION).map((reservation) => [
+        renderFelt(reservation.reservation_id),
+        renderFelt(reservation.adventurer_id),
+        renderNumber(reservation.reserved_amount),
+        escapeHtml(formatValue(reservation.status))
+      ])
+    )
+  );
+}
+
+function renderAdventurersCard(payload: HexInspectPayload): string {
+  return renderCard(
+    `Adventurers (${payload.adventurers.length})`,
+    renderTable(
+      ["ID", "Energy", "Locked Until", "Alive"],
+      payload.adventurers.slice(0, MAX_ROWS_PER_SECTION).map((adventurer) => [
+        renderFelt(adventurer.adventurer_id),
+        `${renderNumber(adventurer.energy)}/${renderNumber(adventurer.max_energy)}`,
+        renderNumber(adventurer.activity_locked_until),
+        escapeHtml(formatValue(adventurer.is_alive))
+      ])
+    )
+  );
+}
+
+function renderEconomicsCard(payload: HexInspectPayload): string {
+  return renderCard(
+    `Economics (${payload.adventurerEconomics.length})`,
+    renderTable(
+      ["ID", "Balance", "Spent", "Earned"],
+      payload.adventurerEconomics.slice(0, MAX_ROWS_PER_SECTION).map((economics) => [
+        renderFelt(economics.adventurer_id),
+        renderNumber(economics.energy_balance),
+        renderNumber(economics.total_energy_spent),
+        renderNumber(economics.total_energy_earned)
+      ])
+    )
+  );
+}
+
+function renderInventoryCard(payload: HexInspectPayload): string {
+  return renderCard(
+    `Inventory (${payload.inventories.length})`,
+    renderTable(
+      ["ID", "Weight"],
+      payload.inventories.slice(0, MAX_ROWS_PER_SECTION).map((inventory) => [
+        renderFelt(inventory.adventurer_id),
+        `${renderNumber(inventory.current_weight)}/${renderNumber(inventory.max_weight)}`
+      ])
+    )
+  );
+}
+
+function renderBackpackCard(payload: HexInspectPayload): string {
+  return renderCard(
+    `Backpack (${payload.backpackItems.length})`,
+    renderTable(
+      ["ID", "Item", "Qty", "Quality"],
+      payload.backpackItems.slice(0, MAX_ROWS_PER_SECTION).map((item) => [
+        renderFelt(item.adventurer_id),
+        renderFelt(item.item_id),
+        renderNumber(item.quantity),
+        renderNumber(item.quality)
+      ])
+    )
+  );
+}
+
+function renderBuildingsCard(payload: HexInspectPayload): string {
+  return renderCard(
+    `Buildings (${payload.buildings.length})`,
+    renderTable(
+      ["Area", "Type", "Tier", "Condition", "Active"],
+      payload.buildings.slice(0, MAX_ROWS_PER_SECTION).map((building) => [
+        renderFelt(building.area_id),
+        renderFelt(building.building_type),
+        renderNumber(building.tier),
+        renderNumber(building.condition_bp),
+        escapeHtml(formatValue(building.is_active))
+      ])
+    )
+  );
+}
+
+function renderConstructionCard(payload: HexInspectPayload): string {
+  const projectTable = renderTable(
+    ["Project", "Adventurer", "Tier", "Status"],
+    payload.constructionProjects.slice(0, MAX_ROWS_PER_SECTION).map((project) => [
+      renderFelt(project.project_id),
+      renderFelt(project.adventurer_id),
+      renderNumber(project.target_tier),
+      escapeHtml(formatValue(project.status))
+    ])
+  );
+  const escrowTable = renderTable(
+    ["Project", "Item", "Qty"],
+    payload.constructionEscrows.slice(0, MAX_ROWS_PER_SECTION).map((escrow) => [
+      renderFelt(escrow.project_id),
+      renderFelt(escrow.item_id),
+      renderNumber(escrow.quantity)
+    ])
+  );
+
+  return renderCard(
+    `Construction (projects=${payload.constructionProjects.length}, escrows=${payload.constructionEscrows.length})`,
+    [
+      '<p class="inspect-subhead">Projects</p>',
+      projectTable,
+      '<p class="inspect-subhead">Escrows</p>',
+      escrowTable
+    ].join("")
+  );
+}
+
+function renderDeathsCard(payload: HexInspectPayload): string {
+  return renderCard(
+    `Deaths (${payload.deathRecords.length})`,
+    renderTable(
+      ["Adventurer", "Block", "Cause"],
+      payload.deathRecords.slice(0, MAX_ROWS_PER_SECTION).map((death) => [
+        renderFelt(death.adventurer_id),
+        renderNumber(death.death_block),
+        renderFelt(death.death_cause)
+      ])
+    )
+  );
+}
+
+function renderEventsCard(payload: HexInspectPayload): string {
+  return renderCard(
+    `Events (${payload.eventTail.length})`,
+    renderTable(
+      ["Pos", "Name"],
+      payload.eventTail.slice(0, MAX_ROWS_PER_SECTION).map((event) => [
+        escapeHtml(`${event.blockNumber}/${event.txIndex}/${event.eventIndex}`),
+        escapeHtml(event.eventName)
+      ])
+    )
+  );
+}
+
+function renderCard(title: string, content: string): string {
+  return [
+    '<section class="inspect-card">',
+    `<h3>${escapeHtml(title)}</h3>`,
+    content,
+    "</section>"
+  ].join("");
+}
+
+function renderTable(headers: string[], rows: string[][]): string {
+  if (rows.length === 0) {
+    return '<p class="inspect-muted">No rows.</p>';
+  }
+
+  const headerHtml = headers.map((header) => `<th>${escapeHtml(header)}</th>`).join("");
+  const bodyHtml = rows
+    .map(
+      (row) =>
+        `<tr>${row
+          .map((cell) => `<td>${cell}</td>`)
+          .join("")}</tr>`
+    )
+    .join("");
+  return [
+    '<div class="inspect-table-wrap">',
+    '<table class="inspect-table">',
+    `<thead><tr>${headerHtml}</tr></thead>`,
+    `<tbody>${bodyHtml}</tbody>`,
+    "</table>",
+    "</div>"
+  ].join("");
+}
+
+function renderFelt(value: unknown): string {
+  const normalized = String(value);
+  const short = normalized.length <= 22 ? normalized : `${normalized.slice(0, 10)}...${normalized.slice(-8)}`;
+  const escapedFull = escapeHtml(normalized);
+  const escapedShort = escapeHtml(short);
+  return `<span class="inspect-felt" title="${escapedFull}">${escapedShort}</span>`;
+}
+
+function renderNumber(value: unknown): string {
+  return String(toSafeNumber(value, 0));
+}
+
+function formatValue(value: unknown): string {
+  if (typeof value === "boolean" || typeof value === "number" || typeof value === "bigint") {
+    return String(value);
+  }
+  if (typeof value === "string") {
+    return value;
+  }
+  if (value === null || value === undefined) {
+    return "none";
+  }
+  if (typeof value === "object") {
+    const objectValue = value as Record<string, unknown>;
+    const keys = Object.keys(objectValue);
+    if (keys.length === 1) {
+      return keys[0] ?? "unknown";
+    }
+    return JSON.stringify(value);
+  }
+  return String(value);
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
 }
 
 function formatFelt(value: unknown): string {

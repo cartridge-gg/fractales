@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { HexInspectPayload } from "@gen-dungeon/explorer-types";
-import { formatInspectPanelText } from "../src/inspect-format.js";
+import { renderInspectPanelHtml } from "../src/inspect-format.js";
 
 const HEX = "0x3ffffe0000100001";
 const ADV = "0xadv1";
@@ -131,23 +131,26 @@ function inspectFixture(): HexInspectPayload {
 }
 
 describe("inspect formatter (RED)", () => {
-  it("formats placeholder when no selection payload.red", () => {
-    const output = formatInspectPanelText(null);
-    expect(output).toContain("No inspect payload");
+  it("renders placeholder shell when no selection payload.red", () => {
+    const output = renderInspectPanelHtml(null);
+    expect(output).toContain("inspect-empty");
+    expect(output).toContain("Select a discovered hex");
   });
 
-  it("formats core and economy/building sections.red", () => {
-    const output = formatInspectPanelText(inspectFixture());
-    expect(output).toContain("Hex");
-    expect(output).toContain("biome");
-    expect(output).toContain("Areas");
-    expect(output).toContain("Ownership");
-    expect(output).toContain("Decay");
-    expect(output).toContain("Adventurers");
-    expect(output).toContain("Economics");
-    expect(output).toContain("Inventory");
-    expect(output).toContain("Backpack");
-    expect(output).toContain("Buildings");
-    expect(output).toContain("Construction");
+  it("renders readable section cards and tables.red", () => {
+    const output = renderInspectPanelHtml(inspectFixture());
+    expect(output).toContain("inspect-hero");
+    expect(output).toContain("inspect-badge biome");
+    expect(output).toContain("inspect-card");
+    expect(output).toContain("<h3>Areas");
+    expect(output).toContain("<h3>Ownership");
+    expect(output).toContain("<h3>Decay");
+    expect(output).toContain("<h3>Adventurers");
+    expect(output).toContain("<h3>Economics");
+    expect(output).toContain("<h3>Inventory");
+    expect(output).toContain("<h3>Backpack");
+    expect(output).toContain("<h3>Construction");
+    expect(output).toContain("inspect-table");
+    expect(output).toContain("title=");
   });
 });
