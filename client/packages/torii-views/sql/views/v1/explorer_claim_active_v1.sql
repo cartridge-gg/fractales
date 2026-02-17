@@ -8,6 +8,6 @@ SELECT
   ce.created_block,
   ce.expiry_block
 FROM {{ClaimEscrow}} ce
--- ACTIVE/non-expired filtering should be applied in deployment mappings
--- where enum encoding and current-head semantics are available.
-;
+-- ACTIVE filtering uses the canonical enum code for ACTIVE claims.
+-- Expiry filtering is applied by proxy query contracts with head-block context.
+WHERE ce.status = 1;

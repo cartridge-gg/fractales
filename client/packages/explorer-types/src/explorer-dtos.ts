@@ -1,11 +1,18 @@
 import type {
   Adventurer,
+  AdventurerEconomics,
   AreaOwnership,
+  BackpackItem,
   ClaimEscrow,
+  ConstructionBuildingNode,
+  ConstructionMaterialEscrow,
+  ConstructionProject,
+  DeathRecord,
   HarvestReservation,
   Hex,
   HexArea,
   HexDecayState,
+  Inventory,
   PlantNode
 } from "./generated.js";
 
@@ -53,6 +60,13 @@ export interface HexInspectPayload {
   plants: PlantNode[];
   activeReservations: HarvestReservation[];
   adventurers: Adventurer[];
+  adventurerEconomics: AdventurerEconomics[];
+  inventories: Inventory[];
+  backpackItems: BackpackItem[];
+  buildings: ConstructionBuildingNode[];
+  constructionProjects: ConstructionProject[];
+  constructionEscrows: ConstructionMaterialEscrow[];
+  deathRecords: DeathRecord[];
   eventTail: EventTailRow[];
 }
 

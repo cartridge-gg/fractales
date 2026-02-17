@@ -7,10 +7,15 @@
   ],
   "scripts": {
     "typecheck": "tsc -b packages/*",
-    "test": "bun run test:torii-views && bun run test:explorer-data && bun run test:proxy",
+    "test": "bun run test:torii-views && bun run test:explorer-data && bun run test:proxy && bun run test:renderer && bun run test:app",
     "test:torii-views": "bun run --filter @gen-dungeon/torii-views test",
     "test:explorer-data": "bun run --filter @gen-dungeon/explorer-data test",
-    "test:proxy": "bun run --filter @gen-dungeon/explorer-proxy-node test"
+    "test:proxy": "bun run --filter @gen-dungeon/explorer-proxy-node test",
+    "test:renderer": "bun run --filter @gen-dungeon/explorer-renderer-webgl test",
+    "test:app": "bun run --filter @gen-dungeon/explorer-app test",
+    "dev:app": "bun run --filter @gen-dungeon/explorer-app dev",
+    "test:deterministic-replay": "bun run --filter @gen-dungeon/explorer-data test:deterministic-replay",
+    "test:perf-smoke": "bun run --filter @gen-dungeon/explorer-renderer-webgl test:perf && bun run --filter @gen-dungeon/explorer-data test:perf"
   },
   "devDependencies": {
     "@dojoengine/core": "^1.8.8",

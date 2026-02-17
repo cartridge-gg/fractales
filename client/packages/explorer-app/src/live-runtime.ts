@@ -1,0 +1,1266 @@
+import type {
+  ExplorerDataStore,
+  ExplorerProxyClient,
+  ExplorerSelectors,
+  PatchStreamHandlers
+} from "@gen-dungeon/explorer-data";
+import type { ExplorerRenderer } from "@gen-dungeon/explorer-renderer-webgl";
+import type {
+  Adventurer,
+  AdventurerEconomics,
+  AreaOwnership,
+  BackpackItem,
+  ChunkKey,
+  ChunkSnapshot,
+  ClaimEscrow,
+  ConstructionBuildingNode,
+  ConstructionMaterialEscrow,
+  ConstructionProject,
+  DeathRecord,
+  EventTailQuery,
+  EventTailRow,
+  HarvestReservation,
+  Hex,
+  HexArea,
+  HexCoordinate,
+  HexInspectPayload,
+  HexRenderRow,
+  HexDecayState,
+  Inventory,
+  LayerToggleState,
+  PlantNode,
+  SearchQuery,
+  SearchResult,
+  StreamPatchEnvelope
+} from "@gen-dungeon/explorer-types";
+import type { ExplorerAppDependencies } from "./contracts.js";
+import { CanvasMockRenderer } from "./dev-runtime.js";
+
+export const DEFAULT_LIVE_TORII_GRAPHQL_URL =
+  "https://api.cartridge.gg/x/gen-dungeon-live-20260215a/torii/graphql";
+
+const DEFAULT_CACHE_TTL_MS = 2_500;
+const DEFAULT_POLL_INTERVAL_MS = 4_000;
+const DEFAULT_CHUNK_SIZE = 1;
+const DEFAULT_QUERY_LIMIT = 2_000;
+
+const AXIS_OFFSET = 1_048_576n;
+const AXIS_MASK = 2_097_151n;
+const MAX_PACKED = 9_223_372_036_854_775_807n;
+const PACK_X_MULT = 4_398_046_511_104n;
+const PACK_Y_MULT = 2_097_152n;
+const PACK_RANGE = 2_097_152n;
+
+const SNAPSHOT_QUERY = `
+query LiveSnapshot($hexLimit: Int!, $modelLimit: Int!) {
+  dojoStarterHexModels(limit: $hexLimit) {
+    edges {
+      node {
+        coordinate
+        biome
+        is_discovered
+        discovery_block
+        discoverer
+        area_count
+      }
+    }
+  }
+  dojoStarterHexAreaModels(limit: $modelLimit) {
+    edges {
+      node {
+        area_id
+        hex_coordinate
+        area_index
+        area_type
+        is_discovered
+        discoverer
+        resource_quality
+        size_category
+        plant_slot_count
+      }
+    }
+  }
+  dojoStarterAreaOwnershipModels(limit: $modelLimit) {
+    edges {
+      node {
+        area_id
+        owner_adventurer_id
+        discoverer_adventurer_id
+        discovery_block
+        claim_block
+      }
+    }
+  }
+  dojoStarterHexDecayStateModels(limit: $modelLimit) {
+    edges {
+      node {
+        hex_coordinate
+        owner_adventurer_id
+        current_energy_reserve
+        last_energy_payment_block
+        last_decay_processed_block
+        decay_level
+        claimable_since_block
+      }
+    }
+  }
+  dojoStarterClaimEscrowModels(limit: $modelLimit) {
+    edges {
+      node {
+        claim_id
+        hex_coordinate
+        claimant_adventurer_id
+        energy_locked
+        created_block
+        expiry_block
+        status
+      }
+    }
+  }
+  dojoStarterPlantNodeModels(limit: $modelLimit) {
+    edges {
+      node {
+        plant_key
+        hex_coordinate
+        area_id
+        plant_id
+        species
+        current_yield
+        reserved_yield
+        max_yield
+        regrowth_rate
+        health
+        stress_level
+        genetics_hash
+        last_harvest_block
+        discoverer
+      }
+    }
+  }
+  dojoStarterHarvestReservationModels(limit: $modelLimit) {
+    edges {
+      node {
+        reservation_id
+        adventurer_id
+        plant_key
+        reserved_amount
+        created_block
+        expiry_block
+        status
+      }
+    }
+  }
+  dojoStarterAdventurerModels(limit: $modelLimit) {
+    edges {
+      node {
+        adventurer_id
+        owner
+        name
+        energy
+        max_energy
+        current_hex
+        activity_locked_until
+        is_alive
+      }
+    }
+  }
+  dojoStarterAdventurerEconomicsModels(limit: $modelLimit) {
+    edges {
+      node {
+        adventurer_id
+        energy_balance
+        total_energy_spent
+        total_energy_earned
+        last_regen_block
+      }
+    }
+  }
+  dojoStarterInventoryModels(limit: $modelLimit) {
+    edges {
+      node {
+        adventurer_id
+        current_weight
+        max_weight
+      }
+    }
+  }
+  dojoStarterBackpackItemModels(limit: $modelLimit) {
+    edges {
+      node {
+        adventurer_id
+        item_id
+        quantity
+        quality
+        weight_per_unit
+      }
+    }
+  }
+  dojoStarterDeathRecordModels(limit: $modelLimit) {
+    edges {
+      node {
+        adventurer_id
+        owner
+        death_block
+        death_cause
+        inventory_lost_hash
+      }
+    }
+  }
+  dojoStarterConstructionBuildingNodeModels(limit: $modelLimit) {
+    edges {
+      node {
+        area_id
+        hex_coordinate
+        owner_adventurer_id
+        building_type
+        tier
+        condition_bp
+        upkeep_reserve
+        last_upkeep_block
+        is_active
+      }
+    }
+  }
+  dojoStarterConstructionProjectModels(limit: $modelLimit) {
+    edges {
+      node {
+        project_id
+        adventurer_id
+        hex_coordinate
+        area_id
+        building_type
+        target_tier
+        start_block
+        completion_block
+        energy_staked
+        status
+      }
+    }
+  }
+  dojoStarterConstructionMaterialEscrowModels(limit: $modelLimit) {
+    edges {
+      node {
+        project_id
+        item_id
+        quantity
+      }
+    }
+  }
+}
+`;
+
+export interface LiveRuntimeBundle {
+  dependencies: ExplorerAppDependencies;
+  renderer: CanvasMockRenderer;
+  proxy: LiveToriiProxyClient;
+}
+
+export interface LiveToriiRuntimeOptions {
+  toriiGraphqlUrl?: string;
+  cacheTtlMs?: number;
+  pollIntervalMs?: number;
+  chunkSize?: number;
+  queryLimit?: number;
+  fetchImpl?: typeof fetch;
+}
+
+export interface ToriiHexRow {
+  coordinate: HexCoordinate;
+  biome: string;
+  is_discovered: boolean | number | string;
+  discovery_block: unknown;
+  discoverer: string;
+  area_count: unknown;
+}
+
+export interface ToriiHexAreaRow {
+  area_id: string;
+  hex_coordinate: HexCoordinate;
+  area_index: unknown;
+  area_type: string;
+  is_discovered: boolean | number | string;
+  discoverer: string;
+  resource_quality: unknown;
+  size_category: string;
+  plant_slot_count: unknown;
+}
+
+export interface ToriiAreaOwnershipRow {
+  area_id: string;
+  owner_adventurer_id: string;
+  discoverer_adventurer_id: string;
+  discovery_block: unknown;
+  claim_block: unknown;
+}
+
+export interface ToriiHexDecayRow {
+  hex_coordinate: HexCoordinate;
+  owner_adventurer_id: string;
+  current_energy_reserve: unknown;
+  last_energy_payment_block: unknown;
+  last_decay_processed_block: unknown;
+  decay_level: unknown;
+  claimable_since_block: unknown;
+}
+
+export interface ToriiClaimEscrowRow {
+  claim_id: string;
+  hex_coordinate: HexCoordinate;
+  claimant_adventurer_id: string;
+  energy_locked: unknown;
+  created_block: unknown;
+  expiry_block: unknown;
+  status: unknown;
+}
+
+export interface ToriiPlantRow {
+  plant_key: string;
+  hex_coordinate: HexCoordinate;
+  area_id: string;
+  plant_id: unknown;
+  species: unknown;
+  current_yield: unknown;
+  reserved_yield: unknown;
+  max_yield: unknown;
+  regrowth_rate: unknown;
+  health: unknown;
+  stress_level: unknown;
+  genetics_hash: unknown;
+  last_harvest_block: unknown;
+  discoverer: string;
+}
+
+export interface ToriiHarvestReservationRow {
+  reservation_id: string;
+  adventurer_id: string;
+  plant_key: string;
+  reserved_amount: unknown;
+  created_block: unknown;
+  expiry_block: unknown;
+  status: unknown;
+}
+
+export interface ToriiAdventurerRow {
+  adventurer_id: string;
+  owner: string;
+  name: unknown;
+  energy: unknown;
+  max_energy: unknown;
+  current_hex: HexCoordinate;
+  activity_locked_until: unknown;
+  is_alive: boolean | number | string;
+}
+
+export interface ToriiAdventurerEconomicsRow {
+  adventurer_id: string;
+  energy_balance: unknown;
+  total_energy_spent: unknown;
+  total_energy_earned: unknown;
+  last_regen_block: unknown;
+}
+
+export interface ToriiInventoryRow {
+  adventurer_id: string;
+  current_weight: unknown;
+  max_weight: unknown;
+}
+
+export interface ToriiBackpackItemRow {
+  adventurer_id: string;
+  item_id: unknown;
+  quantity: unknown;
+  quality: unknown;
+  weight_per_unit: unknown;
+}
+
+export interface ToriiDeathRecordRow {
+  adventurer_id: string;
+  owner: string;
+  death_block: unknown;
+  death_cause: unknown;
+  inventory_lost_hash: unknown;
+}
+
+export interface ToriiConstructionBuildingRow {
+  area_id: string;
+  hex_coordinate: HexCoordinate;
+  owner_adventurer_id: string;
+  building_type: unknown;
+  tier: unknown;
+  condition_bp: unknown;
+  upkeep_reserve: unknown;
+  last_upkeep_block: unknown;
+  is_active: boolean | number | string;
+}
+
+export interface ToriiConstructionProjectRow {
+  project_id: string;
+  adventurer_id: string;
+  hex_coordinate: HexCoordinate;
+  area_id: string;
+  building_type: unknown;
+  target_tier: unknown;
+  start_block: unknown;
+  completion_block: unknown;
+  energy_staked: unknown;
+  status: unknown;
+}
+
+export interface ToriiConstructionMaterialEscrowRow {
+  project_id: string;
+  item_id: unknown;
+  quantity: unknown;
+}
+
+export interface ToriiSnapshotRows {
+  hexes: ToriiHexRow[];
+  areas: ToriiHexAreaRow[];
+  ownership: ToriiAreaOwnershipRow[];
+  decay: ToriiHexDecayRow[];
+  claims: ToriiClaimEscrowRow[];
+  plants: ToriiPlantRow[];
+  reservations: ToriiHarvestReservationRow[];
+  adventurers: ToriiAdventurerRow[];
+  economics: ToriiAdventurerEconomicsRow[];
+  inventories: ToriiInventoryRow[];
+  backpackItems: ToriiBackpackItemRow[];
+  deathRecords: ToriiDeathRecordRow[];
+  buildings: ToriiConstructionBuildingRow[];
+  constructionProjects: ToriiConstructionProjectRow[];
+  constructionEscrows: ToriiConstructionMaterialEscrowRow[];
+}
+
+interface SnapshotBundle extends ToriiSnapshotRows {
+  headBlock: number;
+}
+
+export interface BuildChunkOptions {
+  chunkSize?: number;
+  headBlock: number;
+}
+
+interface GraphqlConnection<TNode> {
+  edges?: Array<{ node?: TNode | null } | null> | null;
+}
+
+interface SnapshotQueryData {
+  dojoStarterHexModels?: GraphqlConnection<ToriiHexRow>;
+  dojoStarterHexAreaModels?: GraphqlConnection<ToriiHexAreaRow>;
+  dojoStarterAreaOwnershipModels?: GraphqlConnection<ToriiAreaOwnershipRow>;
+  dojoStarterHexDecayStateModels?: GraphqlConnection<ToriiHexDecayRow>;
+  dojoStarterClaimEscrowModels?: GraphqlConnection<ToriiClaimEscrowRow>;
+  dojoStarterPlantNodeModels?: GraphqlConnection<ToriiPlantRow>;
+  dojoStarterHarvestReservationModels?: GraphqlConnection<ToriiHarvestReservationRow>;
+  dojoStarterAdventurerModels?: GraphqlConnection<ToriiAdventurerRow>;
+  dojoStarterAdventurerEconomicsModels?: GraphqlConnection<ToriiAdventurerEconomicsRow>;
+  dojoStarterInventoryModels?: GraphqlConnection<ToriiInventoryRow>;
+  dojoStarterBackpackItemModels?: GraphqlConnection<ToriiBackpackItemRow>;
+  dojoStarterDeathRecordModels?: GraphqlConnection<ToriiDeathRecordRow>;
+  dojoStarterConstructionBuildingNodeModels?: GraphqlConnection<ToriiConstructionBuildingRow>;
+  dojoStarterConstructionProjectModels?: GraphqlConnection<ToriiConstructionProjectRow>;
+  dojoStarterConstructionMaterialEscrowModels?: GraphqlConnection<ToriiConstructionMaterialEscrowRow>;
+}
+
+interface GraphqlResponse<TData> {
+  data?: TData;
+  errors?: Array<{ message?: string } | null>;
+}
+
+export function createLiveToriiRuntime(
+  canvas: HTMLCanvasElement,
+  options: LiveToriiRuntimeOptions = {}
+): LiveRuntimeBundle {
+  const chunkSize = Math.max(1, Math.floor(options.chunkSize ?? DEFAULT_CHUNK_SIZE));
+  const fetchImpl =
+    options.fetchImpl?.bind(globalThis) ?? globalThis.fetch.bind(globalThis);
+  const store = new LiveStore();
+  const renderer = new CanvasMockRenderer(canvas);
+  const proxy = new LiveToriiProxyClient({
+    toriiGraphqlUrl: options.toriiGraphqlUrl ?? DEFAULT_LIVE_TORII_GRAPHQL_URL,
+    cacheTtlMs: options.cacheTtlMs ?? DEFAULT_CACHE_TTL_MS,
+    pollIntervalMs: options.pollIntervalMs ?? DEFAULT_POLL_INTERVAL_MS,
+    chunkSize,
+    queryLimit: options.queryLimit ?? DEFAULT_QUERY_LIMIT,
+    fetchImpl
+  });
+  const selectors = createLiveSelectors(store, chunkSize);
+
+  return {
+    dependencies: {
+      proxyClient: proxy,
+      store,
+      selectors,
+      renderer
+    },
+    renderer,
+    proxy
+  };
+}
+
+export function decodeCubeCoordinate(
+  coordinate: HexCoordinate
+): { x: number; y: number; z: number } | null {
+  let packed: bigint;
+  try {
+    packed = BigInt(coordinate);
+  } catch {
+    return null;
+  }
+
+  if (packed < 0n || packed > MAX_PACKED) {
+    return null;
+  }
+
+  const xShifted = packed / PACK_X_MULT;
+  const yShifted = (packed / PACK_Y_MULT) % PACK_RANGE;
+  const zShifted = packed % PACK_RANGE;
+
+  if (xShifted > AXIS_MASK || yShifted > AXIS_MASK || zShifted > AXIS_MASK) {
+    return null;
+  }
+
+  const x = Number(xShifted - AXIS_OFFSET);
+  const y = Number(yShifted - AXIS_OFFSET);
+  const z = Number(zShifted - AXIS_OFFSET);
+
+  if (!Number.isSafeInteger(x) || !Number.isSafeInteger(y) || !Number.isSafeInteger(z)) {
+    return null;
+  }
+
+  if (x + y + z !== 0) {
+    return null;
+  }
+
+  return { x, y, z };
+}
+
+export function chunkKeyForHexCoordinate(
+  coordinate: HexCoordinate,
+  chunkSize: number = DEFAULT_CHUNK_SIZE
+): ChunkKey | null {
+  const decoded = decodeCubeCoordinate(coordinate);
+  if (!decoded) {
+    return null;
+  }
+
+  const safeChunkSize = Math.max(1, Math.floor(chunkSize));
+  const chunkQ = floorDiv(decoded.x, safeChunkSize);
+  const chunkR = floorDiv(decoded.z, safeChunkSize);
+
+  return `${chunkQ}:${chunkR}` as ChunkKey;
+}
+
+export function buildChunkSnapshotsFromToriiRows(
+  rows: Pick<
+    ToriiSnapshotRows,
+    "hexes" | "areas" | "ownership" | "decay" | "claims" | "adventurers" | "plants"
+  > &
+    Partial<Pick<ToriiSnapshotRows, "reservations">>,
+  options: BuildChunkOptions
+): ChunkSnapshot[] {
+  const chunkSize = Math.max(1, Math.floor(options.chunkSize ?? DEFAULT_CHUNK_SIZE));
+  const headBlock = options.headBlock;
+
+  const controlAreaByHex = new Map<HexCoordinate, string>();
+  for (const area of rows.areas) {
+    if (!isTrueValue(area.is_discovered)) {
+      continue;
+    }
+
+    if (!isControlArea(area.area_type)) {
+      continue;
+    }
+
+    const current = controlAreaByHex.get(area.hex_coordinate);
+    if (!current || normalizeHex(area.area_id) < normalizeHex(current)) {
+      controlAreaByHex.set(area.hex_coordinate, area.area_id);
+    }
+  }
+
+  const ownerByAreaId = new Map<string, string>();
+  for (const entry of rows.ownership) {
+    ownerByAreaId.set(normalizeHex(entry.area_id), normalizeHex(entry.owner_adventurer_id));
+  }
+
+  const decayByHex = new Map<HexCoordinate, ToriiHexDecayRow>();
+  for (const entry of rows.decay) {
+    decayByHex.set(entry.hex_coordinate, entry);
+  }
+
+  const activeClaimCountByHex = new Map<HexCoordinate, number>();
+  for (const claim of rows.claims) {
+    if (!isActiveEnumStatus(claim.status)) {
+      continue;
+    }
+
+    activeClaimCountByHex.set(
+      claim.hex_coordinate,
+      (activeClaimCountByHex.get(claim.hex_coordinate) ?? 0) + 1
+    );
+  }
+
+  const adventurerCountByHex = new Map<HexCoordinate, number>();
+  for (const adventurer of rows.adventurers) {
+    adventurerCountByHex.set(
+      adventurer.current_hex,
+      (adventurerCountByHex.get(adventurer.current_hex) ?? 0) + 1
+    );
+  }
+
+  const plantCountByHex = new Map<HexCoordinate, number>();
+  for (const plant of rows.plants) {
+    plantCountByHex.set(plant.hex_coordinate, (plantCountByHex.get(plant.hex_coordinate) ?? 0) + 1);
+  }
+
+  const chunks = new Map<ChunkKey, ChunkSnapshot>();
+
+  for (const hex of rows.hexes) {
+    if (!isTrueValue(hex.is_discovered)) {
+      continue;
+    }
+
+    const chunkKey = chunkKeyForHexCoordinate(hex.coordinate, chunkSize);
+    if (!chunkKey) {
+      continue;
+    }
+
+    const [chunkQ, chunkR] = parseChunkKey(chunkKey);
+
+    let chunk = chunks.get(chunkKey);
+    if (!chunk) {
+      chunk = {
+        schemaVersion: "explorer-v1",
+        chunk: {
+          key: chunkKey,
+          chunkQ,
+          chunkR
+        },
+        headBlock,
+        hexes: []
+      };
+      chunks.set(chunkKey, chunk);
+    }
+
+    const controlAreaId = controlAreaByHex.get(hex.coordinate);
+    const ownerAdventurerId = controlAreaId
+      ? ownerByAreaId.get(normalizeHex(controlAreaId)) ?? null
+      : null;
+
+    const decay = decayByHex.get(hex.coordinate);
+    const decayLevel = toSafeNumber(decay?.decay_level, 0);
+
+    const row: HexRenderRow = {
+      hexCoordinate: hex.coordinate,
+      biome: String(hex.biome),
+      ownerAdventurerId,
+      decayLevel,
+      isClaimable: decayLevel >= 80,
+      activeClaimCount: activeClaimCountByHex.get(hex.coordinate) ?? 0,
+      adventurerCount: adventurerCountByHex.get(hex.coordinate) ?? 0,
+      plantCount: plantCountByHex.get(hex.coordinate) ?? 0
+    };
+
+    chunk.hexes.push(row);
+  }
+
+  return Array.from(chunks.values())
+    .map((chunk) => ({
+      ...chunk,
+      hexes: [...chunk.hexes].sort((a, b) => normalizeHex(a.hexCoordinate).localeCompare(normalizeHex(b.hexCoordinate)))
+    }))
+    .sort((a, b) => compareChunkKeys(a.chunk.key, b.chunk.key));
+}
+
+function createLiveSelectors(store: LiveStore, chunkSize: number): ExplorerSelectors {
+  return {
+    visibleChunkKeys(viewport) {
+      const centerQ = floorDiv(Math.round(viewport.center.x), chunkSize);
+      const centerR = floorDiv(Math.round(viewport.center.y), chunkSize);
+      const keys: ChunkKey[] = [];
+
+      for (let qDelta = -1; qDelta <= 1; qDelta += 1) {
+        for (let rDelta = -1; rDelta <= 1; rDelta += 1) {
+          keys.push(`${centerQ + qDelta}:${centerR + rDelta}` as ChunkKey);
+        }
+      }
+
+      return keys.sort(compareChunkKeys);
+    },
+    visibleHexes(_viewport, layers) {
+      const loaded = store.snapshot().loadedChunks;
+      const all = loaded.flatMap((chunk) => chunk.hexes);
+      return filterHexesByLayer(all, layers);
+    }
+  };
+}
+
+function filterHexesByLayer(
+  hexes: ChunkSnapshot["hexes"],
+  layers: LayerToggleState
+): ChunkSnapshot["hexes"] {
+  if (layers.biome) {
+    return hexes;
+  }
+
+  return hexes.filter((hex) => {
+    return (
+      (layers.ownership && hex.ownerAdventurerId !== null) ||
+      (layers.claims && (hex.activeClaimCount > 0 || hex.isClaimable)) ||
+      (layers.adventurers && hex.adventurerCount > 0) ||
+      (layers.resources && hex.plantCount > 0) ||
+      (layers.decay && hex.decayLevel > 0)
+    );
+  });
+}
+
+class LiveStore implements ExplorerDataStore {
+  private chunks: ChunkSnapshot[] = [];
+  private selectedHex: HexCoordinate | null = null;
+
+  replaceChunks(chunks: ChunkSnapshot[]): void {
+    this.chunks = chunks;
+  }
+
+  applyPatch(_patch: StreamPatchEnvelope): void {}
+
+  evictChunk(key: ChunkKey): void {
+    this.chunks = this.chunks.filter((chunk) => chunk.chunk.key !== key);
+  }
+
+  setSelectedHex(hex: HexCoordinate | null): void {
+    this.selectedHex = hex;
+  }
+
+  snapshot() {
+    return {
+      status: "live" as const,
+      headBlock: this.chunks.reduce((max, chunk) => Math.max(max, chunk.headBlock), 0),
+      selectedHex: this.selectedHex,
+      loadedChunks: this.chunks
+    };
+  }
+}
+
+export class LiveToriiProxyClient implements ExplorerProxyClient {
+  private readonly toriiGraphqlUrl: string;
+  private readonly cacheTtlMs: number;
+  private readonly pollIntervalMs: number;
+  private readonly chunkSize: number;
+  private readonly queryLimit: number;
+  private readonly fetchImpl: typeof fetch;
+
+  private cachedSnapshot: SnapshotBundle | null = null;
+  private cachedAtMs = 0;
+  private inFlightSnapshot: Promise<SnapshotBundle> | null = null;
+
+  constructor(options: {
+    toriiGraphqlUrl: string;
+    cacheTtlMs: number;
+    pollIntervalMs: number;
+    chunkSize: number;
+    queryLimit: number;
+    fetchImpl: typeof fetch;
+  }) {
+    this.toriiGraphqlUrl = options.toriiGraphqlUrl;
+    this.cacheTtlMs = options.cacheTtlMs;
+    this.pollIntervalMs = options.pollIntervalMs;
+    this.chunkSize = options.chunkSize;
+    this.queryLimit = options.queryLimit;
+    this.fetchImpl = options.fetchImpl;
+  }
+
+  async getChunks(keys: ChunkKey[]): Promise<ChunkSnapshot[]> {
+    const snapshot = await this.loadSnapshot(false);
+    const chunks = buildChunkSnapshotsFromToriiRows(snapshot, {
+      chunkSize: this.chunkSize,
+      headBlock: snapshot.headBlock
+    });
+    const byKey = new Map(chunks.map((chunk) => [chunk.chunk.key, chunk]));
+
+    return keys.flatMap((key) => {
+      const chunk = byKey.get(key);
+      return chunk ? [chunk] : [];
+    });
+  }
+
+  async getHexInspect(hexCoordinate: HexCoordinate): Promise<HexInspectPayload> {
+    const snapshot = await this.loadSnapshot(false);
+    const hexRow = snapshot.hexes.find(
+      (row) => normalizeHex(row.coordinate) === normalizeHex(hexCoordinate)
+    );
+
+    if (!hexRow) {
+      throw new Error(`Hex not found in live Torii snapshot: ${hexCoordinate}`);
+    }
+
+    const areas = snapshot.areas.filter(
+      (row) => normalizeHex(row.hex_coordinate) === normalizeHex(hexCoordinate)
+    );
+
+    const areaIds = new Set(areas.map((row) => normalizeHex(row.area_id)));
+    const ownership = snapshot.ownership.filter((row) => areaIds.has(normalizeHex(row.area_id)));
+
+    const decayState =
+      snapshot.decay.find(
+        (row) => normalizeHex(row.hex_coordinate) === normalizeHex(hexCoordinate)
+      ) ?? null;
+
+    const activeClaims = snapshot.claims.filter((row) => {
+      return (
+        normalizeHex(row.hex_coordinate) === normalizeHex(hexCoordinate) &&
+        isActiveEnumStatus(row.status)
+      );
+    });
+
+    const plants = snapshot.plants.filter(
+      (row) => normalizeHex(row.hex_coordinate) === normalizeHex(hexCoordinate)
+    );
+
+    const plantKeys = new Set(plants.map((row) => normalizeHex(row.plant_key)));
+    const activeReservations = snapshot.reservations.filter((row) => {
+      return plantKeys.has(normalizeHex(row.plant_key)) && isActiveEnumStatus(row.status);
+    });
+
+    const buildings = snapshot.buildings.filter(
+      (row) => normalizeHex(row.hex_coordinate) === normalizeHex(hexCoordinate)
+    );
+
+    const constructionProjects = snapshot.constructionProjects.filter(
+      (row) => normalizeHex(row.hex_coordinate) === normalizeHex(hexCoordinate)
+    );
+
+    const projectIds = new Set(constructionProjects.map((row) => normalizeHex(row.project_id)));
+    const constructionEscrows = snapshot.constructionEscrows.filter((row) => {
+      return projectIds.has(normalizeHex(row.project_id));
+    });
+
+    const adventurers = snapshot.adventurers.filter(
+      (row) => normalizeHex(row.current_hex) === normalizeHex(hexCoordinate)
+    );
+
+    const relatedAdventurerIds = new Set<string>();
+    for (const row of adventurers) {
+      relatedAdventurerIds.add(normalizeHex(row.adventurer_id));
+    }
+    for (const row of ownership) {
+      relatedAdventurerIds.add(normalizeHex(row.owner_adventurer_id));
+      relatedAdventurerIds.add(normalizeHex(row.discoverer_adventurer_id));
+    }
+    for (const row of activeClaims) {
+      relatedAdventurerIds.add(normalizeHex(row.claimant_adventurer_id));
+    }
+    for (const row of activeReservations) {
+      relatedAdventurerIds.add(normalizeHex(row.adventurer_id));
+    }
+    for (const row of buildings) {
+      relatedAdventurerIds.add(normalizeHex(row.owner_adventurer_id));
+    }
+    for (const row of constructionProjects) {
+      relatedAdventurerIds.add(normalizeHex(row.adventurer_id));
+    }
+    if (decayState) {
+      relatedAdventurerIds.add(normalizeHex(decayState.owner_adventurer_id));
+    }
+
+    const adventurerEconomics = snapshot.economics.filter((row) =>
+      relatedAdventurerIds.has(normalizeHex(row.adventurer_id))
+    );
+    const inventories = snapshot.inventories.filter((row) =>
+      relatedAdventurerIds.has(normalizeHex(row.adventurer_id))
+    );
+    const backpackItems = snapshot.backpackItems.filter((row) =>
+      relatedAdventurerIds.has(normalizeHex(row.adventurer_id))
+    );
+    const deathRecords = snapshot.deathRecords.filter((row) =>
+      relatedAdventurerIds.has(normalizeHex(row.adventurer_id))
+    );
+
+    return {
+      schemaVersion: "explorer-v1",
+      headBlock: snapshot.headBlock,
+      hex: hexRow as unknown as Hex,
+      areas: areas as unknown as HexArea[],
+      ownership: ownership as unknown as AreaOwnership[],
+      decayState: decayState as unknown as HexDecayState | null,
+      activeClaims: activeClaims as unknown as ClaimEscrow[],
+      plants: plants as unknown as PlantNode[],
+      activeReservations: activeReservations as unknown as HarvestReservation[],
+      adventurers: adventurers as unknown as Adventurer[],
+      adventurerEconomics: adventurerEconomics as unknown as AdventurerEconomics[],
+      inventories: inventories as unknown as Inventory[],
+      backpackItems: backpackItems as unknown as BackpackItem[],
+      buildings: buildings as unknown as ConstructionBuildingNode[],
+      constructionProjects: constructionProjects as unknown as ConstructionProject[],
+      constructionEscrows: constructionEscrows as unknown as ConstructionMaterialEscrow[],
+      deathRecords: deathRecords as unknown as DeathRecord[],
+      eventTail: []
+    };
+  }
+
+  async search(query: SearchQuery): Promise<SearchResult[]> {
+    const snapshot = await this.loadSnapshot(false);
+    const discoveredHexes = new Set(
+      snapshot.hexes
+        .filter((row) => isTrueValue(row.is_discovered))
+        .map((row) => normalizeHex(row.coordinate))
+    );
+
+    if (query.coord) {
+      const target = normalizeHex(query.coord);
+      if (!discoveredHexes.has(target)) {
+        return [];
+      }
+
+      return [{ hexCoordinate: target, score: 100, reason: "coord" }];
+    }
+
+    const limit = query.limit ?? 20;
+
+    if (query.owner) {
+      const owner = normalizeHex(query.owner);
+      const coordinates = dedupeHexes(
+        snapshot.adventurers
+          .filter((row) => normalizeHex(row.owner) === owner)
+          .map((row) => normalizeHex(row.current_hex))
+          .filter((coordinate) => discoveredHexes.has(coordinate))
+      );
+
+      return coordinates.slice(0, limit).map((hexCoordinate, index) => ({
+        hexCoordinate,
+        score: 100 - index,
+        reason: "owner" as const
+      }));
+    }
+
+    if (query.adventurer) {
+      const adventurer = normalizeHex(query.adventurer);
+      const coordinates = dedupeHexes(
+        snapshot.adventurers
+          .filter((row) => normalizeHex(row.adventurer_id) === adventurer)
+          .map((row) => normalizeHex(row.current_hex))
+          .filter((coordinate) => discoveredHexes.has(coordinate))
+      );
+
+      return coordinates.slice(0, limit).map((hexCoordinate, index) => ({
+        hexCoordinate,
+        score: 100 - index,
+        reason: "adventurer" as const
+      }));
+    }
+
+    return [];
+  }
+
+  async getEventTail(_query: EventTailQuery): Promise<EventTailRow[]> {
+    return [];
+  }
+
+  subscribePatches(handlers: PatchStreamHandlers) {
+    let closed = false;
+    let sequence = 0;
+    let previousDigest: string | null = null;
+    handlers.onStatus("live");
+
+    const poll = async (forceRefresh: boolean): Promise<void> => {
+      if (closed) {
+        return;
+      }
+
+      try {
+        const snapshot = await this.loadSnapshot(forceRefresh);
+        const digest = `${snapshot.headBlock}:${snapshot.hexes.length}:${snapshot.claims.length}:${snapshot.reservations.length}`;
+
+        if (digest !== previousDigest) {
+          previousDigest = digest;
+          sequence += 1;
+          handlers.onPatch({
+            schemaVersion: "explorer-v1",
+            sequence,
+            blockNumber: snapshot.headBlock,
+            txIndex: 0,
+            eventIndex: 0,
+            kind: "heartbeat",
+            payload: {
+              source: "live-torii",
+              hexCount: snapshot.hexes.length
+            },
+            emittedAtMs: Date.now()
+          });
+        }
+
+        handlers.onStatus("live");
+      } catch (error) {
+        handlers.onStatus("degraded");
+        handlers.onError(error instanceof Error ? error : new Error(String(error)));
+      }
+    };
+
+    void poll(false);
+    const interval = globalThis.setInterval(() => {
+      void poll(true);
+    }, this.pollIntervalMs);
+
+    return {
+      close: () => {
+        closed = true;
+        globalThis.clearInterval(interval);
+      }
+    };
+  }
+
+  private async loadSnapshot(forceRefresh: boolean): Promise<SnapshotBundle> {
+    const now = Date.now();
+    if (!forceRefresh && this.cachedSnapshot && now - this.cachedAtMs < this.cacheTtlMs) {
+      return this.cachedSnapshot;
+    }
+
+    if (this.inFlightSnapshot) {
+      return this.inFlightSnapshot;
+    }
+
+    this.inFlightSnapshot = this.fetchSnapshot()
+      .then((snapshot) => {
+        this.cachedSnapshot = snapshot;
+        this.cachedAtMs = Date.now();
+        return snapshot;
+      })
+      .finally(() => {
+        this.inFlightSnapshot = null;
+      });
+
+    return this.inFlightSnapshot;
+  }
+
+  private async fetchSnapshot(): Promise<SnapshotBundle> {
+    const payload = await this.queryGraphql<SnapshotQueryData>(SNAPSHOT_QUERY, {
+      hexLimit: this.queryLimit,
+      modelLimit: this.queryLimit
+    });
+
+    const rows: ToriiSnapshotRows = {
+      hexes: toNodes(payload.dojoStarterHexModels),
+      areas: toNodes(payload.dojoStarterHexAreaModels),
+      ownership: toNodes(payload.dojoStarterAreaOwnershipModels),
+      decay: toNodes(payload.dojoStarterHexDecayStateModels),
+      claims: toNodes(payload.dojoStarterClaimEscrowModels),
+      plants: toNodes(payload.dojoStarterPlantNodeModels),
+      reservations: toNodes(payload.dojoStarterHarvestReservationModels),
+      adventurers: toNodes(payload.dojoStarterAdventurerModels),
+      economics: toNodes(payload.dojoStarterAdventurerEconomicsModels),
+      inventories: toNodes(payload.dojoStarterInventoryModels),
+      backpackItems: toNodes(payload.dojoStarterBackpackItemModels),
+      deathRecords: toNodes(payload.dojoStarterDeathRecordModels),
+      buildings: toNodes(payload.dojoStarterConstructionBuildingNodeModels),
+      constructionProjects: toNodes(payload.dojoStarterConstructionProjectModels),
+      constructionEscrows: toNodes(payload.dojoStarterConstructionMaterialEscrowModels)
+    };
+
+    return {
+      ...rows,
+      headBlock: deriveHeadBlock(rows)
+    };
+  }
+
+  private async queryGraphql<TData>(
+    query: string,
+    variables: Record<string, unknown>
+  ): Promise<TData> {
+    const response = await this.fetchImpl(this.toriiGraphqlUrl, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({ query, variables })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Torii GraphQL request failed with status ${response.status}`);
+    }
+
+    const json = (await response.json()) as GraphqlResponse<TData>;
+
+    if (json.errors && json.errors.length > 0) {
+      const message = json.errors
+        .map((entry) => entry?.message)
+        .filter((entry): entry is string => Boolean(entry))
+        .join("; ");
+      throw new Error(`Torii GraphQL error: ${message || "unknown"}`);
+    }
+
+    if (!json.data) {
+      throw new Error("Torii GraphQL response missing data");
+    }
+
+    return json.data;
+  }
+}
+
+function toNodes<TNode>(connection: GraphqlConnection<TNode> | null | undefined): TNode[] {
+  if (!connection?.edges) {
+    return [];
+  }
+
+  const nodes: TNode[] = [];
+  for (const edge of connection.edges) {
+    const node = edge?.node;
+    if (node) {
+      nodes.push(node);
+    }
+  }
+
+  return nodes;
+}
+
+function deriveHeadBlock(rows: ToriiSnapshotRows): number {
+  let head = 0;
+
+  for (const hex of rows.hexes) {
+    head = Math.max(head, toSafeNumber(hex.discovery_block, 0));
+  }
+
+  for (const ownership of rows.ownership) {
+    head = Math.max(head, toSafeNumber(ownership.discovery_block, 0));
+    head = Math.max(head, toSafeNumber(ownership.claim_block, 0));
+  }
+
+  for (const decay of rows.decay) {
+    head = Math.max(head, toSafeNumber(decay.last_energy_payment_block, 0));
+    head = Math.max(head, toSafeNumber(decay.last_decay_processed_block, 0));
+    head = Math.max(head, toSafeNumber(decay.claimable_since_block, 0));
+  }
+
+  for (const claim of rows.claims) {
+    head = Math.max(head, toSafeNumber(claim.created_block, 0));
+    head = Math.max(head, toSafeNumber(claim.expiry_block, 0));
+  }
+
+  for (const reservation of rows.reservations) {
+    head = Math.max(head, toSafeNumber(reservation.created_block, 0));
+    head = Math.max(head, toSafeNumber(reservation.expiry_block, 0));
+  }
+
+  for (const plant of rows.plants) {
+    head = Math.max(head, toSafeNumber(plant.last_harvest_block, 0));
+  }
+
+  for (const adventurer of rows.adventurers) {
+    head = Math.max(head, toSafeNumber(adventurer.activity_locked_until, 0));
+  }
+
+  for (const economics of rows.economics) {
+    head = Math.max(head, toSafeNumber(economics.last_regen_block, 0));
+  }
+
+  for (const deathRecord of rows.deathRecords) {
+    head = Math.max(head, toSafeNumber(deathRecord.death_block, 0));
+  }
+
+  for (const building of rows.buildings) {
+    head = Math.max(head, toSafeNumber(building.last_upkeep_block, 0));
+  }
+
+  for (const project of rows.constructionProjects) {
+    head = Math.max(head, toSafeNumber(project.start_block, 0));
+    head = Math.max(head, toSafeNumber(project.completion_block, 0));
+  }
+
+  return head;
+}
+
+function parseChunkKey(key: ChunkKey): [number, number] {
+  const [chunkQRaw, chunkRRaw] = key.split(":").map((value) => Number.parseInt(value, 10));
+  return [chunkQRaw ?? 0, chunkRRaw ?? 0];
+}
+
+function compareChunkKeys(left: ChunkKey, right: ChunkKey): number {
+  const [leftQ, leftR] = parseChunkKey(left);
+  const [rightQ, rightR] = parseChunkKey(right);
+
+  if (leftQ !== rightQ) {
+    return leftQ - rightQ;
+  }
+
+  return leftR - rightR;
+}
+
+function isControlArea(areaType: unknown): boolean {
+  return String(areaType).toLowerCase() === "control";
+}
+
+function isActiveEnumStatus(status: unknown): boolean {
+  const normalized = String(status).toLowerCase();
+  return normalized === "active" || normalized === "1";
+}
+
+function isTrueValue(value: unknown): boolean {
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  if (typeof value === "number") {
+    return value !== 0;
+  }
+
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    return normalized === "true" || normalized === "1";
+  }
+
+  return false;
+}
+
+function toSafeNumber(value: unknown, fallback: number): number {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return Math.floor(value);
+  }
+
+  if (typeof value === "bigint") {
+    return bigintToNumber(value, fallback);
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (trimmed.length === 0) {
+      return fallback;
+    }
+
+    try {
+      if (trimmed.startsWith("0x") || trimmed.startsWith("-0x")) {
+        return bigintToNumber(BigInt(trimmed), fallback);
+      }
+
+      const parsed = Number.parseInt(trimmed, 10);
+      if (Number.isFinite(parsed)) {
+        return parsed;
+      }
+    } catch {
+      return fallback;
+    }
+  }
+
+  return fallback;
+}
+
+function bigintToNumber(value: bigint, fallback: number): number {
+  const max = BigInt(Number.MAX_SAFE_INTEGER);
+  const min = BigInt(Number.MIN_SAFE_INTEGER);
+  if (value > max || value < min) {
+    return fallback;
+  }
+
+  return Number(value);
+}
+
+function normalizeHex(value: unknown): HexCoordinate {
+  return String(value).toLowerCase() as HexCoordinate;
+}
+
+function dedupeHexes(values: HexCoordinate[]): HexCoordinate[] {
+  const deduped = Array.from(new Set(values));
+  deduped.sort((left, right) => normalizeHex(left).localeCompare(normalizeHex(right)));
+  return deduped;
+}
+
+function floorDiv(value: number, divisor: number): number {
+  return Math.floor(value / divisor);
+}

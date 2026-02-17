@@ -24,6 +24,8 @@ This PRD is explicitly aligned to:
 - `../docs/07-delivery/agent-handoff.md`
 - `../client/typescript/models.gen.ts`
 - `../client/typescript/contracts.gen.ts`
+- `../client/docs/p3-renderer-architecture.md` (renderer pass/shader/fixture contracts)
+- `../client/docs/p5-perf-runbook.md` (SLOs, dashboards, alerts, mitigation)
 
 ## 3. Product Scope
 

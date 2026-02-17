@@ -1,1 +1,1 @@
-{"root":["./src/contracts.ts","./src/index.ts"],"version":"5.9.3"}
+{"root":["./src/camera.ts","./src/contracts.ts","./src/culling.ts","./src/draw-batching.ts","./src/draw-pipeline.ts","./src/index.ts","./src/perf-harness.ts","./src/perf-optimizations.ts","./src/picking.ts","./src/render-constants.ts","./tests/camera.red.test.ts","./tests/culling.red.test.ts","./tests/overlay-glyph.red.test.ts","./tests/perf-harness.red.test.ts","./tests/picking.red.test.ts"],"version":"5.9.3"}

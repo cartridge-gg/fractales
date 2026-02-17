@@ -37,6 +37,15 @@ describe("torii view contracts (RED)", () => {
     }
   });
 
+  it("views.claim_active.filters_expired_escrow.red", () => {
+    const claimSql = readFileSync(
+      resolve(packageRoot, "sql/views/v1/explorer_claim_active_v1.sql"),
+      "utf8"
+    );
+
+    expect(claimSql).toContain("WHERE ce.status = 1");
+  });
+
   it("manifest declares full v1 logical view catalog", () => {
     const actualIds = new Set(toriiViewsManifestV1.views.map((view) => view.id));
     const expectedIds = [

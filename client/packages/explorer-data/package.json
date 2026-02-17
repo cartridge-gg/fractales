@@ -9,7 +9,9 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "test": "vitest run tests"
+    "test": "vitest run tests",
+    "test:deterministic-replay": "vitest run tests/patch-ordering.red.test.ts tests/chunk-cache.red.test.ts tests/stream-state.red.test.ts tests/selectors.red.test.ts",
+    "test:perf": "vitest run tests/perf-reliability.red.test.ts"
   },
   "dependencies": {
     "@gen-dungeon/explorer-types": "workspace:*"

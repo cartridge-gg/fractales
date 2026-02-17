@@ -8,6 +8,10 @@
   "exports": {
     ".": "./src/index.ts"
   },
+  "scripts": {
+    "test": "vitest run tests",
+    "test:perf": "vitest run tests/perf-harness.red.test.ts"
+  },
   "dependencies": {
     "@gen-dungeon/explorer-types": "workspace:*"
   }

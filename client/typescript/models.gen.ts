@@ -14,6 +14,40 @@ export interface Adventurer {
 	is_alive: boolean;
 }
 
+// Type definition for `dojo_starter::models::construction::ConstructionBuildingNode` struct
+export interface ConstructionBuildingNode {
+	area_id: BigNumberish;
+	hex_coordinate: BigNumberish;
+	owner_adventurer_id: BigNumberish;
+	building_type: BigNumberish;
+	tier: BigNumberish;
+	condition_bp: BigNumberish;
+	upkeep_reserve: BigNumberish;
+	last_upkeep_block: BigNumberish;
+	is_active: boolean;
+}
+
+// Type definition for `dojo_starter::models::construction::ConstructionMaterialEscrow` struct
+export interface ConstructionMaterialEscrow {
+	project_id: BigNumberish;
+	item_id: BigNumberish;
+	quantity: BigNumberish;
+}
+
+// Type definition for `dojo_starter::models::construction::ConstructionProject` struct
+export interface ConstructionProject {
+	project_id: BigNumberish;
+	adventurer_id: BigNumberish;
+	hex_coordinate: BigNumberish;
+	area_id: BigNumberish;
+	building_type: BigNumberish;
+	target_tier: BigNumberish;
+	start_block: BigNumberish;
+	completion_block: BigNumberish;
+	energy_staked: BigNumberish;
+	status: ConstructionProjectStatusEnum;
+}
+
 // Type definition for `dojo_starter::models::deaths::DeathRecord` struct
 export interface DeathRecord {
 	adventurer_id: BigNumberish;
@@ -52,6 +86,29 @@ export interface ConversionRate {
 	units_converted_in_window: BigNumberish;
 }
 
+// Type definition for `dojo_starter::models::economics::EconomyAccumulator` struct
+export interface EconomyAccumulator {
+	epoch: BigNumberish;
+	total_sources: BigNumberish;
+	total_sinks: BigNumberish;
+	new_hexes: BigNumberish;
+	deaths: BigNumberish;
+	mints: BigNumberish;
+}
+
+// Type definition for `dojo_starter::models::economics::EconomyEpochSnapshot` struct
+export interface EconomyEpochSnapshot {
+	epoch: BigNumberish;
+	total_sources: BigNumberish;
+	total_sinks: BigNumberish;
+	net_energy: BigNumberish;
+	new_hexes: BigNumberish;
+	deaths: BigNumberish;
+	mints: BigNumberish;
+	finalized_at_block: BigNumberish;
+	is_finalized: boolean;
+}
+
 // Type definition for `dojo_starter::models::economics::HexDecayState` struct
 export interface HexDecayState {
 	hex_coordinate: BigNumberish;
@@ -61,6 +118,46 @@ export interface HexDecayState {
 	last_decay_processed_block: BigNumberish;
 	decay_level: BigNumberish;
 	claimable_since_block: BigNumberish;
+}
+
+// Type definition for `dojo_starter::models::economics::RegulatorConfig` struct
+export interface RegulatorConfig {
+	slot: BigNumberish;
+	epoch_blocks: BigNumberish;
+	keeper_bounty_energy: BigNumberish;
+	keeper_bounty_max: BigNumberish;
+	bounty_funding_share_bp: BigNumberish;
+	inflation_target_pct: BigNumberish;
+	inflation_deadband_pct: BigNumberish;
+	policy_slew_limit_bp: BigNumberish;
+	min_conversion_tax_bp: BigNumberish;
+	max_conversion_tax_bp: BigNumberish;
+}
+
+// Type definition for `dojo_starter::models::economics::RegulatorPolicy` struct
+export interface RegulatorPolicy {
+	slot: BigNumberish;
+	policy_epoch: BigNumberish;
+	conversion_tax_bp: BigNumberish;
+	upkeep_bp: BigNumberish;
+	mint_discount_bp: BigNumberish;
+}
+
+// Type definition for `dojo_starter::models::economics::RegulatorState` struct
+export interface RegulatorState {
+	slot: BigNumberish;
+	has_ticked: boolean;
+	last_tick_block: BigNumberish;
+	last_tick_epoch: BigNumberish;
+}
+
+// Type definition for `dojo_starter::models::economics::RegulatorTreasury` struct
+export interface RegulatorTreasury {
+	slot: BigNumberish;
+	regulator_bounty_pool: BigNumberish;
+	last_bounty_epoch: BigNumberish;
+	last_bounty_paid: BigNumberish;
+	last_bounty_caller: string;
 }
 
 // Type definition for `dojo_starter::models::harvesting::HarvestReservation` struct
@@ -108,6 +205,68 @@ export interface Inventory {
 	max_weight: BigNumberish;
 }
 
+// Type definition for `dojo_starter::models::mining::MineAccessGrant` struct
+export interface MineAccessGrant {
+	mine_key: BigNumberish;
+	grantee_adventurer_id: BigNumberish;
+	is_allowed: boolean;
+	granted_by_adventurer_id: BigNumberish;
+	grant_block: BigNumberish;
+	revoked_block: BigNumberish;
+}
+
+// Type definition for `dojo_starter::models::mining::MineCollapseRecord` struct
+export interface MineCollapseRecord {
+	mine_key: BigNumberish;
+	collapse_count: BigNumberish;
+	last_collapse_block: BigNumberish;
+	trigger_stress: BigNumberish;
+	trigger_active_miners: BigNumberish;
+}
+
+// Type definition for `dojo_starter::models::mining::MineNode` struct
+export interface MineNode {
+	mine_key: BigNumberish;
+	hex_coordinate: BigNumberish;
+	area_id: BigNumberish;
+	mine_id: BigNumberish;
+	ore_id: BigNumberish;
+	rarity_tier: BigNumberish;
+	depth_tier: BigNumberish;
+	richness_bp: BigNumberish;
+	remaining_reserve: BigNumberish;
+	base_stress_per_block: BigNumberish;
+	collapse_threshold: BigNumberish;
+	mine_stress: BigNumberish;
+	safe_shift_blocks: BigNumberish;
+	active_miners: BigNumberish;
+	last_update_block: BigNumberish;
+	collapsed_until_block: BigNumberish;
+	repair_energy_needed: BigNumberish;
+	is_depleted: boolean;
+	active_head_shift_id: BigNumberish;
+	active_tail_shift_id: BigNumberish;
+	biome_risk_bp: BigNumberish;
+	rarity_risk_bp: BigNumberish;
+	base_tick_energy: BigNumberish;
+	ore_energy_weight: BigNumberish;
+	conversion_energy_per_unit: BigNumberish;
+}
+
+// Type definition for `dojo_starter::models::mining::MiningShift` struct
+export interface MiningShift {
+	shift_id: BigNumberish;
+	adventurer_id: BigNumberish;
+	mine_key: BigNumberish;
+	status: MiningShiftStatusEnum;
+	start_block: BigNumberish;
+	last_settle_block: BigNumberish;
+	accrued_ore_unbanked: BigNumberish;
+	accrued_stabilization_work: BigNumberish;
+	prev_active_shift_id: BigNumberish;
+	next_active_shift_id: BigNumberish;
+}
+
 // Type definition for `dojo_starter::models::ownership::AreaOwnership` struct
 export interface AreaOwnership {
 	area_id: BigNumberish;
@@ -115,6 +274,66 @@ export interface AreaOwnership {
 	discoverer_adventurer_id: BigNumberish;
 	discovery_block: BigNumberish;
 	claim_block: BigNumberish;
+}
+
+// Type definition for `dojo_starter::models::sharing::ResourceAccessGrant` struct
+export interface ResourceAccessGrant {
+	resource_key: BigNumberish;
+	grantee_adventurer_id: BigNumberish;
+	permissions_mask: BigNumberish;
+	granted_by_adventurer_id: BigNumberish;
+	grant_block: BigNumberish;
+	revoke_block: BigNumberish;
+	is_active: boolean;
+	policy_epoch: BigNumberish;
+}
+
+// Type definition for `dojo_starter::models::sharing::ResourceDistributionNonce` struct
+export interface ResourceDistributionNonce {
+	resource_key: BigNumberish;
+	last_nonce: BigNumberish;
+}
+
+// Type definition for `dojo_starter::models::sharing::ResourcePolicy` struct
+export interface ResourcePolicy {
+	resource_key: BigNumberish;
+	scope: PolicyScopeEnum;
+	scope_key: BigNumberish;
+	resource_kind: ResourceKindEnum;
+	controller_adventurer_id: BigNumberish;
+	policy_epoch: BigNumberish;
+	is_enabled: boolean;
+	updated_block: BigNumberish;
+	last_mutation_block: BigNumberish;
+}
+
+// Type definition for `dojo_starter::models::sharing::ResourceShareRule` struct
+export interface ResourceShareRule {
+	resource_key: BigNumberish;
+	recipient_adventurer_id: BigNumberish;
+	rule_kind: ShareRuleKindEnum;
+	share_bp: BigNumberish;
+	is_active: boolean;
+	policy_epoch: BigNumberish;
+	updated_block: BigNumberish;
+}
+
+// Type definition for `dojo_starter::models::sharing::ResourceShareRuleTally` struct
+export interface ResourceShareRuleTally {
+	resource_key: BigNumberish;
+	rule_kind: ShareRuleKindEnum;
+	total_bp: BigNumberish;
+	active_recipient_count: BigNumberish;
+	policy_epoch: BigNumberish;
+	recipient_0: BigNumberish;
+	recipient_1: BigNumberish;
+	recipient_2: BigNumberish;
+	recipient_3: BigNumberish;
+	recipient_4: BigNumberish;
+	recipient_5: BigNumberish;
+	recipient_6: BigNumberish;
+	recipient_7: BigNumberish;
+	updated_block: BigNumberish;
 }
 
 // Type definition for `dojo_starter::models::world::Hex` struct
@@ -137,6 +356,7 @@ export interface HexArea {
 	discoverer: string;
 	resource_quality: BigNumberish;
 	size_category: SizeCategoryEnum;
+	plant_slot_count: BigNumberish;
 }
 
 // Type definition for `dojo_starter::models::world::WorldGenConfig` struct
@@ -169,6 +389,76 @@ export interface AdventurerMoved {
 	adventurer_id: BigNumberish;
 	from: BigNumberish;
 	to: BigNumberish;
+}
+
+// Type definition for `dojo_starter::events::construction_events::ConstructionCompleted` struct
+export interface ConstructionCompleted {
+	project_id: BigNumberish;
+	adventurer_id: BigNumberish;
+	hex_coordinate: BigNumberish;
+	area_id: BigNumberish;
+	building_type: BigNumberish;
+	resulting_tier: BigNumberish;
+}
+
+// Type definition for `dojo_starter::events::construction_events::ConstructionPlantProcessed` struct
+export interface ConstructionPlantProcessed {
+	adventurer_id: BigNumberish;
+	source_item_id: BigNumberish;
+	target_material: BigNumberish;
+	input_qty: BigNumberish;
+	output_qty: BigNumberish;
+}
+
+// Type definition for `dojo_starter::events::construction_events::ConstructionRejected` struct
+export interface ConstructionRejected {
+	adventurer_id: BigNumberish;
+	area_id: BigNumberish;
+	action: BigNumberish;
+	reason: BigNumberish;
+}
+
+// Type definition for `dojo_starter::events::construction_events::ConstructionRepaired` struct
+export interface ConstructionRepaired {
+	area_id: BigNumberish;
+	adventurer_id: BigNumberish;
+	amount: BigNumberish;
+	condition_bp: BigNumberish;
+	is_active: boolean;
+}
+
+// Type definition for `dojo_starter::events::construction_events::ConstructionStarted` struct
+export interface ConstructionStarted {
+	project_id: BigNumberish;
+	adventurer_id: BigNumberish;
+	hex_coordinate: BigNumberish;
+	area_id: BigNumberish;
+	building_type: BigNumberish;
+	target_tier: BigNumberish;
+	completion_block: BigNumberish;
+}
+
+// Type definition for `dojo_starter::events::construction_events::ConstructionUpgradeQueued` struct
+export interface ConstructionUpgradeQueued {
+	area_id: BigNumberish;
+	project_id: BigNumberish;
+	adventurer_id: BigNumberish;
+	target_tier: BigNumberish;
+}
+
+// Type definition for `dojo_starter::events::construction_events::ConstructionUpkeepPaid` struct
+export interface ConstructionUpkeepPaid {
+	area_id: BigNumberish;
+	adventurer_id: BigNumberish;
+	amount: BigNumberish;
+	upkeep_reserve: BigNumberish;
+}
+
+// Type definition for `dojo_starter::events::economic_events::BountyPaid` struct
+export interface BountyPaid {
+	epoch: BigNumberish;
+	caller: string;
+	amount: BigNumberish;
 }
 
 // Type definition for `dojo_starter::events::economic_events::ClaimExpired` struct
@@ -223,6 +513,22 @@ export interface ItemsConverted {
 	energy_gained: BigNumberish;
 }
 
+// Type definition for `dojo_starter::events::economic_events::RegulatorPolicyUpdated` struct
+export interface RegulatorPolicyUpdated {
+	epoch: BigNumberish;
+	conversion_tax_bp: BigNumberish;
+	upkeep_bp: BigNumberish;
+	mint_discount_bp: BigNumberish;
+}
+
+// Type definition for `dojo_starter::events::economic_events::RegulatorTicked` struct
+export interface RegulatorTicked {
+	epoch: BigNumberish;
+	caller: string;
+	bounty_paid: BigNumberish;
+	status: BigNumberish;
+}
+
 // Type definition for `dojo_starter::events::harvesting_events::HarvestingCancelled` struct
 export interface HarvestingCancelled {
 	adventurer_id: BigNumberish;
@@ -258,6 +564,82 @@ export interface HarvestingStarted {
 	eta: BigNumberish;
 }
 
+// Type definition for `dojo_starter::events::mining_events::MineAccessGranted` struct
+export interface MineAccessGranted {
+	mine_key: BigNumberish;
+	grantee_adventurer_id: BigNumberish;
+	granted_by_adventurer_id: BigNumberish;
+}
+
+// Type definition for `dojo_starter::events::mining_events::MineAccessRevoked` struct
+export interface MineAccessRevoked {
+	mine_key: BigNumberish;
+	grantee_adventurer_id: BigNumberish;
+	revoked_by_adventurer_id: BigNumberish;
+}
+
+// Type definition for `dojo_starter::events::mining_events::MineCollapsed` struct
+export interface MineCollapsed {
+	mine_key: BigNumberish;
+	killed_miners: BigNumberish;
+	collapse_count: BigNumberish;
+}
+
+// Type definition for `dojo_starter::events::mining_events::MineInitialized` struct
+export interface MineInitialized {
+	mine_key: BigNumberish;
+	hex_coordinate: BigNumberish;
+	area_id: BigNumberish;
+	mine_id: BigNumberish;
+	ore_id: BigNumberish;
+	rarity_tier: BigNumberish;
+}
+
+// Type definition for `dojo_starter::events::mining_events::MineRepaired` struct
+export interface MineRepaired {
+	mine_key: BigNumberish;
+	adventurer_id: BigNumberish;
+	energy_contributed: BigNumberish;
+	repair_energy_remaining: BigNumberish;
+}
+
+// Type definition for `dojo_starter::events::mining_events::MineStabilized` struct
+export interface MineStabilized {
+	adventurer_id: BigNumberish;
+	mine_key: BigNumberish;
+	stress_reduced: BigNumberish;
+}
+
+// Type definition for `dojo_starter::events::mining_events::MiningContinued` struct
+export interface MiningContinued {
+	adventurer_id: BigNumberish;
+	mine_key: BigNumberish;
+	mined_ore: BigNumberish;
+	energy_spent: BigNumberish;
+}
+
+// Type definition for `dojo_starter::events::mining_events::MiningExited` struct
+export interface MiningExited {
+	adventurer_id: BigNumberish;
+	mine_key: BigNumberish;
+	banked_ore: BigNumberish;
+}
+
+// Type definition for `dojo_starter::events::mining_events::MiningRejected` struct
+export interface MiningRejected {
+	adventurer_id: BigNumberish;
+	mine_key: BigNumberish;
+	action: BigNumberish;
+	reason: BigNumberish;
+}
+
+// Type definition for `dojo_starter::events::mining_events::MiningStarted` struct
+export interface MiningStarted {
+	adventurer_id: BigNumberish;
+	mine_key: BigNumberish;
+	start_block: BigNumberish;
+}
+
 // Type definition for `dojo_starter::events::ownership_events::AreaOwnershipAssigned` struct
 export interface AreaOwnershipAssigned {
 	area_id: BigNumberish;
@@ -272,6 +654,60 @@ export interface OwnershipTransferred {
 	from_adventurer_id: BigNumberish;
 	to_adventurer_id: BigNumberish;
 	claim_block: BigNumberish;
+}
+
+// Type definition for `dojo_starter::events::sharing_events::ResourceAccessGranted` struct
+export interface ResourceAccessGranted {
+	resource_key: BigNumberish;
+	grantee_adventurer_id: BigNumberish;
+	granted_by_adventurer_id: BigNumberish;
+	permissions_mask: BigNumberish;
+	policy_epoch: BigNumberish;
+}
+
+// Type definition for `dojo_starter::events::sharing_events::ResourceAccessRevoked` struct
+export interface ResourceAccessRevoked {
+	resource_key: BigNumberish;
+	grantee_adventurer_id: BigNumberish;
+	revoked_by_adventurer_id: BigNumberish;
+	policy_epoch: BigNumberish;
+}
+
+// Type definition for `dojo_starter::events::sharing_events::ResourcePermissionRejected` struct
+export interface ResourcePermissionRejected {
+	adventurer_id: BigNumberish;
+	resource_key: BigNumberish;
+	action: BigNumberish;
+	reason: BigNumberish;
+}
+
+// Type definition for `dojo_starter::events::sharing_events::ResourcePolicyUpserted` struct
+export interface ResourcePolicyUpserted {
+	resource_key: BigNumberish;
+	scope: PolicyScopeEnum;
+	scope_key: BigNumberish;
+	resource_kind: ResourceKindEnum;
+	controller_adventurer_id: BigNumberish;
+	policy_epoch: BigNumberish;
+	is_enabled: boolean;
+	updated_block: BigNumberish;
+}
+
+// Type definition for `dojo_starter::events::sharing_events::ResourceShareRuleCleared` struct
+export interface ResourceShareRuleCleared {
+	resource_key: BigNumberish;
+	recipient_adventurer_id: BigNumberish;
+	rule_kind: ShareRuleKindEnum;
+	policy_epoch: BigNumberish;
+}
+
+// Type definition for `dojo_starter::events::sharing_events::ResourceShareRuleSet` struct
+export interface ResourceShareRuleSet {
+	resource_key: BigNumberish;
+	recipient_adventurer_id: BigNumberish;
+	rule_kind: ShareRuleKindEnum;
+	share_bp: BigNumberish;
+	policy_epoch: BigNumberish;
 }
 
 // Type definition for `dojo_starter::events::world_events::AreaDiscovered` struct
@@ -309,6 +745,24 @@ export interface WorldGenConfigInitialized {
 	plant_octaves: BigNumberish;
 }
 
+// Type definition for `dojo_starter::systems::autoregulator_manager::TickOutcome` struct
+export interface TickOutcome {
+	status: TickStatusEnum;
+	epoch: BigNumberish;
+	bounty_paid: BigNumberish;
+	policy_changed: boolean;
+}
+
+// Type definition for `dojo_starter::models::construction::ConstructionProjectStatus` enum
+export const constructionProjectStatus = [
+	'Inactive',
+	'Active',
+	'Completed',
+	'Canceled',
+] as const;
+export type ConstructionProjectStatus = { [key in typeof constructionProjectStatus[number]]: string };
+export type ConstructionProjectStatusEnum = CairoCustomEnum;
+
 // Type definition for `dojo_starter::models::economics::ClaimEscrowStatus` enum
 export const claimEscrowStatus = [
 	'Inactive',
@@ -329,11 +783,52 @@ export const harvestReservationStatus = [
 export type HarvestReservationStatus = { [key in typeof harvestReservationStatus[number]]: string };
 export type HarvestReservationStatusEnum = CairoCustomEnum;
 
+// Type definition for `dojo_starter::models::mining::MiningShiftStatus` enum
+export const miningShiftStatus = [
+	'Inactive',
+	'Active',
+	'Exited',
+	'Collapsed',
+	'Completed',
+] as const;
+export type MiningShiftStatus = { [key in typeof miningShiftStatus[number]]: string };
+export type MiningShiftStatusEnum = CairoCustomEnum;
+
+// Type definition for `dojo_starter::models::sharing::PolicyScope` enum
+export const policyScope = [
+	'None',
+	'Global',
+	'Hex',
+	'Area',
+] as const;
+export type PolicyScope = { [key in typeof policyScope[number]]: string };
+export type PolicyScopeEnum = CairoCustomEnum;
+
+// Type definition for `dojo_starter::models::sharing::ResourceKind` enum
+export const resourceKind = [
+	'Unknown',
+	'Mine',
+	'PlantArea',
+	'ConstructionArea',
+] as const;
+export type ResourceKind = { [key in typeof resourceKind[number]]: string };
+export type ResourceKindEnum = CairoCustomEnum;
+
+// Type definition for `dojo_starter::models::sharing::ShareRuleKind` enum
+export const shareRuleKind = [
+	'OutputItem',
+	'OutputEnergy',
+	'FeeOnly',
+] as const;
+export type ShareRuleKind = { [key in typeof shareRuleKind[number]]: string };
+export type ShareRuleKindEnum = CairoCustomEnum;
+
 // Type definition for `dojo_starter::models::world::AreaType` enum
 export const areaType = [
 	'Wilderness',
 	'Control',
 	'PlantField',
+	'MineField',
 ] as const;
 export type AreaType = { [key in typeof areaType[number]]: string };
 export type AreaTypeEnum = CairoCustomEnum;
@@ -346,6 +841,21 @@ export const biome = [
 	'Mountain',
 	'Desert',
 	'Swamp',
+	'Tundra',
+	'Taiga',
+	'Jungle',
+	'Savanna',
+	'Grassland',
+	'Canyon',
+	'Badlands',
+	'Volcanic',
+	'Glacier',
+	'Wetlands',
+	'Steppe',
+	'Oasis',
+	'Mire',
+	'Highlands',
+	'Coast',
 ] as const;
 export type Biome = { [key in typeof biome[number]]: string };
 export type BiomeEnum = CairoCustomEnum;
@@ -359,25 +869,60 @@ export const sizeCategory = [
 export type SizeCategory = { [key in typeof sizeCategory[number]]: string };
 export type SizeCategoryEnum = CairoCustomEnum;
 
+// Type definition for `dojo_starter::systems::autoregulator_manager::TickStatus` enum
+export const tickStatus = [
+	'NoOpEarly',
+	'NoOpAlreadyTicked',
+	'Applied',
+] as const;
+export type TickStatus = { [key in typeof tickStatus[number]]: string };
+export type TickStatusEnum = CairoCustomEnum;
+
 export interface SchemaType extends ISchemaType {
 	dojo_starter: {
 		Adventurer: Adventurer,
+		ConstructionBuildingNode: ConstructionBuildingNode,
+		ConstructionMaterialEscrow: ConstructionMaterialEscrow,
+		ConstructionProject: ConstructionProject,
 		DeathRecord: DeathRecord,
 		AdventurerEconomics: AdventurerEconomics,
 		ClaimEscrow: ClaimEscrow,
 		ConversionRate: ConversionRate,
+		EconomyAccumulator: EconomyAccumulator,
+		EconomyEpochSnapshot: EconomyEpochSnapshot,
 		HexDecayState: HexDecayState,
+		RegulatorConfig: RegulatorConfig,
+		RegulatorPolicy: RegulatorPolicy,
+		RegulatorState: RegulatorState,
+		RegulatorTreasury: RegulatorTreasury,
 		HarvestReservation: HarvestReservation,
 		PlantNode: PlantNode,
 		BackpackItem: BackpackItem,
 		Inventory: Inventory,
+		MineAccessGrant: MineAccessGrant,
+		MineCollapseRecord: MineCollapseRecord,
+		MineNode: MineNode,
+		MiningShift: MiningShift,
 		AreaOwnership: AreaOwnership,
+		ResourceAccessGrant: ResourceAccessGrant,
+		ResourceDistributionNonce: ResourceDistributionNonce,
+		ResourcePolicy: ResourcePolicy,
+		ResourceShareRule: ResourceShareRule,
+		ResourceShareRuleTally: ResourceShareRuleTally,
 		Hex: Hex,
 		HexArea: HexArea,
 		WorldGenConfig: WorldGenConfig,
 		AdventurerCreated: AdventurerCreated,
 		AdventurerDied: AdventurerDied,
 		AdventurerMoved: AdventurerMoved,
+		ConstructionCompleted: ConstructionCompleted,
+		ConstructionPlantProcessed: ConstructionPlantProcessed,
+		ConstructionRejected: ConstructionRejected,
+		ConstructionRepaired: ConstructionRepaired,
+		ConstructionStarted: ConstructionStarted,
+		ConstructionUpgradeQueued: ConstructionUpgradeQueued,
+		ConstructionUpkeepPaid: ConstructionUpkeepPaid,
+		BountyPaid: BountyPaid,
 		ClaimExpired: ClaimExpired,
 		ClaimInitiated: ClaimInitiated,
 		ClaimRefunded: ClaimRefunded,
@@ -385,16 +930,35 @@ export interface SchemaType extends ISchemaType {
 		HexDefended: HexDefended,
 		HexEnergyPaid: HexEnergyPaid,
 		ItemsConverted: ItemsConverted,
+		RegulatorPolicyUpdated: RegulatorPolicyUpdated,
+		RegulatorTicked: RegulatorTicked,
 		HarvestingCancelled: HarvestingCancelled,
 		HarvestingCompleted: HarvestingCompleted,
 		HarvestingRejected: HarvestingRejected,
 		HarvestingStarted: HarvestingStarted,
+		MineAccessGranted: MineAccessGranted,
+		MineAccessRevoked: MineAccessRevoked,
+		MineCollapsed: MineCollapsed,
+		MineInitialized: MineInitialized,
+		MineRepaired: MineRepaired,
+		MineStabilized: MineStabilized,
+		MiningContinued: MiningContinued,
+		MiningExited: MiningExited,
+		MiningRejected: MiningRejected,
+		MiningStarted: MiningStarted,
 		AreaOwnershipAssigned: AreaOwnershipAssigned,
 		OwnershipTransferred: OwnershipTransferred,
+		ResourceAccessGranted: ResourceAccessGranted,
+		ResourceAccessRevoked: ResourceAccessRevoked,
+		ResourcePermissionRejected: ResourcePermissionRejected,
+		ResourcePolicyUpserted: ResourcePolicyUpserted,
+		ResourceShareRuleCleared: ResourceShareRuleCleared,
+		ResourceShareRuleSet: ResourceShareRuleSet,
 		AreaDiscovered: AreaDiscovered,
 		HexDiscovered: HexDiscovered,
 		WorldActionRejected: WorldActionRejected,
 		WorldGenConfigInitialized: WorldGenConfigInitialized,
+		TickOutcome: TickOutcome,
 	},
 }
 export const schema: SchemaType = {
@@ -408,6 +972,38 @@ export const schema: SchemaType = {
 			current_hex: 0,
 			activity_locked_until: 0,
 			is_alive: false,
+		},
+		ConstructionBuildingNode: {
+			area_id: 0,
+			hex_coordinate: 0,
+			owner_adventurer_id: 0,
+			building_type: 0,
+			tier: 0,
+			condition_bp: 0,
+			upkeep_reserve: 0,
+			last_upkeep_block: 0,
+			is_active: false,
+		},
+		ConstructionMaterialEscrow: {
+			project_id: 0,
+			item_id: 0,
+			quantity: 0,
+		},
+		ConstructionProject: {
+			project_id: 0,
+			adventurer_id: 0,
+			hex_coordinate: 0,
+			area_id: 0,
+			building_type: 0,
+			target_tier: 0,
+			start_block: 0,
+			completion_block: 0,
+			energy_staked: 0,
+		status: new CairoCustomEnum({ 
+					Inactive: "",
+				Active: undefined,
+				Completed: undefined,
+				Canceled: undefined, }),
 		},
 		DeathRecord: {
 			adventurer_id: 0,
@@ -443,6 +1039,25 @@ export const schema: SchemaType = {
 			last_update_block: 0,
 			units_converted_in_window: 0,
 		},
+		EconomyAccumulator: {
+			epoch: 0,
+			total_sources: 0,
+			total_sinks: 0,
+			new_hexes: 0,
+			deaths: 0,
+			mints: 0,
+		},
+		EconomyEpochSnapshot: {
+			epoch: 0,
+			total_sources: 0,
+			total_sinks: 0,
+			net_energy: 0,
+			new_hexes: 0,
+			deaths: 0,
+			mints: 0,
+			finalized_at_block: 0,
+			is_finalized: false,
+		},
 		HexDecayState: {
 			hex_coordinate: 0,
 			owner_adventurer_id: 0,
@@ -451,6 +1066,38 @@ export const schema: SchemaType = {
 			last_decay_processed_block: 0,
 			decay_level: 0,
 			claimable_since_block: 0,
+		},
+		RegulatorConfig: {
+			slot: 0,
+			epoch_blocks: 0,
+			keeper_bounty_energy: 0,
+			keeper_bounty_max: 0,
+			bounty_funding_share_bp: 0,
+			inflation_target_pct: 0,
+			inflation_deadband_pct: 0,
+			policy_slew_limit_bp: 0,
+			min_conversion_tax_bp: 0,
+			max_conversion_tax_bp: 0,
+		},
+		RegulatorPolicy: {
+			slot: 0,
+			policy_epoch: 0,
+			conversion_tax_bp: 0,
+			upkeep_bp: 0,
+			mint_discount_bp: 0,
+		},
+		RegulatorState: {
+			slot: 0,
+			has_ticked: false,
+			last_tick_block: 0,
+			last_tick_epoch: 0,
+		},
+		RegulatorTreasury: {
+			slot: 0,
+			regulator_bounty_pool: 0,
+			last_bounty_epoch: 0,
+			last_bounty_paid: 0,
+			last_bounty_caller: "",
 		},
 		HarvestReservation: {
 			reservation_id: 0,
@@ -493,12 +1140,135 @@ export const schema: SchemaType = {
 			current_weight: 0,
 			max_weight: 0,
 		},
+		MineAccessGrant: {
+			mine_key: 0,
+			grantee_adventurer_id: 0,
+			is_allowed: false,
+			granted_by_adventurer_id: 0,
+			grant_block: 0,
+			revoked_block: 0,
+		},
+		MineCollapseRecord: {
+			mine_key: 0,
+			collapse_count: 0,
+			last_collapse_block: 0,
+			trigger_stress: 0,
+			trigger_active_miners: 0,
+		},
+		MineNode: {
+			mine_key: 0,
+			hex_coordinate: 0,
+			area_id: 0,
+			mine_id: 0,
+			ore_id: 0,
+			rarity_tier: 0,
+			depth_tier: 0,
+			richness_bp: 0,
+			remaining_reserve: 0,
+			base_stress_per_block: 0,
+			collapse_threshold: 0,
+			mine_stress: 0,
+			safe_shift_blocks: 0,
+			active_miners: 0,
+			last_update_block: 0,
+			collapsed_until_block: 0,
+			repair_energy_needed: 0,
+			is_depleted: false,
+			active_head_shift_id: 0,
+			active_tail_shift_id: 0,
+			biome_risk_bp: 0,
+			rarity_risk_bp: 0,
+			base_tick_energy: 0,
+			ore_energy_weight: 0,
+			conversion_energy_per_unit: 0,
+		},
+		MiningShift: {
+			shift_id: 0,
+			adventurer_id: 0,
+			mine_key: 0,
+		status: new CairoCustomEnum({ 
+					Inactive: "",
+				Active: undefined,
+				Exited: undefined,
+				Collapsed: undefined,
+				Completed: undefined, }),
+			start_block: 0,
+			last_settle_block: 0,
+			accrued_ore_unbanked: 0,
+			accrued_stabilization_work: 0,
+			prev_active_shift_id: 0,
+			next_active_shift_id: 0,
+		},
 		AreaOwnership: {
 			area_id: 0,
 			owner_adventurer_id: 0,
 			discoverer_adventurer_id: 0,
 			discovery_block: 0,
 			claim_block: 0,
+		},
+		ResourceAccessGrant: {
+			resource_key: 0,
+			grantee_adventurer_id: 0,
+			permissions_mask: 0,
+			granted_by_adventurer_id: 0,
+			grant_block: 0,
+			revoke_block: 0,
+			is_active: false,
+			policy_epoch: 0,
+		},
+		ResourceDistributionNonce: {
+			resource_key: 0,
+			last_nonce: 0,
+		},
+		ResourcePolicy: {
+			resource_key: 0,
+		scope: new CairoCustomEnum({ 
+					None: "",
+				Global: undefined,
+				Hex: undefined,
+				Area: undefined, }),
+			scope_key: 0,
+		resource_kind: new CairoCustomEnum({ 
+					Unknown: "",
+				Mine: undefined,
+				PlantArea: undefined,
+				ConstructionArea: undefined, }),
+			controller_adventurer_id: 0,
+			policy_epoch: 0,
+			is_enabled: false,
+			updated_block: 0,
+			last_mutation_block: 0,
+		},
+		ResourceShareRule: {
+			resource_key: 0,
+			recipient_adventurer_id: 0,
+		rule_kind: new CairoCustomEnum({ 
+					OutputItem: "",
+				OutputEnergy: undefined,
+				FeeOnly: undefined, }),
+			share_bp: 0,
+			is_active: false,
+			policy_epoch: 0,
+			updated_block: 0,
+		},
+		ResourceShareRuleTally: {
+			resource_key: 0,
+		rule_kind: new CairoCustomEnum({ 
+					OutputItem: "",
+				OutputEnergy: undefined,
+				FeeOnly: undefined, }),
+			total_bp: 0,
+			active_recipient_count: 0,
+			policy_epoch: 0,
+			recipient_0: 0,
+			recipient_1: 0,
+			recipient_2: 0,
+			recipient_3: 0,
+			recipient_4: 0,
+			recipient_5: 0,
+			recipient_6: 0,
+			recipient_7: 0,
+			updated_block: 0,
 		},
 		Hex: {
 			coordinate: 0,
@@ -508,7 +1278,22 @@ export const schema: SchemaType = {
 				Forest: undefined,
 				Mountain: undefined,
 				Desert: undefined,
-				Swamp: undefined, }),
+				Swamp: undefined,
+				Tundra: undefined,
+				Taiga: undefined,
+				Jungle: undefined,
+				Savanna: undefined,
+				Grassland: undefined,
+				Canyon: undefined,
+				Badlands: undefined,
+				Volcanic: undefined,
+				Glacier: undefined,
+				Wetlands: undefined,
+				Steppe: undefined,
+				Oasis: undefined,
+				Mire: undefined,
+				Highlands: undefined,
+				Coast: undefined, }),
 			is_discovered: false,
 			discovery_block: 0,
 			discoverer: "",
@@ -521,7 +1306,8 @@ export const schema: SchemaType = {
 		area_type: new CairoCustomEnum({ 
 					Wilderness: "",
 				Control: undefined,
-				PlantField: undefined, }),
+				PlantField: undefined,
+				MineField: undefined, }),
 			is_discovered: false,
 			discoverer: "",
 			resource_quality: 0,
@@ -529,6 +1315,7 @@ export const schema: SchemaType = {
 					Small: "",
 				Medium: undefined,
 				Large: undefined, }),
+			plant_slot_count: 0,
 		},
 		WorldGenConfig: {
 			generation_version: 0,
@@ -553,6 +1340,60 @@ export const schema: SchemaType = {
 			adventurer_id: 0,
 			from: 0,
 			to: 0,
+		},
+		ConstructionCompleted: {
+			project_id: 0,
+			adventurer_id: 0,
+			hex_coordinate: 0,
+			area_id: 0,
+			building_type: 0,
+			resulting_tier: 0,
+		},
+		ConstructionPlantProcessed: {
+			adventurer_id: 0,
+			source_item_id: 0,
+			target_material: 0,
+			input_qty: 0,
+			output_qty: 0,
+		},
+		ConstructionRejected: {
+			adventurer_id: 0,
+			area_id: 0,
+			action: 0,
+			reason: 0,
+		},
+		ConstructionRepaired: {
+			area_id: 0,
+			adventurer_id: 0,
+			amount: 0,
+			condition_bp: 0,
+			is_active: false,
+		},
+		ConstructionStarted: {
+			project_id: 0,
+			adventurer_id: 0,
+			hex_coordinate: 0,
+			area_id: 0,
+			building_type: 0,
+			target_tier: 0,
+			completion_block: 0,
+		},
+		ConstructionUpgradeQueued: {
+			area_id: 0,
+			project_id: 0,
+			adventurer_id: 0,
+			target_tier: 0,
+		},
+		ConstructionUpkeepPaid: {
+			area_id: 0,
+			adventurer_id: 0,
+			amount: 0,
+			upkeep_reserve: 0,
+		},
+		BountyPaid: {
+			epoch: 0,
+			caller: "",
+			amount: 0,
 		},
 		ClaimExpired: {
 			hex: 0,
@@ -592,6 +1433,18 @@ export const schema: SchemaType = {
 			quantity: 0,
 			energy_gained: 0,
 		},
+		RegulatorPolicyUpdated: {
+			epoch: 0,
+			conversion_tax_bp: 0,
+			upkeep_bp: 0,
+			mint_discount_bp: 0,
+		},
+		RegulatorTicked: {
+			epoch: 0,
+			caller: "",
+			bounty_paid: 0,
+			status: 0,
+		},
 		HarvestingCancelled: {
 			adventurer_id: 0,
 			partial_yield: 0,
@@ -619,6 +1472,62 @@ export const schema: SchemaType = {
 			amount: 0,
 			eta: 0,
 		},
+		MineAccessGranted: {
+			mine_key: 0,
+			grantee_adventurer_id: 0,
+			granted_by_adventurer_id: 0,
+		},
+		MineAccessRevoked: {
+			mine_key: 0,
+			grantee_adventurer_id: 0,
+			revoked_by_adventurer_id: 0,
+		},
+		MineCollapsed: {
+			mine_key: 0,
+			killed_miners: 0,
+			collapse_count: 0,
+		},
+		MineInitialized: {
+			mine_key: 0,
+			hex_coordinate: 0,
+			area_id: 0,
+			mine_id: 0,
+			ore_id: 0,
+			rarity_tier: 0,
+		},
+		MineRepaired: {
+			mine_key: 0,
+			adventurer_id: 0,
+			energy_contributed: 0,
+			repair_energy_remaining: 0,
+		},
+		MineStabilized: {
+			adventurer_id: 0,
+			mine_key: 0,
+			stress_reduced: 0,
+		},
+		MiningContinued: {
+			adventurer_id: 0,
+			mine_key: 0,
+			mined_ore: 0,
+			energy_spent: 0,
+		},
+		MiningExited: {
+			adventurer_id: 0,
+			mine_key: 0,
+			banked_ore: 0,
+		},
+		MiningRejected: {
+			adventurer_id: 0,
+			mine_key: 0,
+			action: 0,
+			reason: 0,
+		},
+		MiningStarted: {
+			adventurer_id: 0,
+			mine_key: 0,
+			start_block: 0,
+		},
 		AreaOwnershipAssigned: {
 			area_id: 0,
 			owner_adventurer_id: 0,
@@ -631,13 +1540,70 @@ export const schema: SchemaType = {
 			to_adventurer_id: 0,
 			claim_block: 0,
 		},
+		ResourceAccessGranted: {
+			resource_key: 0,
+			grantee_adventurer_id: 0,
+			granted_by_adventurer_id: 0,
+			permissions_mask: 0,
+			policy_epoch: 0,
+		},
+		ResourceAccessRevoked: {
+			resource_key: 0,
+			grantee_adventurer_id: 0,
+			revoked_by_adventurer_id: 0,
+			policy_epoch: 0,
+		},
+		ResourcePermissionRejected: {
+			adventurer_id: 0,
+			resource_key: 0,
+			action: 0,
+			reason: 0,
+		},
+		ResourcePolicyUpserted: {
+			resource_key: 0,
+		scope: new CairoCustomEnum({ 
+					None: "",
+				Global: undefined,
+				Hex: undefined,
+				Area: undefined, }),
+			scope_key: 0,
+		resource_kind: new CairoCustomEnum({ 
+					Unknown: "",
+				Mine: undefined,
+				PlantArea: undefined,
+				ConstructionArea: undefined, }),
+			controller_adventurer_id: 0,
+			policy_epoch: 0,
+			is_enabled: false,
+			updated_block: 0,
+		},
+		ResourceShareRuleCleared: {
+			resource_key: 0,
+			recipient_adventurer_id: 0,
+		rule_kind: new CairoCustomEnum({ 
+					OutputItem: "",
+				OutputEnergy: undefined,
+				FeeOnly: undefined, }),
+			policy_epoch: 0,
+		},
+		ResourceShareRuleSet: {
+			resource_key: 0,
+			recipient_adventurer_id: 0,
+		rule_kind: new CairoCustomEnum({ 
+					OutputItem: "",
+				OutputEnergy: undefined,
+				FeeOnly: undefined, }),
+			share_bp: 0,
+			policy_epoch: 0,
+		},
 		AreaDiscovered: {
 			area_id: 0,
 			hex: 0,
 		area_type: new CairoCustomEnum({ 
 					Wilderness: "",
 				Control: undefined,
-				PlantField: undefined, }),
+				PlantField: undefined,
+				MineField: undefined, }),
 			discoverer: "",
 		},
 		HexDiscovered: {
@@ -648,7 +1614,22 @@ export const schema: SchemaType = {
 				Forest: undefined,
 				Mountain: undefined,
 				Desert: undefined,
-				Swamp: undefined, }),
+				Swamp: undefined,
+				Tundra: undefined,
+				Taiga: undefined,
+				Jungle: undefined,
+				Savanna: undefined,
+				Grassland: undefined,
+				Canyon: undefined,
+				Badlands: undefined,
+				Volcanic: undefined,
+				Glacier: undefined,
+				Wetlands: undefined,
+				Steppe: undefined,
+				Oasis: undefined,
+				Mire: undefined,
+				Highlands: undefined,
+				Coast: undefined, }),
 			discoverer: "",
 		},
 		WorldActionRejected: {
@@ -667,22 +1648,54 @@ export const schema: SchemaType = {
 			area_octaves: 0,
 			plant_octaves: 0,
 		},
+		TickOutcome: {
+		status: new CairoCustomEnum({ 
+					NoOpEarly: "",
+				NoOpAlreadyTicked: undefined,
+				Applied: undefined, }),
+			epoch: 0,
+			bounty_paid: 0,
+			policy_changed: false,
+		},
 	},
 };
 export enum ModelsMapping {
 	Adventurer = 'dojo_starter-Adventurer',
+	ConstructionBuildingNode = 'dojo_starter-ConstructionBuildingNode',
+	ConstructionMaterialEscrow = 'dojo_starter-ConstructionMaterialEscrow',
+	ConstructionProject = 'dojo_starter-ConstructionProject',
+	ConstructionProjectStatus = 'dojo_starter-ConstructionProjectStatus',
 	DeathRecord = 'dojo_starter-DeathRecord',
 	AdventurerEconomics = 'dojo_starter-AdventurerEconomics',
 	ClaimEscrow = 'dojo_starter-ClaimEscrow',
 	ClaimEscrowStatus = 'dojo_starter-ClaimEscrowStatus',
 	ConversionRate = 'dojo_starter-ConversionRate',
+	EconomyAccumulator = 'dojo_starter-EconomyAccumulator',
+	EconomyEpochSnapshot = 'dojo_starter-EconomyEpochSnapshot',
 	HexDecayState = 'dojo_starter-HexDecayState',
+	RegulatorConfig = 'dojo_starter-RegulatorConfig',
+	RegulatorPolicy = 'dojo_starter-RegulatorPolicy',
+	RegulatorState = 'dojo_starter-RegulatorState',
+	RegulatorTreasury = 'dojo_starter-RegulatorTreasury',
 	HarvestReservation = 'dojo_starter-HarvestReservation',
 	HarvestReservationStatus = 'dojo_starter-HarvestReservationStatus',
 	PlantNode = 'dojo_starter-PlantNode',
 	BackpackItem = 'dojo_starter-BackpackItem',
 	Inventory = 'dojo_starter-Inventory',
+	MineAccessGrant = 'dojo_starter-MineAccessGrant',
+	MineCollapseRecord = 'dojo_starter-MineCollapseRecord',
+	MineNode = 'dojo_starter-MineNode',
+	MiningShift = 'dojo_starter-MiningShift',
+	MiningShiftStatus = 'dojo_starter-MiningShiftStatus',
 	AreaOwnership = 'dojo_starter-AreaOwnership',
+	PolicyScope = 'dojo_starter-PolicyScope',
+	ResourceAccessGrant = 'dojo_starter-ResourceAccessGrant',
+	ResourceDistributionNonce = 'dojo_starter-ResourceDistributionNonce',
+	ResourceKind = 'dojo_starter-ResourceKind',
+	ResourcePolicy = 'dojo_starter-ResourcePolicy',
+	ResourceShareRule = 'dojo_starter-ResourceShareRule',
+	ResourceShareRuleTally = 'dojo_starter-ResourceShareRuleTally',
+	ShareRuleKind = 'dojo_starter-ShareRuleKind',
 	AreaType = 'dojo_starter-AreaType',
 	Biome = 'dojo_starter-Biome',
 	Hex = 'dojo_starter-Hex',
@@ -692,6 +1705,14 @@ export enum ModelsMapping {
 	AdventurerCreated = 'dojo_starter-AdventurerCreated',
 	AdventurerDied = 'dojo_starter-AdventurerDied',
 	AdventurerMoved = 'dojo_starter-AdventurerMoved',
+	ConstructionCompleted = 'dojo_starter-ConstructionCompleted',
+	ConstructionPlantProcessed = 'dojo_starter-ConstructionPlantProcessed',
+	ConstructionRejected = 'dojo_starter-ConstructionRejected',
+	ConstructionRepaired = 'dojo_starter-ConstructionRepaired',
+	ConstructionStarted = 'dojo_starter-ConstructionStarted',
+	ConstructionUpgradeQueued = 'dojo_starter-ConstructionUpgradeQueued',
+	ConstructionUpkeepPaid = 'dojo_starter-ConstructionUpkeepPaid',
+	BountyPaid = 'dojo_starter-BountyPaid',
 	ClaimExpired = 'dojo_starter-ClaimExpired',
 	ClaimInitiated = 'dojo_starter-ClaimInitiated',
 	ClaimRefunded = 'dojo_starter-ClaimRefunded',
@@ -699,14 +1720,34 @@ export enum ModelsMapping {
 	HexDefended = 'dojo_starter-HexDefended',
 	HexEnergyPaid = 'dojo_starter-HexEnergyPaid',
 	ItemsConverted = 'dojo_starter-ItemsConverted',
+	RegulatorPolicyUpdated = 'dojo_starter-RegulatorPolicyUpdated',
+	RegulatorTicked = 'dojo_starter-RegulatorTicked',
 	HarvestingCancelled = 'dojo_starter-HarvestingCancelled',
 	HarvestingCompleted = 'dojo_starter-HarvestingCompleted',
 	HarvestingRejected = 'dojo_starter-HarvestingRejected',
 	HarvestingStarted = 'dojo_starter-HarvestingStarted',
+	MineAccessGranted = 'dojo_starter-MineAccessGranted',
+	MineAccessRevoked = 'dojo_starter-MineAccessRevoked',
+	MineCollapsed = 'dojo_starter-MineCollapsed',
+	MineInitialized = 'dojo_starter-MineInitialized',
+	MineRepaired = 'dojo_starter-MineRepaired',
+	MineStabilized = 'dojo_starter-MineStabilized',
+	MiningContinued = 'dojo_starter-MiningContinued',
+	MiningExited = 'dojo_starter-MiningExited',
+	MiningRejected = 'dojo_starter-MiningRejected',
+	MiningStarted = 'dojo_starter-MiningStarted',
 	AreaOwnershipAssigned = 'dojo_starter-AreaOwnershipAssigned',
 	OwnershipTransferred = 'dojo_starter-OwnershipTransferred',
+	ResourceAccessGranted = 'dojo_starter-ResourceAccessGranted',
+	ResourceAccessRevoked = 'dojo_starter-ResourceAccessRevoked',
+	ResourcePermissionRejected = 'dojo_starter-ResourcePermissionRejected',
+	ResourcePolicyUpserted = 'dojo_starter-ResourcePolicyUpserted',
+	ResourceShareRuleCleared = 'dojo_starter-ResourceShareRuleCleared',
+	ResourceShareRuleSet = 'dojo_starter-ResourceShareRuleSet',
 	AreaDiscovered = 'dojo_starter-AreaDiscovered',
 	HexDiscovered = 'dojo_starter-HexDiscovered',
 	WorldActionRejected = 'dojo_starter-WorldActionRejected',
 	WorldGenConfigInitialized = 'dojo_starter-WorldGenConfigInitialized',
+	TickOutcome = 'dojo_starter-TickOutcome',
+	TickStatus = 'dojo_starter-TickStatus',
 }

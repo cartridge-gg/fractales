@@ -67,6 +67,23 @@ export function setupWorld(provider: DojoProvider) {
 		}
 	};
 
+	const build_adventurer_manager_quoteCreateAdventurerCost_calldata = (): DojoCall => {
+		return {
+			contractName: "adventurer_manager",
+			entrypoint: "quote_create_adventurer_cost",
+			calldata: [],
+		};
+	};
+
+	const adventurer_manager_quoteCreateAdventurerCost = async () => {
+		try {
+			return await provider.call("dojo_starter", build_adventurer_manager_quoteCreateAdventurerCost_calldata());
+		} catch (error) {
+			console.error(error);
+			throw error;
+		}
+	};
+
 	const build_adventurer_manager_regenerateEnergy_calldata = (adventurerId: BigNumberish): DojoCall => {
 		return {
 			contractName: "adventurer_manager",
@@ -80,6 +97,204 @@ export function setupWorld(provider: DojoProvider) {
 			return await provider.execute(
 				snAccount,
 				build_adventurer_manager_regenerateEnergy_calldata(adventurerId),
+				"dojo_starter",
+			);
+		} catch (error) {
+			console.error(error);
+			throw error;
+		}
+	};
+
+	const build_autoregulator_manager_getLatestSnapshot_calldata = (): DojoCall => {
+		return {
+			contractName: "autoregulator_manager",
+			entrypoint: "get_latest_snapshot",
+			calldata: [],
+		};
+	};
+
+	const autoregulator_manager_getLatestSnapshot = async () => {
+		try {
+			return await provider.call("dojo_starter", build_autoregulator_manager_getLatestSnapshot_calldata());
+		} catch (error) {
+			console.error(error);
+			throw error;
+		}
+	};
+
+	const build_autoregulator_manager_getRegulatorPolicy_calldata = (): DojoCall => {
+		return {
+			contractName: "autoregulator_manager",
+			entrypoint: "get_regulator_policy",
+			calldata: [],
+		};
+	};
+
+	const autoregulator_manager_getRegulatorPolicy = async () => {
+		try {
+			return await provider.call("dojo_starter", build_autoregulator_manager_getRegulatorPolicy_calldata());
+		} catch (error) {
+			console.error(error);
+			throw error;
+		}
+	};
+
+	const build_autoregulator_manager_tickAutoregulator_calldata = (): DojoCall => {
+		return {
+			contractName: "autoregulator_manager",
+			entrypoint: "tick_autoregulator",
+			calldata: [],
+		};
+	};
+
+	const autoregulator_manager_tickAutoregulator = async (snAccount: Account | AccountInterface) => {
+		try {
+			return await provider.execute(
+				snAccount,
+				build_autoregulator_manager_tickAutoregulator_calldata(),
+				"dojo_starter",
+			);
+		} catch (error) {
+			console.error(error);
+			throw error;
+		}
+	};
+
+	const build_construction_manager_completeConstruction_calldata = (adventurerId: BigNumberish, projectId: BigNumberish): DojoCall => {
+		return {
+			contractName: "construction_manager",
+			entrypoint: "complete_construction",
+			calldata: [adventurerId, projectId],
+		};
+	};
+
+	const construction_manager_completeConstruction = async (snAccount: Account | AccountInterface, adventurerId: BigNumberish, projectId: BigNumberish) => {
+		try {
+			return await provider.execute(
+				snAccount,
+				build_construction_manager_completeConstruction_calldata(adventurerId, projectId),
+				"dojo_starter",
+			);
+		} catch (error) {
+			console.error(error);
+			throw error;
+		}
+	};
+
+	const build_construction_manager_inspectBuilding_calldata = (hexCoordinate: BigNumberish, areaId: BigNumberish): DojoCall => {
+		return {
+			contractName: "construction_manager",
+			entrypoint: "inspect_building",
+			calldata: [hexCoordinate, areaId],
+		};
+	};
+
+	const construction_manager_inspectBuilding = async (hexCoordinate: BigNumberish, areaId: BigNumberish) => {
+		try {
+			return await provider.call("dojo_starter", build_construction_manager_inspectBuilding_calldata(hexCoordinate, areaId));
+		} catch (error) {
+			console.error(error);
+			throw error;
+		}
+	};
+
+	const build_construction_manager_payBuildingUpkeep_calldata = (adventurerId: BigNumberish, hexCoordinate: BigNumberish, areaId: BigNumberish, amount: BigNumberish): DojoCall => {
+		return {
+			contractName: "construction_manager",
+			entrypoint: "pay_building_upkeep",
+			calldata: [adventurerId, hexCoordinate, areaId, amount],
+		};
+	};
+
+	const construction_manager_payBuildingUpkeep = async (snAccount: Account | AccountInterface, adventurerId: BigNumberish, hexCoordinate: BigNumberish, areaId: BigNumberish, amount: BigNumberish) => {
+		try {
+			return await provider.execute(
+				snAccount,
+				build_construction_manager_payBuildingUpkeep_calldata(adventurerId, hexCoordinate, areaId, amount),
+				"dojo_starter",
+			);
+		} catch (error) {
+			console.error(error);
+			throw error;
+		}
+	};
+
+	const build_construction_manager_processPlantMaterial_calldata = (adventurerId: BigNumberish, sourceItemId: BigNumberish, quantity: BigNumberish, targetMaterial: BigNumberish): DojoCall => {
+		return {
+			contractName: "construction_manager",
+			entrypoint: "process_plant_material",
+			calldata: [adventurerId, sourceItemId, quantity, targetMaterial],
+		};
+	};
+
+	const construction_manager_processPlantMaterial = async (snAccount: Account | AccountInterface, adventurerId: BigNumberish, sourceItemId: BigNumberish, quantity: BigNumberish, targetMaterial: BigNumberish) => {
+		try {
+			return await provider.execute(
+				snAccount,
+				build_construction_manager_processPlantMaterial_calldata(adventurerId, sourceItemId, quantity, targetMaterial),
+				"dojo_starter",
+			);
+		} catch (error) {
+			console.error(error);
+			throw error;
+		}
+	};
+
+	const build_construction_manager_repairBuilding_calldata = (adventurerId: BigNumberish, hexCoordinate: BigNumberish, areaId: BigNumberish, amount: BigNumberish): DojoCall => {
+		return {
+			contractName: "construction_manager",
+			entrypoint: "repair_building",
+			calldata: [adventurerId, hexCoordinate, areaId, amount],
+		};
+	};
+
+	const construction_manager_repairBuilding = async (snAccount: Account | AccountInterface, adventurerId: BigNumberish, hexCoordinate: BigNumberish, areaId: BigNumberish, amount: BigNumberish) => {
+		try {
+			return await provider.execute(
+				snAccount,
+				build_construction_manager_repairBuilding_calldata(adventurerId, hexCoordinate, areaId, amount),
+				"dojo_starter",
+			);
+		} catch (error) {
+			console.error(error);
+			throw error;
+		}
+	};
+
+	const build_construction_manager_startConstruction_calldata = (adventurerId: BigNumberish, hexCoordinate: BigNumberish, areaId: BigNumberish, buildingType: BigNumberish): DojoCall => {
+		return {
+			contractName: "construction_manager",
+			entrypoint: "start_construction",
+			calldata: [adventurerId, hexCoordinate, areaId, buildingType],
+		};
+	};
+
+	const construction_manager_startConstruction = async (snAccount: Account | AccountInterface, adventurerId: BigNumberish, hexCoordinate: BigNumberish, areaId: BigNumberish, buildingType: BigNumberish) => {
+		try {
+			return await provider.execute(
+				snAccount,
+				build_construction_manager_startConstruction_calldata(adventurerId, hexCoordinate, areaId, buildingType),
+				"dojo_starter",
+			);
+		} catch (error) {
+			console.error(error);
+			throw error;
+		}
+	};
+
+	const build_construction_manager_upgradeBuilding_calldata = (adventurerId: BigNumberish, hexCoordinate: BigNumberish, areaId: BigNumberish): DojoCall => {
+		return {
+			contractName: "construction_manager",
+			entrypoint: "upgrade_building",
+			calldata: [adventurerId, hexCoordinate, areaId],
+		};
+	};
+
+	const construction_manager_upgradeBuilding = async (snAccount: Account | AccountInterface, adventurerId: BigNumberish, hexCoordinate: BigNumberish, areaId: BigNumberish) => {
+		try {
+			return await provider.execute(
+				snAccount,
+				build_construction_manager_upgradeBuilding_calldata(adventurerId, hexCoordinate, areaId),
 				"dojo_starter",
 			);
 		} catch (error) {
@@ -294,6 +509,191 @@ export function setupWorld(provider: DojoProvider) {
 		}
 	};
 
+	const build_mining_manager_continueMining_calldata = (adventurerId: BigNumberish, mineKey: BigNumberish): DojoCall => {
+		return {
+			contractName: "mining_manager",
+			entrypoint: "continue_mining",
+			calldata: [adventurerId, mineKey],
+		};
+	};
+
+	const mining_manager_continueMining = async (snAccount: Account | AccountInterface, adventurerId: BigNumberish, mineKey: BigNumberish) => {
+		try {
+			return await provider.execute(
+				snAccount,
+				build_mining_manager_continueMining_calldata(adventurerId, mineKey),
+				"dojo_starter",
+			);
+		} catch (error) {
+			console.error(error);
+			throw error;
+		}
+	};
+
+	const build_mining_manager_exitMining_calldata = (adventurerId: BigNumberish, mineKey: BigNumberish): DojoCall => {
+		return {
+			contractName: "mining_manager",
+			entrypoint: "exit_mining",
+			calldata: [adventurerId, mineKey],
+		};
+	};
+
+	const mining_manager_exitMining = async (snAccount: Account | AccountInterface, adventurerId: BigNumberish, mineKey: BigNumberish) => {
+		try {
+			return await provider.execute(
+				snAccount,
+				build_mining_manager_exitMining_calldata(adventurerId, mineKey),
+				"dojo_starter",
+			);
+		} catch (error) {
+			console.error(error);
+			throw error;
+		}
+	};
+
+	const build_mining_manager_grantMineAccess_calldata = (controllerAdventurerId: BigNumberish, mineKey: BigNumberish, granteeAdventurerId: BigNumberish): DojoCall => {
+		return {
+			contractName: "mining_manager",
+			entrypoint: "grant_mine_access",
+			calldata: [controllerAdventurerId, mineKey, granteeAdventurerId],
+		};
+	};
+
+	const mining_manager_grantMineAccess = async (snAccount: Account | AccountInterface, controllerAdventurerId: BigNumberish, mineKey: BigNumberish, granteeAdventurerId: BigNumberish) => {
+		try {
+			return await provider.execute(
+				snAccount,
+				build_mining_manager_grantMineAccess_calldata(controllerAdventurerId, mineKey, granteeAdventurerId),
+				"dojo_starter",
+			);
+		} catch (error) {
+			console.error(error);
+			throw error;
+		}
+	};
+
+	const build_mining_manager_initMining_calldata = (hexCoordinate: BigNumberish, areaId: BigNumberish, mineId: BigNumberish): DojoCall => {
+		return {
+			contractName: "mining_manager",
+			entrypoint: "init_mining",
+			calldata: [hexCoordinate, areaId, mineId],
+		};
+	};
+
+	const mining_manager_initMining = async (snAccount: Account | AccountInterface, hexCoordinate: BigNumberish, areaId: BigNumberish, mineId: BigNumberish) => {
+		try {
+			return await provider.execute(
+				snAccount,
+				build_mining_manager_initMining_calldata(hexCoordinate, areaId, mineId),
+				"dojo_starter",
+			);
+		} catch (error) {
+			console.error(error);
+			throw error;
+		}
+	};
+
+	const build_mining_manager_inspectMine_calldata = (hexCoordinate: BigNumberish, areaId: BigNumberish, mineId: BigNumberish): DojoCall => {
+		return {
+			contractName: "mining_manager",
+			entrypoint: "inspect_mine",
+			calldata: [hexCoordinate, areaId, mineId],
+		};
+	};
+
+	const mining_manager_inspectMine = async (hexCoordinate: BigNumberish, areaId: BigNumberish, mineId: BigNumberish) => {
+		try {
+			return await provider.call("dojo_starter", build_mining_manager_inspectMine_calldata(hexCoordinate, areaId, mineId));
+		} catch (error) {
+			console.error(error);
+			throw error;
+		}
+	};
+
+	const build_mining_manager_repairMine_calldata = (adventurerId: BigNumberish, mineKey: BigNumberish, energyAmount: BigNumberish): DojoCall => {
+		return {
+			contractName: "mining_manager",
+			entrypoint: "repair_mine",
+			calldata: [adventurerId, mineKey, energyAmount],
+		};
+	};
+
+	const mining_manager_repairMine = async (snAccount: Account | AccountInterface, adventurerId: BigNumberish, mineKey: BigNumberish, energyAmount: BigNumberish) => {
+		try {
+			return await provider.execute(
+				snAccount,
+				build_mining_manager_repairMine_calldata(adventurerId, mineKey, energyAmount),
+				"dojo_starter",
+			);
+		} catch (error) {
+			console.error(error);
+			throw error;
+		}
+	};
+
+	const build_mining_manager_revokeMineAccess_calldata = (controllerAdventurerId: BigNumberish, mineKey: BigNumberish, granteeAdventurerId: BigNumberish): DojoCall => {
+		return {
+			contractName: "mining_manager",
+			entrypoint: "revoke_mine_access",
+			calldata: [controllerAdventurerId, mineKey, granteeAdventurerId],
+		};
+	};
+
+	const mining_manager_revokeMineAccess = async (snAccount: Account | AccountInterface, controllerAdventurerId: BigNumberish, mineKey: BigNumberish, granteeAdventurerId: BigNumberish) => {
+		try {
+			return await provider.execute(
+				snAccount,
+				build_mining_manager_revokeMineAccess_calldata(controllerAdventurerId, mineKey, granteeAdventurerId),
+				"dojo_starter",
+			);
+		} catch (error) {
+			console.error(error);
+			throw error;
+		}
+	};
+
+	const build_mining_manager_stabilizeMine_calldata = (adventurerId: BigNumberish, mineKey: BigNumberish): DojoCall => {
+		return {
+			contractName: "mining_manager",
+			entrypoint: "stabilize_mine",
+			calldata: [adventurerId, mineKey],
+		};
+	};
+
+	const mining_manager_stabilizeMine = async (snAccount: Account | AccountInterface, adventurerId: BigNumberish, mineKey: BigNumberish) => {
+		try {
+			return await provider.execute(
+				snAccount,
+				build_mining_manager_stabilizeMine_calldata(adventurerId, mineKey),
+				"dojo_starter",
+			);
+		} catch (error) {
+			console.error(error);
+			throw error;
+		}
+	};
+
+	const build_mining_manager_startMining_calldata = (adventurerId: BigNumberish, hexCoordinate: BigNumberish, areaId: BigNumberish, mineId: BigNumberish): DojoCall => {
+		return {
+			contractName: "mining_manager",
+			entrypoint: "start_mining",
+			calldata: [adventurerId, hexCoordinate, areaId, mineId],
+		};
+	};
+
+	const mining_manager_startMining = async (snAccount: Account | AccountInterface, adventurerId: BigNumberish, hexCoordinate: BigNumberish, areaId: BigNumberish, mineId: BigNumberish) => {
+		try {
+			return await provider.execute(
+				snAccount,
+				build_mining_manager_startMining_calldata(adventurerId, hexCoordinate, areaId, mineId),
+				"dojo_starter",
+			);
+		} catch (error) {
+			console.error(error);
+			throw error;
+		}
+	};
+
 	const build_ownership_manager_getOwner_calldata = (areaId: BigNumberish): DojoCall => {
 		return {
 			contractName: "ownership_manager",
@@ -324,6 +724,145 @@ export function setupWorld(provider: DojoProvider) {
 			return await provider.execute(
 				snAccount,
 				build_ownership_manager_transferOwnership_calldata(areaId, toAdventurerId),
+				"dojo_starter",
+			);
+		} catch (error) {
+			console.error(error);
+			throw error;
+		}
+	};
+
+	const build_sharing_manager_clearResourceShareRule_calldata = (controllerAdventurerId: BigNumberish, resourceKey: BigNumberish, recipientAdventurerId: BigNumberish, ruleKind: CairoCustomEnum): DojoCall => {
+		return {
+			contractName: "sharing_manager",
+			entrypoint: "clear_resource_share_rule",
+			calldata: [controllerAdventurerId, resourceKey, recipientAdventurerId, ruleKind],
+		};
+	};
+
+	const sharing_manager_clearResourceShareRule = async (snAccount: Account | AccountInterface, controllerAdventurerId: BigNumberish, resourceKey: BigNumberish, recipientAdventurerId: BigNumberish, ruleKind: CairoCustomEnum) => {
+		try {
+			return await provider.execute(
+				snAccount,
+				build_sharing_manager_clearResourceShareRule_calldata(controllerAdventurerId, resourceKey, recipientAdventurerId, ruleKind),
+				"dojo_starter",
+			);
+		} catch (error) {
+			console.error(error);
+			throw error;
+		}
+	};
+
+	const build_sharing_manager_grantResourceAccess_calldata = (controllerAdventurerId: BigNumberish, resourceKey: BigNumberish, granteeAdventurerId: BigNumberish, permissionsMask: BigNumberish): DojoCall => {
+		return {
+			contractName: "sharing_manager",
+			entrypoint: "grant_resource_access",
+			calldata: [controllerAdventurerId, resourceKey, granteeAdventurerId, permissionsMask],
+		};
+	};
+
+	const sharing_manager_grantResourceAccess = async (snAccount: Account | AccountInterface, controllerAdventurerId: BigNumberish, resourceKey: BigNumberish, granteeAdventurerId: BigNumberish, permissionsMask: BigNumberish) => {
+		try {
+			return await provider.execute(
+				snAccount,
+				build_sharing_manager_grantResourceAccess_calldata(controllerAdventurerId, resourceKey, granteeAdventurerId, permissionsMask),
+				"dojo_starter",
+			);
+		} catch (error) {
+			console.error(error);
+			throw error;
+		}
+	};
+
+	const build_sharing_manager_inspectResourcePermissions_calldata = (resourceKey: BigNumberish, adventurerId: BigNumberish): DojoCall => {
+		return {
+			contractName: "sharing_manager",
+			entrypoint: "inspect_resource_permissions",
+			calldata: [resourceKey, adventurerId],
+		};
+	};
+
+	const sharing_manager_inspectResourcePermissions = async (resourceKey: BigNumberish, adventurerId: BigNumberish) => {
+		try {
+			return await provider.call("dojo_starter", build_sharing_manager_inspectResourcePermissions_calldata(resourceKey, adventurerId));
+		} catch (error) {
+			console.error(error);
+			throw error;
+		}
+	};
+
+	const build_sharing_manager_inspectResourceShare_calldata = (resourceKey: BigNumberish, recipientAdventurerId: BigNumberish, ruleKind: CairoCustomEnum): DojoCall => {
+		return {
+			contractName: "sharing_manager",
+			entrypoint: "inspect_resource_share",
+			calldata: [resourceKey, recipientAdventurerId, ruleKind],
+		};
+	};
+
+	const sharing_manager_inspectResourceShare = async (resourceKey: BigNumberish, recipientAdventurerId: BigNumberish, ruleKind: CairoCustomEnum) => {
+		try {
+			return await provider.call("dojo_starter", build_sharing_manager_inspectResourceShare_calldata(resourceKey, recipientAdventurerId, ruleKind));
+		} catch (error) {
+			console.error(error);
+			throw error;
+		}
+	};
+
+	const build_sharing_manager_revokeResourceAccess_calldata = (controllerAdventurerId: BigNumberish, resourceKey: BigNumberish, granteeAdventurerId: BigNumberish): DojoCall => {
+		return {
+			contractName: "sharing_manager",
+			entrypoint: "revoke_resource_access",
+			calldata: [controllerAdventurerId, resourceKey, granteeAdventurerId],
+		};
+	};
+
+	const sharing_manager_revokeResourceAccess = async (snAccount: Account | AccountInterface, controllerAdventurerId: BigNumberish, resourceKey: BigNumberish, granteeAdventurerId: BigNumberish) => {
+		try {
+			return await provider.execute(
+				snAccount,
+				build_sharing_manager_revokeResourceAccess_calldata(controllerAdventurerId, resourceKey, granteeAdventurerId),
+				"dojo_starter",
+			);
+		} catch (error) {
+			console.error(error);
+			throw error;
+		}
+	};
+
+	const build_sharing_manager_setResourceShareRule_calldata = (controllerAdventurerId: BigNumberish, resourceKey: BigNumberish, recipientAdventurerId: BigNumberish, ruleKind: CairoCustomEnum, shareBp: BigNumberish): DojoCall => {
+		return {
+			contractName: "sharing_manager",
+			entrypoint: "set_resource_share_rule",
+			calldata: [controllerAdventurerId, resourceKey, recipientAdventurerId, ruleKind, shareBp],
+		};
+	};
+
+	const sharing_manager_setResourceShareRule = async (snAccount: Account | AccountInterface, controllerAdventurerId: BigNumberish, resourceKey: BigNumberish, recipientAdventurerId: BigNumberish, ruleKind: CairoCustomEnum, shareBp: BigNumberish) => {
+		try {
+			return await provider.execute(
+				snAccount,
+				build_sharing_manager_setResourceShareRule_calldata(controllerAdventurerId, resourceKey, recipientAdventurerId, ruleKind, shareBp),
+				"dojo_starter",
+			);
+		} catch (error) {
+			console.error(error);
+			throw error;
+		}
+	};
+
+	const build_sharing_manager_upsertResourcePolicy_calldata = (controllerAdventurerId: BigNumberish, resourceKey: BigNumberish, resourceKind: CairoCustomEnum, isEnabled: boolean): DojoCall => {
+		return {
+			contractName: "sharing_manager",
+			entrypoint: "upsert_resource_policy",
+			calldata: [controllerAdventurerId, resourceKey, resourceKind, isEnabled],
+		};
+	};
+
+	const sharing_manager_upsertResourcePolicy = async (snAccount: Account | AccountInterface, controllerAdventurerId: BigNumberish, resourceKey: BigNumberish, resourceKind: CairoCustomEnum, isEnabled: boolean) => {
+		try {
+			return await provider.execute(
+				snAccount,
+				build_sharing_manager_upsertResourcePolicy_calldata(controllerAdventurerId, resourceKey, resourceKind, isEnabled),
 				"dojo_starter",
 			);
 		} catch (error) {
@@ -443,8 +982,34 @@ export function setupWorld(provider: DojoProvider) {
 			buildCreateAdventurerCalldata: build_adventurer_manager_createAdventurer_calldata,
 			killAdventurer: adventurer_manager_killAdventurer,
 			buildKillAdventurerCalldata: build_adventurer_manager_killAdventurer_calldata,
+			quoteCreateAdventurerCost: adventurer_manager_quoteCreateAdventurerCost,
+			buildQuoteCreateAdventurerCostCalldata: build_adventurer_manager_quoteCreateAdventurerCost_calldata,
 			regenerateEnergy: adventurer_manager_regenerateEnergy,
 			buildRegenerateEnergyCalldata: build_adventurer_manager_regenerateEnergy_calldata,
+		},
+		autoregulator_manager: {
+			getLatestSnapshot: autoregulator_manager_getLatestSnapshot,
+			buildGetLatestSnapshotCalldata: build_autoregulator_manager_getLatestSnapshot_calldata,
+			getRegulatorPolicy: autoregulator_manager_getRegulatorPolicy,
+			buildGetRegulatorPolicyCalldata: build_autoregulator_manager_getRegulatorPolicy_calldata,
+			tickAutoregulator: autoregulator_manager_tickAutoregulator,
+			buildTickAutoregulatorCalldata: build_autoregulator_manager_tickAutoregulator_calldata,
+		},
+		construction_manager: {
+			completeConstruction: construction_manager_completeConstruction,
+			buildCompleteConstructionCalldata: build_construction_manager_completeConstruction_calldata,
+			inspectBuilding: construction_manager_inspectBuilding,
+			buildInspectBuildingCalldata: build_construction_manager_inspectBuilding_calldata,
+			payBuildingUpkeep: construction_manager_payBuildingUpkeep,
+			buildPayBuildingUpkeepCalldata: build_construction_manager_payBuildingUpkeep_calldata,
+			processPlantMaterial: construction_manager_processPlantMaterial,
+			buildProcessPlantMaterialCalldata: build_construction_manager_processPlantMaterial_calldata,
+			repairBuilding: construction_manager_repairBuilding,
+			buildRepairBuildingCalldata: build_construction_manager_repairBuilding_calldata,
+			startConstruction: construction_manager_startConstruction,
+			buildStartConstructionCalldata: build_construction_manager_startConstruction_calldata,
+			upgradeBuilding: construction_manager_upgradeBuilding,
+			buildUpgradeBuildingCalldata: build_construction_manager_upgradeBuilding_calldata,
 		},
 		economic_manager: {
 			convertItemsToEnergy: economic_manager_convertItemsToEnergy,
@@ -470,11 +1035,47 @@ export function setupWorld(provider: DojoProvider) {
 			startHarvesting: harvesting_manager_startHarvesting,
 			buildStartHarvestingCalldata: build_harvesting_manager_startHarvesting_calldata,
 		},
+		mining_manager: {
+			continueMining: mining_manager_continueMining,
+			buildContinueMiningCalldata: build_mining_manager_continueMining_calldata,
+			exitMining: mining_manager_exitMining,
+			buildExitMiningCalldata: build_mining_manager_exitMining_calldata,
+			grantMineAccess: mining_manager_grantMineAccess,
+			buildGrantMineAccessCalldata: build_mining_manager_grantMineAccess_calldata,
+			initMining: mining_manager_initMining,
+			buildInitMiningCalldata: build_mining_manager_initMining_calldata,
+			inspectMine: mining_manager_inspectMine,
+			buildInspectMineCalldata: build_mining_manager_inspectMine_calldata,
+			repairMine: mining_manager_repairMine,
+			buildRepairMineCalldata: build_mining_manager_repairMine_calldata,
+			revokeMineAccess: mining_manager_revokeMineAccess,
+			buildRevokeMineAccessCalldata: build_mining_manager_revokeMineAccess_calldata,
+			stabilizeMine: mining_manager_stabilizeMine,
+			buildStabilizeMineCalldata: build_mining_manager_stabilizeMine_calldata,
+			startMining: mining_manager_startMining,
+			buildStartMiningCalldata: build_mining_manager_startMining_calldata,
+		},
 		ownership_manager: {
 			getOwner: ownership_manager_getOwner,
 			buildGetOwnerCalldata: build_ownership_manager_getOwner_calldata,
 			transferOwnership: ownership_manager_transferOwnership,
 			buildTransferOwnershipCalldata: build_ownership_manager_transferOwnership_calldata,
+		},
+		sharing_manager: {
+			clearResourceShareRule: sharing_manager_clearResourceShareRule,
+			buildClearResourceShareRuleCalldata: build_sharing_manager_clearResourceShareRule_calldata,
+			grantResourceAccess: sharing_manager_grantResourceAccess,
+			buildGrantResourceAccessCalldata: build_sharing_manager_grantResourceAccess_calldata,
+			inspectResourcePermissions: sharing_manager_inspectResourcePermissions,
+			buildInspectResourcePermissionsCalldata: build_sharing_manager_inspectResourcePermissions_calldata,
+			inspectResourceShare: sharing_manager_inspectResourceShare,
+			buildInspectResourceShareCalldata: build_sharing_manager_inspectResourceShare_calldata,
+			revokeResourceAccess: sharing_manager_revokeResourceAccess,
+			buildRevokeResourceAccessCalldata: build_sharing_manager_revokeResourceAccess_calldata,
+			setResourceShareRule: sharing_manager_setResourceShareRule,
+			buildSetResourceShareRuleCalldata: build_sharing_manager_setResourceShareRule_calldata,
+			upsertResourcePolicy: sharing_manager_upsertResourcePolicy,
+			buildUpsertResourcePolicyCalldata: build_sharing_manager_upsertResourcePolicy_calldata,
 		},
 		world_gen_manager: {
 			getActiveWorldGenConfig: world_gen_manager_getActiveWorldGenConfig,

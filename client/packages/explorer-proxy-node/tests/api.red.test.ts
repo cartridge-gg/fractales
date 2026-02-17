@@ -36,6 +36,13 @@ function makeInspectPayload(hexCoordinate: string): HexInspectPayload {
     plants: [],
     activeReservations: [],
     adventurers: [],
+    adventurerEconomics: [],
+    inventories: [],
+    backpackItems: [],
+    buildings: [],
+    constructionProjects: [],
+    constructionEscrows: [],
+    deathRecords: [],
     eventTail: []
   };
 }

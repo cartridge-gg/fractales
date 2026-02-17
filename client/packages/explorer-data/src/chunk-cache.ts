@@ -12,12 +12,29 @@ export interface ChunkCacheState {
   entries: Map<ChunkKey, ChunkCacheEntry>;
 }
 
+export type ChunkCacheProfile = "mobile" | "desktop";
+
+const CHUNK_CACHE_PROFILE_BUDGETS: Record<ChunkCacheProfile, number> = {
+  mobile: 96,
+  desktop: 192
+};
+
 export function createChunkCache(maxChunks: number): ChunkCacheState {
   return {
     maxChunks,
     tick: 0,
     entries: new Map()
   };
+}
+
+export function chunkBudgetForProfile(profile: ChunkCacheProfile): number {
+  return CHUNK_CACHE_PROFILE_BUDGETS[profile];
+}
+
+export function createChunkCacheForProfile(
+  profile: ChunkCacheProfile
+): ChunkCacheState {
+  return createChunkCache(chunkBudgetForProfile(profile));
 }
 
 export function getChunk(

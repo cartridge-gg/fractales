@@ -8,6 +8,12 @@
   "exports": {
     ".": "./src/index.ts"
   },
+  "scripts": {
+    "test": "vitest run tests",
+    "dev": "vite --host 127.0.0.1 --port 4173",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 4173"
+  },
   "dependencies": {
     "@gen-dungeon/explorer-data": "workspace:*",
     "@gen-dungeon/explorer-renderer-webgl": "workspace:*",

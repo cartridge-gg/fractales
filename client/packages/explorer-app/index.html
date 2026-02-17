@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gen Dungeon Explorer Dev Harness</title>
+  </head>
+  <body>
+    <div id="app-root">
+      <header class="app-header">
+        <div>
+          <p class="eyebrow">Gen Dungeon</p>
+          <h1>Explorer Dev Harness</h1>
+        </div>
+        <div class="status-cluster">
+          <span id="status-pill" class="status-pill live">live</span>
+          <code id="url-label">/explorer</code>
+        </div>
+      </header>
+
+      <section class="control-grid">
+        <article class="control-card">
+          <h2>Navigation</h2>
+          <div class="button-row">
+            <button data-pan="-1,0">Pan Left</button>
+            <button data-pan="1,0">Pan Right</button>
+            <button data-pan="0,-1">Pan Up</button>
+            <button data-pan="0,1">Pan Down</button>
+          </div>
+          <div class="button-row">
+            <button id="zoom-out">Zoom Out</button>
+            <button id="zoom-in">Zoom In</button>
+            <button id="mobile-layout">Mobile 390x844</button>
+            <button id="desktop-layout">Desktop Fit</button>
+          </div>
+        </article>
+
+        <article class="control-card">
+          <h2>Layers</h2>
+          <div class="layer-grid">
+            <label><input data-layer="biome" type="checkbox" checked /> Biome</label>
+            <label><input data-layer="ownership" type="checkbox" /> Ownership</label>
+            <label><input data-layer="claims" type="checkbox" /> Claims</label>
+            <label><input data-layer="adventurers" type="checkbox" /> Adventurers</label>
+            <label><input data-layer="resources" type="checkbox" /> Resources</label>
+            <label><input data-layer="decay" type="checkbox" /> Decay</label>
+          </div>
+          <div class="button-row">
+            <button id="layers-on">All On</button>
+            <button id="layers-off">All Off</button>
+          </div>
+        </article>
+
+        <article class="control-card">
+          <h2>Search + Deep Link</h2>
+          <div class="search-row">
+            <select id="search-mode">
+              <option value="coord">coord</option>
+              <option value="owner">owner</option>
+              <option value="adventurer">adventurer</option>
+            </select>
+            <input id="search-input" placeholder="0x200" />
+            <button id="search-run">Jump</button>
+          </div>
+          <div class="search-row">
+            <input id="route-input" placeholder="https://example.test/explorer?coord=0x200" />
+            <button id="route-hydrate">Hydrate URL</button>
+          </div>
+          <ul id="search-results" class="search-results"></ul>
+        </article>
+
+        <article class="control-card">
+          <h2>Stream Status</h2>
+          <div class="button-row">
+            <button data-status="live">Set Live</button>
+            <button data-status="catching_up">Set Catching Up</button>
+            <button data-status="degraded">Set Degraded</button>
+          </div>
+          <p id="snapshot-line" class="snapshot-line">selected: none | visible: 0 | zoom: 1.00</p>
+        </article>
+      </section>
+
+      <section class="viewport-grid">
+        <canvas id="explorer-canvas" width="1280" height="720"></canvas>
+        <aside class="inspect-panel">
+          <h2>Inspect</h2>
+          <p id="inspect-selected">selected: none</p>
+          <p id="inspect-layout">layout: desktop</p>
+          <pre id="inspect-details">No inspect payload. Select a hex.</pre>
+          <ol id="visible-list"></ol>
+        </aside>
+      </section>
+    </div>
+
+    <script type="module" src="/src/dev-main.ts"></script>
+  </body>
+</html>
