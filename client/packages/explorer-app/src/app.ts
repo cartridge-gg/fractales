@@ -1,9 +1,11 @@
 import type { ExplorerStreamSubscription } from "@gen-dungeon/explorer-data";
 import type {
+  ChunkSnapshot,
   HexCoordinate,
   LayerId,
   LayerToggleState,
   SearchQuery,
+  StreamPatchEnvelope,
   StreamStatus,
   ViewportWindow
 } from "@gen-dungeon/explorer-types";
@@ -93,6 +95,8 @@ export function createExplorerApp(
         onPatch: (patch) => {
           dependencies.store.applyPatch(patch);
           dependencies.renderer.applyPatch(patch);
+          refreshVisibleHexes();
+          void refreshSelectedInspectIfAffected(patch);
         },
         onStatus: (status) => {
           void app.updateStreamStatus(status);
@@ -262,6 +266,21 @@ export function createExplorerApp(
       state.layerState
     );
   }
+
+  async function refreshSelectedInspectIfAffected(
+    patch: StreamPatchEnvelope
+  ): Promise<void> {
+    if (state.selectedHex === null) {
+      return;
+    }
+
+    if (!patchTouchesHex(patch, state.selectedHex)) {
+      return;
+    }
+
+    const inspectPayload = await dependencies.proxyClient.getHexInspect(state.selectedHex);
+    ui.setInspectPayload(inspectPayload);
+  }
 }
 
 interface InternalAppState {
@@ -347,6 +366,43 @@ function buildDeepLink(
 
   const serialized = params.toString();
   return serialized.length > 0 ? `${basePath}?${serialized}` : basePath;
+}
+
+function patchTouchesHex(
+  patch: StreamPatchEnvelope,
+  hexCoordinate: HexCoordinate
+): boolean {
+  if (patch.kind === "chunk_snapshot") {
+    const snapshot = patch.payload as Partial<ChunkSnapshot>;
+    if (!Array.isArray(snapshot.hexes)) {
+      return false;
+    }
+
+    return snapshot.hexes.some((hex) => {
+      return (
+        typeof hex?.hexCoordinate === "string" &&
+        normalizeCoordinate(hex.hexCoordinate) === normalizeCoordinate(hexCoordinate)
+      );
+    });
+  }
+
+  if (patch.kind === "hex_patch") {
+    const payload = patch.payload as {
+      hex?: { hexCoordinate?: unknown };
+      row?: { hexCoordinate?: unknown };
+    };
+    const candidate = payload.hex?.hexCoordinate ?? payload.row?.hexCoordinate;
+    return (
+      typeof candidate === "string" &&
+      normalizeCoordinate(candidate as HexCoordinate) === normalizeCoordinate(hexCoordinate)
+    );
+  }
+
+  return false;
+}
+
+function normalizeCoordinate(value: HexCoordinate): string {
+  return String(value).toLowerCase();
 }
 
 function clamp(value: number, min: number, max: number): number {

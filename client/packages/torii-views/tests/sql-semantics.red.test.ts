@@ -41,4 +41,15 @@ describe("torii SQL view semantics (RED)", () => {
     const order = rows.map((row) => `${row.block_number}-${row.tx_index}-${row.event_index}`);
     expect(order).toEqual(["12-0-0", "11-1-0", "11-0-1", "10-0-0"]);
   });
+
+  it("computes claimable from claimable_since_block, not decay threshold", () => {
+    const harness = createSeededToriiSqlHarness();
+    const rows = harness.select<{ hex_coordinate: string; is_claimable: number }>(
+      "SELECT hex_coordinate, is_claimable FROM explorer_hex_render_v1 ORDER BY hex_coordinate"
+    );
+
+    const byHex = new Map(rows.map((row) => [row.hex_coordinate, row.is_claimable]));
+    expect(byHex.get("0x1")).toBe(0);
+    expect(byHex.get("0x3")).toBe(1);
+  });
 });

@@ -2,7 +2,16 @@ import type { HexInspectPayload } from "@gen-dungeon/explorer-types";
 
 const MAX_ROWS_PER_SECTION = 8;
 
-export function renderInspectPanelHtml(payload: HexInspectPayload | null): string {
+export type InspectDetailMode = "compact" | "full";
+
+export interface RenderInspectPanelOptions {
+  mode?: InspectDetailMode;
+}
+
+export function renderInspectPanelHtml(
+  payload: HexInspectPayload | null,
+  options: RenderInspectPanelOptions = {}
+): string {
   if (!payload) {
     return [
       '<section class="inspect-empty">',
@@ -12,7 +21,7 @@ export function renderInspectPanelHtml(payload: HexInspectPayload | null): strin
     ].join("");
   }
 
-  return [
+  const compact = [
     renderHero(payload),
     renderAreasCard(payload),
     renderOwnershipCard(payload),
@@ -29,6 +38,12 @@ export function renderInspectPanelHtml(payload: HexInspectPayload | null): strin
     renderDeathsCard(payload),
     renderEventsCard(payload)
   ].join("");
+
+  if (options.mode === "full") {
+    return [compact, renderRawPayloadCards(payload)].join("");
+  }
+
+  return compact;
 }
 
 export function formatInspectPanelText(payload: HexInspectPayload | null): string {
@@ -415,6 +430,41 @@ function renderEventsCard(payload: HexInspectPayload): string {
         escapeHtml(event.eventName)
       ])
     )
+  );
+}
+
+function renderRawPayloadCards(payload: HexInspectPayload): string {
+  return [
+    renderRawObjectCard("Hex Raw Fields", payload.hex),
+    renderRawRowsCard("Areas Raw Fields", payload.areas),
+    renderRawRowsCard("Ownership Raw Fields", payload.ownership),
+    renderRawObjectCard("Decay Raw Fields", payload.decayState),
+    renderRawRowsCard("Claims Raw Fields", payload.activeClaims),
+    renderRawRowsCard("Plants Raw Fields", payload.plants),
+    renderRawRowsCard("Reservations Raw Fields", payload.activeReservations),
+    renderRawRowsCard("Adventurers Raw Fields", payload.adventurers),
+    renderRawRowsCard("Economics Raw Fields", payload.adventurerEconomics),
+    renderRawRowsCard("Inventories Raw Fields", payload.inventories),
+    renderRawRowsCard("Backpack Raw Fields", payload.backpackItems),
+    renderRawRowsCard("Buildings Raw Fields", payload.buildings),
+    renderRawRowsCard("Construction Projects Raw Fields", payload.constructionProjects),
+    renderRawRowsCard("Construction Escrows Raw Fields", payload.constructionEscrows),
+    renderRawRowsCard("Deaths Raw Fields", payload.deathRecords),
+    renderRawRowsCard("Events Raw Fields", payload.eventTail)
+  ].join("");
+}
+
+function renderRawRowsCard(title: string, rows: unknown[]): string {
+  return renderRawObjectCard(
+    `${title} (${rows.length})`,
+    rows.slice(0, MAX_ROWS_PER_SECTION)
+  );
+}
+
+function renderRawObjectCard(title: string, value: unknown): string {
+  return renderCard(
+    title,
+    `<pre class="inspect-raw-pre">${escapeHtml(JSON.stringify(value, null, 2) ?? "null")}</pre>`
   );
 }
 

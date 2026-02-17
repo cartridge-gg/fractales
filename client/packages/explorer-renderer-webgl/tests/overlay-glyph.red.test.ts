@@ -25,12 +25,12 @@ function chunkWithFixtureHexes(): ChunkSnapshot {
       {
         hexCoordinate: "0x2",
         biome: "Forest",
-        ownerAdventurerId: null,
-        decayLevel: 0,
+        ownerAdventurerId: "0xowner",
+        decayLevel: 5,
         isClaimable: false,
         activeClaimCount: 1,
-        adventurerCount: 0,
-        plantCount: 0
+        adventurerCount: 1,
+        plantCount: 2
       },
       {
         hexCoordinate: "0x3",
@@ -86,5 +86,23 @@ describe("overlay and glyph snapshots (RED)", () => {
   it("glyph.atlas_snapshot.red", () => {
     const snapshot = renderGlyphAtlasSnapshot(["PLN", "FOR", "DES"]);
     expect(snapshot).toBe(["DES|44-45-53", "FOR|46-4F-52", "PLN|50-4C-4E"].join("\n"));
+  });
+
+  it("overlay.composite_snapshot.red", () => {
+    const snapshot = renderSceneSnapshot([chunkWithFixtureHexes()], "composite");
+    expect(snapshot).toBe(
+      [
+        "grid|0:0|#",
+        "hex|0x1|H",
+        "hex|0x2|H",
+        "hex|0x3|H",
+        "overlay|0x1|.",
+        "overlay|0x2|COA",
+        "overlay|0x3|c",
+        "glyph|0x1|PLN",
+        "glyph|0x2|COA",
+        "glyph|0x3|c__"
+      ].join("\n")
+    );
   });
 });

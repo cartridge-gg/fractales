@@ -1,17 +1,20 @@
-import type { ChunkKey, SearchQuery } from "@gen-dungeon/explorer-types";
+import type { ChunkKey, EventTailRow, SearchQuery } from "@gen-dungeon/explorer-types";
 import type { ToriiViewsReader } from "@gen-dungeon/torii-views";
 import type { ExplorerProxyApi, ProxyStatusPayload } from "./contracts.js";
 
 const DEFAULT_MAX_CHUNK_KEYS = 128;
+const DEFAULT_EVENT_TAIL_LIMIT = 20;
 
 export interface CreateExplorerProxyApiOptions {
   reader: ToriiViewsReader;
   maxChunkKeys?: number;
+  eventTailLimit?: number;
   getStatus?: () => ProxyStatusPayload | Promise<ProxyStatusPayload>;
 }
 
 export function createExplorerProxyApi(options: CreateExplorerProxyApiOptions): ExplorerProxyApi {
   const maxChunkKeys = options.maxChunkKeys ?? DEFAULT_MAX_CHUNK_KEYS;
+  const eventTailLimit = normalizeEventTailLimit(options.eventTailLimit);
 
   return {
     async getChunks(keys) {
@@ -19,7 +22,15 @@ export function createExplorerProxyApi(options: CreateExplorerProxyApiOptions): 
       return options.reader.getChunks({ keys: normalized });
     },
     async getHex(hexCoordinate) {
-      return options.reader.getHexInspect(hexCoordinate);
+      const inspect = await options.reader.getHexInspect(hexCoordinate);
+      const eventTail = await options.reader.getEventTail({
+        hexCoordinate,
+        limit: eventTailLimit
+      });
+      return {
+        ...inspect,
+        eventTail: sortEventTailRows(eventTail)
+      };
     },
     async search(query) {
       validateSearchQuery(query);
@@ -38,6 +49,31 @@ export function createExplorerProxyApi(options: CreateExplorerProxyApiOptions): 
       return options.getStatus();
     }
   };
+}
+
+function normalizeEventTailLimit(limit: number | undefined): number {
+  if (limit === undefined) {
+    return DEFAULT_EVENT_TAIL_LIMIT;
+  }
+  if (!Number.isInteger(limit) || limit <= 0) {
+    throw new Error("event tail limit must be a positive integer");
+  }
+  return limit;
+}
+
+function sortEventTailRows(rows: EventTailRow[]): EventTailRow[] {
+  return [...rows].sort((left, right) => {
+    if (left.blockNumber !== right.blockNumber) {
+      return left.blockNumber - right.blockNumber;
+    }
+    if (left.txIndex !== right.txIndex) {
+      return left.txIndex - right.txIndex;
+    }
+    if (left.eventIndex !== right.eventIndex) {
+      return left.eventIndex - right.eventIndex;
+    }
+    return 0;
+  });
 }
 
 function normalizeChunkKeys(keys: ChunkKey[], maxChunkKeys: number): ChunkKey[] {

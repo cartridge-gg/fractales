@@ -356,6 +356,7 @@ export class CanvasMockRenderer implements ExplorerRenderer {
   private dpr = 1;
   private layout: HexLayoutEntry[] = [];
   private knownDiscoveredHexes = new Map<string, ChunkSnapshot["hexes"][number]>();
+  private lastAppliedSequence = 0;
 
   constructor(private readonly canvas: HTMLCanvasElement) {
     this.onPointerDown = this.onPointerDown.bind(this);
@@ -372,21 +373,40 @@ export class CanvasMockRenderer implements ExplorerRenderer {
 
   replaceChunks(chunks: ChunkSnapshot[]): void {
     this.chunks = chunks;
-    for (const chunk of chunks) {
-      for (const hex of chunk.hexes) {
-        this.knownDiscoveredHexes.set(normalizeHexCoordinate(hex.hexCoordinate), hex);
-      }
-    }
-    this.layout = buildLayout(
-      chunks,
-      this.cssWidth,
-      this.cssHeight,
-      this.layerState,
-      this.knownDiscoveredHexes
-    );
+    this.mergeKnownDiscovered(chunks);
+    this.rebuildLayout();
   }
 
-  applyPatch(_patch: StreamPatchEnvelope): void {}
+  applyPatch(patch: StreamPatchEnvelope): void {
+    if (patch.sequence <= this.lastAppliedSequence) {
+      return;
+    }
+    this.lastAppliedSequence = patch.sequence;
+
+    if (patch.kind === "chunk_snapshot") {
+      const chunk = toChunkSnapshotFromPatchPayload(patch.payload);
+      if (chunk) {
+        this.chunks = upsertChunk(this.chunks, chunk);
+        this.mergeKnownDiscovered([chunk]);
+        this.rebuildLayout();
+      }
+      return;
+    }
+
+    if (patch.kind === "hex_patch") {
+      const update = toHexPatchUpdate(patch.payload);
+      if (!update) {
+        return;
+      }
+
+      this.chunks = upsertHex(this.chunks, update, patch.blockNumber);
+      this.knownDiscoveredHexes.set(
+        normalizeHexCoordinate(update.hex.hexCoordinate),
+        update.hex
+      );
+      this.rebuildLayout();
+    }
+  }
 
   setSelectedHex(hexCoordinate: HexCoordinate | null): void {
     this.selectedHex = hexCoordinate;
@@ -400,13 +420,7 @@ export class CanvasMockRenderer implements ExplorerRenderer {
     this.canvas.style.height = `${this.cssHeight}px`;
     this.canvas.width = Math.floor(this.cssWidth * this.dpr);
     this.canvas.height = Math.floor(this.cssHeight * this.dpr);
-    this.layout = buildLayout(
-      this.chunks,
-      this.cssWidth,
-      this.cssHeight,
-      this.layerState,
-      this.knownDiscoveredHexes
-    );
+    this.rebuildLayout();
   }
 
   renderFrame(_nowMs: number): void {
@@ -475,6 +489,187 @@ export class CanvasMockRenderer implements ExplorerRenderer {
       this.handlers.onSelectHex?.(hit.hexCoordinate);
     }
   }
+
+  private mergeKnownDiscovered(chunks: ChunkSnapshot[]): void {
+    for (const chunk of chunks) {
+      for (const hex of chunk.hexes) {
+        this.knownDiscoveredHexes.set(normalizeHexCoordinate(hex.hexCoordinate), hex);
+      }
+    }
+  }
+
+  private rebuildLayout(): void {
+    this.layout = buildLayout(
+      this.chunks,
+      this.cssWidth,
+      this.cssHeight,
+      this.layerState,
+      this.knownDiscoveredHexes
+    );
+  }
+}
+
+interface HexPatchUpdate {
+  chunkKey: ChunkKey;
+  hex: ChunkSnapshot["hexes"][number];
+  headBlock?: number;
+}
+
+function toChunkSnapshotFromPatchPayload(payload: unknown): ChunkSnapshot | null {
+  if (isChunkSnapshotPayload(payload)) {
+    return payload;
+  }
+
+  if (
+    payload &&
+    typeof payload === "object" &&
+    "chunk" in payload &&
+    isChunkSnapshotPayload((payload as { chunk?: unknown }).chunk)
+  ) {
+    return (payload as { chunk: ChunkSnapshot }).chunk;
+  }
+
+  return null;
+}
+
+function toHexPatchUpdate(payload: unknown): HexPatchUpdate | null {
+  if (!payload || typeof payload !== "object") {
+    return null;
+  }
+
+  const row = payload as {
+    chunkKey?: unknown;
+    chunk?: { key?: unknown } | null;
+    hex?: unknown;
+    row?: unknown;
+    headBlock?: unknown;
+  };
+  const chunkKeyRaw = row.chunkKey ?? row.chunk?.key;
+  if (typeof chunkKeyRaw !== "string") {
+    return null;
+  }
+
+  const hexRaw = row.hex ?? row.row;
+  if (!isHexRenderRowPayload(hexRaw)) {
+    return null;
+  }
+
+  const headBlock =
+    typeof row.headBlock === "number" && Number.isFinite(row.headBlock)
+      ? Math.floor(row.headBlock)
+      : undefined;
+  const update: HexPatchUpdate = {
+    chunkKey: chunkKeyRaw as ChunkKey,
+    hex: hexRaw
+  };
+  if (headBlock !== undefined) {
+    update.headBlock = headBlock;
+  }
+  return update;
+}
+
+function isChunkSnapshotPayload(payload: unknown): payload is ChunkSnapshot {
+  if (!payload || typeof payload !== "object") {
+    return false;
+  }
+
+  const row = payload as {
+    schemaVersion?: unknown;
+    chunk?: { key?: unknown; chunkQ?: unknown; chunkR?: unknown } | null;
+    headBlock?: unknown;
+    hexes?: unknown;
+  };
+  if (row.schemaVersion !== "explorer-v1") {
+    return false;
+  }
+  if (!row.chunk || typeof row.chunk.key !== "string") {
+    return false;
+  }
+  if (typeof row.chunk.chunkQ !== "number" || typeof row.chunk.chunkR !== "number") {
+    return false;
+  }
+  if (typeof row.headBlock !== "number" || !Number.isFinite(row.headBlock)) {
+    return false;
+  }
+  if (!Array.isArray(row.hexes)) {
+    return false;
+  }
+
+  return row.hexes.every(isHexRenderRowPayload);
+}
+
+function isHexRenderRowPayload(
+  payload: unknown
+): payload is ChunkSnapshot["hexes"][number] {
+  if (!payload || typeof payload !== "object") {
+    return false;
+  }
+
+  const row = payload as {
+    hexCoordinate?: unknown;
+    biome?: unknown;
+    ownerAdventurerId?: unknown;
+    decayLevel?: unknown;
+    isClaimable?: unknown;
+    activeClaimCount?: unknown;
+    adventurerCount?: unknown;
+    plantCount?: unknown;
+  };
+
+  return (
+    typeof row.hexCoordinate === "string" &&
+    typeof row.biome === "string" &&
+    (typeof row.ownerAdventurerId === "string" || row.ownerAdventurerId === null) &&
+    typeof row.decayLevel === "number" &&
+    Number.isFinite(row.decayLevel) &&
+    typeof row.isClaimable === "boolean" &&
+    typeof row.activeClaimCount === "number" &&
+    Number.isFinite(row.activeClaimCount) &&
+    typeof row.adventurerCount === "number" &&
+    Number.isFinite(row.adventurerCount) &&
+    typeof row.plantCount === "number" &&
+    Number.isFinite(row.plantCount)
+  );
+}
+
+function upsertChunk(chunks: ChunkSnapshot[], updated: ChunkSnapshot): ChunkSnapshot[] {
+  const next = [...chunks];
+  const index = next.findIndex((chunk) => chunk.chunk.key === updated.chunk.key);
+  if (index === -1) {
+    next.push(updated);
+  } else {
+    next[index] = updated;
+  }
+  return next.sort((left, right) => compareChunkKeys(left.chunk.key, right.chunk.key));
+}
+
+function upsertHex(
+  chunks: ChunkSnapshot[],
+  update: HexPatchUpdate,
+  blockNumber: number
+): ChunkSnapshot[] {
+  const index = chunks.findIndex((chunk) => chunk.chunk.key === update.chunkKey);
+  const baseChunk = index === -1 ? createEmptyChunk(update.chunkKey) : chunks[index];
+  if (!baseChunk) {
+    return chunks;
+  }
+
+  const hexes = [...baseChunk.hexes];
+  const hexIndex = hexes.findIndex((hex) => {
+    return normalizeHexCoordinate(hex.hexCoordinate) === normalizeHexCoordinate(update.hex.hexCoordinate);
+  });
+  if (hexIndex === -1) {
+    hexes.push(update.hex);
+  } else {
+    hexes[hexIndex] = update.hex;
+  }
+
+  const updated: ChunkSnapshot = {
+    ...baseChunk,
+    headBlock: Math.max(baseChunk.headBlock, update.headBlock ?? 0, blockNumber),
+    hexes
+  };
+  return upsertChunk(chunks, updated);
 }
 
 function findHex(
@@ -494,6 +689,20 @@ function findHex(
 function parseChunkKey(key: ChunkKey): [number, number] {
   const [qRaw, rRaw] = key.split(":").map((value) => Number.parseInt(value, 10));
   return [qRaw ?? 0, rRaw ?? 0];
+}
+
+function createEmptyChunk(key: ChunkKey): ChunkSnapshot {
+  const [chunkQ, chunkR] = parseChunkKey(key);
+  return {
+    schemaVersion: "explorer-v1",
+    chunk: {
+      key,
+      chunkQ,
+      chunkR
+    },
+    headBlock: 0,
+    hexes: []
+  };
 }
 
 function compareChunkKeys(a: ChunkKey, b: ChunkKey): number {
@@ -617,33 +826,44 @@ function hexFillForLayer(
   hex: ChunkSnapshot["hexes"][number],
   layerState: LayerToggleState
 ): string {
+  const base = layerState.biome ? biomeColor(hex.biome) : "#1c2230";
+  const overlays: Array<{ color: string; alpha: number }> = [];
+
   if (layerState.claims) {
     if (hex.activeClaimCount > 0) {
-      return "#991a1a";
+      overlays.push({ color: "#b62222", alpha: 0.62 });
+    } else if (hex.isClaimable) {
+      overlays.push({ color: "#9a7a16", alpha: 0.56 });
     }
-    if (hex.isClaimable) {
-      return "#806000";
-    }
-    return "#2a2a2a";
   }
 
-  if (layerState.ownership) {
-    return hex.ownerAdventurerId ? "#0a6628" : "#222222";
+  if (layerState.ownership && hex.ownerAdventurerId !== null) {
+    overlays.push({ color: "#1f8e4c", alpha: 0.46 });
   }
 
-  if (layerState.adventurers) {
-    return hex.adventurerCount > 0 ? "#00802b" : "#1a1a1a";
+  if (layerState.adventurers && hex.adventurerCount > 0) {
+    overlays.push({ color: "#2c8ba6", alpha: 0.36 });
   }
 
-  if (layerState.resources) {
-    return hex.plantCount > 0 ? "#2d5a1e" : "#1a1a1a";
+  if (layerState.resources && hex.plantCount > 0) {
+    overlays.push({ color: "#4c8a2e", alpha: 0.34 });
   }
 
-  if (layerState.decay) {
-    return hex.decayLevel > 0 ? "#5c3a1e" : "#1e1e1e";
+  if (layerState.decay && hex.decayLevel > 0) {
+    const decayAlpha = Math.min(0.46, 0.18 + Math.min(hex.decayLevel, 100) / 240);
+    overlays.push({ color: "#8a552c", alpha: decayAlpha });
   }
 
-  return biomeColor(hex.biome);
+  if (overlays.length === 0) {
+    return layerState.biome ? base : "#1c2230";
+  }
+
+  let composed = parseHexRgb(base);
+  for (const overlay of overlays) {
+    composed = blendRgb(composed, parseHexRgb(overlay.color), overlay.alpha);
+  }
+
+  return toHexColor(composed);
 }
 
 function biomeColor(biome: string): string {
@@ -665,6 +885,41 @@ function biomeColor(biome: string): string {
     default:
       return "#252525";
   }
+}
+
+function parseHexRgb(hexColor: string): { r: number; g: number; b: number } {
+  const normalized = hexColor.trim();
+  if (!/^#[0-9a-fA-F]{6}$/.test(normalized)) {
+    return { r: 32, g: 36, b: 48 };
+  }
+
+  return {
+    r: Number.parseInt(normalized.slice(1, 3), 16),
+    g: Number.parseInt(normalized.slice(3, 5), 16),
+    b: Number.parseInt(normalized.slice(5, 7), 16)
+  };
+}
+
+function blendRgb(
+  base: { r: number; g: number; b: number },
+  overlay: { r: number; g: number; b: number },
+  alpha: number
+): { r: number; g: number; b: number } {
+  const clampedAlpha = Math.min(1, Math.max(0, alpha));
+  return {
+    r: Math.round(base.r * (1 - clampedAlpha) + overlay.r * clampedAlpha),
+    g: Math.round(base.g * (1 - clampedAlpha) + overlay.g * clampedAlpha),
+    b: Math.round(base.b * (1 - clampedAlpha) + overlay.b * clampedAlpha)
+  };
+}
+
+function toHexColor(rgb: { r: number; g: number; b: number }): string {
+  const red = Math.min(255, Math.max(0, Math.round(rgb.r)));
+  const green = Math.min(255, Math.max(0, Math.round(rgb.g)));
+  const blue = Math.min(255, Math.max(0, Math.round(rgb.b)));
+  return `#${red.toString(16).padStart(2, "0")}${green
+    .toString(16)
+    .padStart(2, "0")}${blue.toString(16).padStart(2, "0")}`;
 }
 
 function paintBackground(

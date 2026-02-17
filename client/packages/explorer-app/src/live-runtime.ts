@@ -1,4 +1,8 @@
-import type {
+import {
+  applyIncomingPatchMetadata,
+  applyStreamPatch,
+  createPatchReducerState,
+  createStreamState,
   ExplorerDataStore,
   ExplorerProxyClient,
   ExplorerSelectors,
@@ -34,15 +38,20 @@ import type {
   StreamPatchEnvelope
 } from "@gen-dungeon/explorer-types";
 import type { ExplorerAppDependencies } from "./contracts.js";
-import { CanvasMockRenderer } from "./dev-runtime.js";
+import { LiveWebglRendererAdapter } from "./live-webgl-renderer.js";
 
 export const DEFAULT_LIVE_TORII_GRAPHQL_URL =
   "https://api.cartridge.gg/x/gen-dungeon-live-20260215a/torii/graphql";
+export const DEFAULT_LIVE_PROXY_ORIGIN = "http://127.0.0.1:3001";
 
 const DEFAULT_CACHE_TTL_MS = 2_500;
 const DEFAULT_POLL_INTERVAL_MS = 4_000;
 const DEFAULT_CHUNK_SIZE = 1;
 const DEFAULT_QUERY_LIMIT = 2_000;
+const DEFAULT_MAX_PROXY_CHUNK_KEYS = 64;
+const VIEWPORT_CHUNK_SPAN_PX = 640;
+const PREFETCH_RING_CHUNKS = 1;
+const MAX_VIEWPORT_CHUNK_KEYS = 49;
 
 const AXIS_OFFSET = 1_048_576n;
 const AXIS_MASK = 2_097_151n;
@@ -251,18 +260,75 @@ query LiveSnapshot($hexLimit: Int!, $modelLimit: Int!) {
 
 export interface LiveRuntimeBundle {
   dependencies: ExplorerAppDependencies;
-  renderer: CanvasMockRenderer;
-  proxy: LiveToriiProxyClient;
+  renderer: ExplorerRenderer;
+  proxy: ExplorerProxyClient;
 }
 
 export interface LiveToriiRuntimeOptions {
+  proxyOrigin?: string;
   toriiGraphqlUrl?: string;
   cacheTtlMs?: number;
   pollIntervalMs?: number;
   chunkSize?: number;
   queryLimit?: number;
   fetchImpl?: typeof fetch;
+  webSocketFactory?: LiveProxyWebSocketFactory;
+  maxProxyChunkKeys?: number;
+  nowMs?: () => number;
 }
+
+interface ProxyChunksResponse {
+  schemaVersion: "explorer-v1";
+  chunks: ChunkSnapshot[];
+}
+
+interface ProxySearchResponse {
+  schemaVersion: "explorer-v1";
+  results: SearchResult[];
+}
+
+interface ProxyStatusResponse {
+  schemaVersion: "explorer-v1";
+  headBlock: number;
+  lastSequence: number;
+  streamLagMs: number;
+}
+
+interface LiveProxyMessageEvent {
+  data: unknown;
+}
+
+interface LiveProxyErrorEvent {
+  error?: unknown;
+  message?: string;
+}
+
+interface LiveProxyWebSocket {
+  readonly readyState: number;
+  addEventListener(type: "open", listener: () => void): void;
+  addEventListener(
+    type: "message",
+    listener: (event: LiveProxyMessageEvent) => void
+  ): void;
+  addEventListener(type: "close", listener: () => void): void;
+  addEventListener(
+    type: "error",
+    listener: (event: LiveProxyErrorEvent) => void
+  ): void;
+  removeEventListener(type: "open", listener: () => void): void;
+  removeEventListener(
+    type: "message",
+    listener: (event: LiveProxyMessageEvent) => void
+  ): void;
+  removeEventListener(type: "close", listener: () => void): void;
+  removeEventListener(
+    type: "error",
+    listener: (event: LiveProxyErrorEvent) => void
+  ): void;
+  close(code?: number, reason?: string): void;
+}
+
+export type LiveProxyWebSocketFactory = (url: string) => LiveProxyWebSocket;
 
 export interface ToriiHexRow {
   coordinate: HexCoordinate;
@@ -434,6 +500,12 @@ interface SnapshotBundle extends ToriiSnapshotRows {
   headBlock: number;
 }
 
+interface HexPatchUpdate {
+  chunkKey: ChunkKey;
+  headBlock?: number;
+  hex: HexRenderRow;
+}
+
 export interface BuildChunkOptions {
   chunkSize?: number;
   headBlock: number;
@@ -474,15 +546,27 @@ export function createLiveToriiRuntime(
   const fetchImpl =
     options.fetchImpl?.bind(globalThis) ?? globalThis.fetch.bind(globalThis);
   const store = new LiveStore();
-  const renderer = new CanvasMockRenderer(canvas);
-  const proxy = new LiveToriiProxyClient({
-    toriiGraphqlUrl: options.toriiGraphqlUrl ?? DEFAULT_LIVE_TORII_GRAPHQL_URL,
+  const renderer = new LiveWebglRendererAdapter(canvas);
+  const proxyClientOptions: {
+    proxyOrigin: string;
+    fetchImpl: typeof fetch;
+    cacheTtlMs: number;
+    maxChunkKeys: number;
+    webSocketFactory?: LiveProxyWebSocketFactory;
+    nowMs?: () => number;
+  } = {
+    proxyOrigin: options.proxyOrigin ?? DEFAULT_LIVE_PROXY_ORIGIN,
+    fetchImpl,
     cacheTtlMs: options.cacheTtlMs ?? DEFAULT_CACHE_TTL_MS,
-    pollIntervalMs: options.pollIntervalMs ?? DEFAULT_POLL_INTERVAL_MS,
-    chunkSize,
-    queryLimit: options.queryLimit ?? DEFAULT_QUERY_LIMIT,
-    fetchImpl
-  });
+    maxChunkKeys: options.maxProxyChunkKeys ?? DEFAULT_MAX_PROXY_CHUNK_KEYS
+  };
+  if (options.webSocketFactory) {
+    proxyClientOptions.webSocketFactory = options.webSocketFactory;
+  }
+  if (options.nowMs) {
+    proxyClientOptions.nowMs = options.nowMs;
+  }
+  const proxy = new LiveProxyHttpClient(proxyClientOptions);
   const selectors = createLiveSelectors(store, chunkSize);
 
   return {
@@ -648,13 +732,14 @@ export function buildChunkSnapshotsFromToriiRows(
 
     const decay = decayByHex.get(hex.coordinate);
     const decayLevel = toSafeNumber(decay?.decay_level, 0);
+    const claimableSinceBlock = toSafeNumber(decay?.claimable_since_block, 0);
 
     const row: HexRenderRow = {
       hexCoordinate: hex.coordinate,
       biome: String(hex.biome),
       ownerAdventurerId,
       decayLevel,
-      isClaimable: decayLevel >= 80,
+      isClaimable: claimableSinceBlock > 0,
       activeClaimCount: activeClaimCountByHex.get(hex.coordinate) ?? 0,
       adventurerCount: adventurerCountByHex.get(hex.coordinate) ?? 0,
       plantCount: plantCountByHex.get(hex.coordinate) ?? 0
@@ -674,17 +759,43 @@ export function buildChunkSnapshotsFromToriiRows(
 function createLiveSelectors(store: LiveStore, chunkSize: number): ExplorerSelectors {
   return {
     visibleChunkKeys(viewport) {
+      const zoom = Math.min(4, Math.max(0.25, viewport.zoom));
+      const scaledWidth = viewport.width / zoom;
+      const scaledHeight = viewport.height / zoom;
       const centerQ = floorDiv(Math.round(viewport.center.x), chunkSize);
       const centerR = floorDiv(Math.round(viewport.center.y), chunkSize);
+      const visibleRadiusQ = Math.max(
+        0,
+        Math.ceil(scaledWidth / (chunkSize * VIEWPORT_CHUNK_SPAN_PX)) - 1
+      );
+      const visibleRadiusR = Math.max(
+        0,
+        Math.ceil(scaledHeight / (chunkSize * VIEWPORT_CHUNK_SPAN_PX)) - 1
+      );
+      const queryRadiusQ = visibleRadiusQ + PREFETCH_RING_CHUNKS;
+      const queryRadiusR = visibleRadiusR + PREFETCH_RING_CHUNKS;
       const keys: ChunkKey[] = [];
 
-      for (let qDelta = -1; qDelta <= 1; qDelta += 1) {
-        for (let rDelta = -1; rDelta <= 1; rDelta += 1) {
+      for (let qDelta = -queryRadiusQ; qDelta <= queryRadiusQ; qDelta += 1) {
+        for (let rDelta = -queryRadiusR; rDelta <= queryRadiusR; rDelta += 1) {
           keys.push(`${centerQ + qDelta}:${centerR + rDelta}` as ChunkKey);
         }
       }
 
-      return keys.sort(compareChunkKeys);
+      const bounded = keys
+        .sort((left, right) => {
+          const [leftQ, leftR] = parseChunkKey(left);
+          const [rightQ, rightR] = parseChunkKey(right);
+          const leftDistance = Math.abs(leftQ - centerQ) + Math.abs(leftR - centerR);
+          const rightDistance = Math.abs(rightQ - centerQ) + Math.abs(rightR - centerR);
+          if (leftDistance !== rightDistance) {
+            return leftDistance - rightDistance;
+          }
+          return compareChunkKeys(left, right);
+        })
+        .slice(0, MAX_VIEWPORT_CHUNK_KEYS);
+
+      return bounded.sort(compareChunkKeys);
     },
     visibleHexes(_viewport, layers) {
       const loaded = store.snapshot().loadedChunks;
@@ -716,12 +827,60 @@ function filterHexesByLayer(
 class LiveStore implements ExplorerDataStore {
   private chunks: ChunkSnapshot[] = [];
   private selectedHex: HexCoordinate | null = null;
+  private patchState = createPatchReducerState();
+  private streamState = createStreamState();
+  private awaitingSnapshotResync = false;
 
   replaceChunks(chunks: ChunkSnapshot[]): void {
     this.chunks = chunks;
+    if (this.awaitingSnapshotResync || this.streamState.resyncRequired) {
+      this.awaitingSnapshotResync = false;
+      this.streamState = {
+        ...this.streamState,
+        status: "live",
+        resyncRequired: false
+      };
+    }
   }
 
-  applyPatch(_patch: StreamPatchEnvelope): void {}
+  applyPatch(patch: StreamPatchEnvelope): void {
+    this.streamState = applyIncomingPatchMetadata(this.streamState, patch);
+    if (patch.kind === "resync_required" || this.streamState.resyncRequired) {
+      this.awaitingSnapshotResync = true;
+      this.streamState = {
+        ...this.streamState,
+        status: "catching_up",
+        resyncRequired: true
+      };
+    }
+
+    const nextPatchState = applyStreamPatch(this.patchState, patch);
+    if (nextPatchState === this.patchState) {
+      return;
+    }
+    this.patchState = nextPatchState;
+
+    if (this.awaitingSnapshotResync || patch.kind === "resync_required") {
+      return;
+    }
+
+    if (patch.kind === "chunk_snapshot") {
+      const chunk = toChunkSnapshotFromPatchPayload(patch.payload);
+      if (!chunk) {
+        return;
+      }
+      this.upsertChunk(chunk);
+      return;
+    }
+
+    if (patch.kind === "hex_patch") {
+      const update = toHexPatchUpdate(patch.payload);
+      if (!update) {
+        return;
+      }
+      this.upsertHex(update, patch.blockNumber);
+    }
+  }
 
   evictChunk(key: ChunkKey): void {
     this.chunks = this.chunks.filter((chunk) => chunk.chunk.key !== key);
@@ -733,11 +892,254 @@ class LiveStore implements ExplorerDataStore {
 
   snapshot() {
     return {
-      status: "live" as const,
+      status: this.streamState.status,
       headBlock: this.chunks.reduce((max, chunk) => Math.max(max, chunk.headBlock), 0),
       selectedHex: this.selectedHex,
       loadedChunks: this.chunks
     };
+  }
+
+  private upsertChunk(chunk: ChunkSnapshot): void {
+    const next = [...this.chunks];
+    const index = next.findIndex((entry) => entry.chunk.key === chunk.chunk.key);
+    if (index === -1) {
+      next.push(chunk);
+    } else {
+      next[index] = chunk;
+    }
+    this.chunks = next.sort((left, right) => compareChunkKeys(left.chunk.key, right.chunk.key));
+  }
+
+  private upsertHex(update: HexPatchUpdate, fallbackHeadBlock: number): void {
+    const next = [...this.chunks];
+    const index = next.findIndex((entry) => entry.chunk.key === update.chunkKey);
+    const existing = index === -1 ? null : next[index];
+    const baseChunk = existing ?? createEmptyChunk(update.chunkKey);
+
+    const hexes = [...baseChunk.hexes];
+    const hexIndex = hexes.findIndex(
+      (entry) => normalizeHex(entry.hexCoordinate) === normalizeHex(update.hex.hexCoordinate)
+    );
+    if (hexIndex === -1) {
+      hexes.push(update.hex);
+    } else {
+      hexes[hexIndex] = update.hex;
+    }
+
+    const headBlock = Math.max(baseChunk.headBlock, update.headBlock ?? 0, fallbackHeadBlock);
+    const updated: ChunkSnapshot = {
+      ...baseChunk,
+      headBlock,
+      hexes
+    };
+
+    if (index === -1) {
+      next.push(updated);
+    } else {
+      next[index] = updated;
+    }
+    this.chunks = next.sort((left, right) => compareChunkKeys(left.chunk.key, right.chunk.key));
+  }
+}
+
+export class LiveProxyHttpClient implements ExplorerProxyClient {
+  private readonly proxyOrigin: string;
+  private readonly fetchImpl: typeof fetch;
+  private readonly cacheTtlMs: number;
+  private readonly maxChunkKeys: number;
+  private readonly nowMs: () => number;
+  private readonly webSocketFactory: LiveProxyWebSocketFactory;
+  private readonly chunkCache = new Map<
+    ChunkKey,
+    { cachedAtMs: number; chunk: ChunkSnapshot }
+  >();
+
+  constructor(options: {
+    proxyOrigin: string;
+    fetchImpl: typeof fetch;
+    cacheTtlMs: number;
+    maxChunkKeys: number;
+    webSocketFactory?: LiveProxyWebSocketFactory;
+    nowMs?: () => number;
+  }) {
+    this.proxyOrigin = options.proxyOrigin.replace(/\/+$/, "");
+    this.fetchImpl = options.fetchImpl;
+    this.cacheTtlMs = Math.max(0, Math.floor(options.cacheTtlMs));
+    this.maxChunkKeys = Math.max(1, Math.floor(options.maxChunkKeys));
+    this.nowMs = options.nowMs ?? Date.now;
+    this.webSocketFactory =
+      options.webSocketFactory ??
+      ((url) => {
+        if (typeof WebSocket === "undefined") {
+          throw new Error("WebSocket is not available in this runtime");
+        }
+        return new WebSocket(url) as unknown as LiveProxyWebSocket;
+      });
+  }
+
+  async getChunks(keys: ChunkKey[]): Promise<ChunkSnapshot[]> {
+    const normalizedKeys = Array.from(new Set(keys)).slice(0, this.maxChunkKeys);
+    if (normalizedKeys.length === 0) {
+      return [];
+    }
+
+    const now = this.nowMs();
+    const missing: ChunkKey[] = [];
+    for (const key of normalizedKeys) {
+      const cached = this.chunkCache.get(key);
+      if (!cached || now - cached.cachedAtMs >= this.cacheTtlMs) {
+        missing.push(key);
+      }
+    }
+
+    if (missing.length > 0) {
+      const params = new URLSearchParams();
+      params.set("keys", missing.join(","));
+      const response = await this.fetchJson<ProxyChunksResponse>(
+        `/v1/chunks?${params.toString()}`
+      );
+      const byKey = new Map(response.chunks.map((chunk) => [chunk.chunk.key, chunk]));
+      for (const key of missing) {
+        const chunk = byKey.get(key);
+        if (!chunk) {
+          this.chunkCache.delete(key);
+          continue;
+        }
+        this.chunkCache.set(key, {
+          cachedAtMs: now,
+          chunk
+        });
+      }
+    }
+
+    return normalizedKeys.flatMap((key) => {
+      const cached = this.chunkCache.get(key);
+      return cached ? [cached.chunk] : [];
+    });
+  }
+
+  async getHexInspect(hexCoordinate: HexCoordinate): Promise<HexInspectPayload> {
+    return this.fetchJson<HexInspectPayload>(`/v1/hex/${encodeURIComponent(hexCoordinate)}`);
+  }
+
+  async search(query: SearchQuery): Promise<SearchResult[]> {
+    const params = new URLSearchParams();
+    if (query.coord) {
+      params.set("coord", query.coord);
+    } else if (query.owner) {
+      params.set("owner", query.owner);
+    } else if (query.adventurer) {
+      params.set("adventurer", query.adventurer);
+    }
+    if (query.limit !== undefined) {
+      params.set("limit", String(query.limit));
+    }
+
+    const response = await this.fetchJson<ProxySearchResponse>(
+      `/v1/search?${params.toString()}`
+    );
+    return response.results;
+  }
+
+  async getEventTail(_query: EventTailQuery): Promise<EventTailRow[]> {
+    return [];
+  }
+
+  subscribePatches(handlers: PatchStreamHandlers) {
+    let closed = false;
+    let socket: LiveProxyWebSocket | null = null;
+
+    const onOpen = (): void => {
+      handlers.onStatus("live");
+    };
+    const onClose = (): void => {
+      if (closed) {
+        return;
+      }
+      handlers.onStatus("degraded");
+    };
+    const onError = (event: LiveProxyErrorEvent): void => {
+      if (closed) {
+        return;
+      }
+      handlers.onStatus("degraded");
+      const details =
+        event.error instanceof Error
+          ? event.error
+          : new Error(event.message ?? "proxy websocket error");
+      handlers.onError(details);
+    };
+    const onMessage = (event: LiveProxyMessageEvent): void => {
+      if (closed) {
+        return;
+      }
+
+      try {
+        const patch = decodeProxyPatchEnvelope(event.data);
+        handlers.onPatch(patch);
+      } catch (error) {
+        handlers.onStatus("degraded");
+        handlers.onError(error instanceof Error ? error : new Error(String(error)));
+      }
+    };
+
+    const bootstrap = async (): Promise<void> => {
+      handlers.onStatus("catching_up");
+      try {
+        await this.fetchJson<ProxyStatusResponse>("/v1/status");
+      } catch (error) {
+        handlers.onStatus("degraded");
+        handlers.onError(error instanceof Error ? error : new Error(String(error)));
+        return;
+      }
+
+      if (closed) {
+        return;
+      }
+
+      const streamUrl = buildWebSocketUrl(this.proxyOrigin, "/v1/stream");
+      socket = this.webSocketFactory(streamUrl);
+      socket.addEventListener("open", onOpen);
+      socket.addEventListener("message", onMessage);
+      socket.addEventListener("close", onClose);
+      socket.addEventListener("error", onError);
+    };
+
+    void bootstrap();
+
+    return {
+      close: () => {
+        if (closed) {
+          return;
+        }
+        closed = true;
+        if (socket) {
+          socket.removeEventListener("open", onOpen);
+          socket.removeEventListener("message", onMessage);
+          socket.removeEventListener("close", onClose);
+          socket.removeEventListener("error", onError);
+          socket.close();
+          socket = null;
+        }
+      }
+    };
+  }
+
+  private async fetchJson<TResponse>(pathAndQuery: string): Promise<TResponse> {
+    const response = await this.fetchImpl(`${this.proxyOrigin}${pathAndQuery}`, {
+      method: "GET",
+      headers: {
+        accept: "application/json"
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `Proxy request failed (${response.status}) for ${pathAndQuery}`
+      );
+    }
+
+    return (await response.json()) as TResponse;
   }
 }
 
@@ -1093,6 +1495,178 @@ export class LiveToriiProxyClient implements ExplorerProxyClient {
 
     return json.data;
   }
+}
+
+function buildWebSocketUrl(origin: string, path: string): string {
+  const normalized = origin.replace(/\/+$/, "");
+  if (normalized.startsWith("https://")) {
+    return `wss://${normalized.slice("https://".length)}${path}`;
+  }
+  if (normalized.startsWith("http://")) {
+    return `ws://${normalized.slice("http://".length)}${path}`;
+  }
+  return `${normalized}${path}`;
+}
+
+function decodeProxyPatchEnvelope(data: unknown): StreamPatchEnvelope {
+  const raw = decodeWebSocketMessageData(data);
+  const parsed = JSON.parse(raw) as Partial<StreamPatchEnvelope>;
+  if (
+    typeof parsed.sequence !== "number" ||
+    typeof parsed.blockNumber !== "number" ||
+    typeof parsed.txIndex !== "number" ||
+    typeof parsed.eventIndex !== "number" ||
+    typeof parsed.kind !== "string"
+  ) {
+    throw new Error("proxy stream payload is not a valid patch envelope");
+  }
+
+  return parsed as StreamPatchEnvelope;
+}
+
+function decodeWebSocketMessageData(data: unknown): string {
+  if (typeof data === "string") {
+    return data;
+  }
+
+  if (data instanceof ArrayBuffer) {
+    return new TextDecoder().decode(data);
+  }
+
+  if (ArrayBuffer.isView(data)) {
+    return new TextDecoder().decode(data);
+  }
+
+  throw new Error("proxy websocket message must be text or binary");
+}
+
+function toChunkSnapshotFromPatchPayload(payload: unknown): ChunkSnapshot | null {
+  if (isChunkSnapshotPayload(payload)) {
+    return payload;
+  }
+
+  if (
+    payload &&
+    typeof payload === "object" &&
+    "chunk" in payload &&
+    isChunkSnapshotPayload((payload as { chunk?: unknown }).chunk)
+  ) {
+    return (payload as { chunk: ChunkSnapshot }).chunk;
+  }
+
+  return null;
+}
+
+function toHexPatchUpdate(payload: unknown): HexPatchUpdate | null {
+  if (!payload || typeof payload !== "object") {
+    return null;
+  }
+
+  const row = payload as {
+    chunkKey?: unknown;
+    chunk?: { key?: unknown } | null;
+    hex?: unknown;
+    row?: unknown;
+    headBlock?: unknown;
+  };
+  const chunkKeyRaw = row.chunkKey ?? row.chunk?.key;
+  if (typeof chunkKeyRaw !== "string") {
+    return null;
+  }
+
+  const hexRaw = row.hex ?? row.row;
+  if (!isHexRenderRowPayload(hexRaw)) {
+    return null;
+  }
+
+  const headBlock =
+    typeof row.headBlock === "number" && Number.isFinite(row.headBlock)
+      ? Math.floor(row.headBlock)
+      : undefined;
+
+  const update: HexPatchUpdate = {
+    chunkKey: chunkKeyRaw as ChunkKey,
+    hex: hexRaw
+  };
+  if (headBlock !== undefined) {
+    update.headBlock = headBlock;
+  }
+  return update;
+}
+
+function isChunkSnapshotPayload(payload: unknown): payload is ChunkSnapshot {
+  if (!payload || typeof payload !== "object") {
+    return false;
+  }
+
+  const row = payload as {
+    schemaVersion?: unknown;
+    chunk?: { key?: unknown; chunkQ?: unknown; chunkR?: unknown } | null;
+    headBlock?: unknown;
+    hexes?: unknown;
+  };
+  if (row.schemaVersion !== "explorer-v1") {
+    return false;
+  }
+  if (!row.chunk || typeof row.chunk.key !== "string") {
+    return false;
+  }
+  if (typeof row.chunk.chunkQ !== "number" || typeof row.chunk.chunkR !== "number") {
+    return false;
+  }
+  if (typeof row.headBlock !== "number" || !Number.isFinite(row.headBlock)) {
+    return false;
+  }
+  if (!Array.isArray(row.hexes)) {
+    return false;
+  }
+  return row.hexes.every(isHexRenderRowPayload);
+}
+
+function isHexRenderRowPayload(payload: unknown): payload is HexRenderRow {
+  if (!payload || typeof payload !== "object") {
+    return false;
+  }
+
+  const row = payload as {
+    hexCoordinate?: unknown;
+    biome?: unknown;
+    ownerAdventurerId?: unknown;
+    decayLevel?: unknown;
+    isClaimable?: unknown;
+    activeClaimCount?: unknown;
+    adventurerCount?: unknown;
+    plantCount?: unknown;
+  };
+
+  return (
+    typeof row.hexCoordinate === "string" &&
+    typeof row.biome === "string" &&
+    (typeof row.ownerAdventurerId === "string" || row.ownerAdventurerId === null) &&
+    typeof row.decayLevel === "number" &&
+    Number.isFinite(row.decayLevel) &&
+    typeof row.isClaimable === "boolean" &&
+    typeof row.activeClaimCount === "number" &&
+    Number.isFinite(row.activeClaimCount) &&
+    typeof row.adventurerCount === "number" &&
+    Number.isFinite(row.adventurerCount) &&
+    typeof row.plantCount === "number" &&
+    Number.isFinite(row.plantCount)
+  );
+}
+
+function createEmptyChunk(key: ChunkKey): ChunkSnapshot {
+  const [chunkQ, chunkR] = parseChunkKey(key);
+  return {
+    schemaVersion: "explorer-v1",
+    chunk: {
+      key,
+      chunkQ,
+      chunkR
+    },
+    headBlock: 0,
+    hexes: []
+  };
 }
 
 function toNodes<TNode>(connection: GraphqlConnection<TNode> | null | undefined): TNode[] {

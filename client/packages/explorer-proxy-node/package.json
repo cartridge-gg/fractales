@@ -9,10 +9,16 @@
     ".": "./src/index.ts"
   },
   "scripts": {
+    "dev": "bun src/server-main.ts",
+    "start": "bun src/server-main.ts",
     "test": "vitest run tests"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.18.1"
   },
   "dependencies": {
     "@gen-dungeon/explorer-types": "workspace:*",
-    "@gen-dungeon/torii-views": "workspace:*"
+    "@gen-dungeon/torii-views": "workspace:*",
+    "ws": "^8.18.3"
   }
 }

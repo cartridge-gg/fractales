@@ -88,13 +88,19 @@ class FakeStore implements ExplorerDataStore {
   private chunks: ChunkSnapshot[] = [];
   private selectedHex: string | null = null;
   private patches: StreamPatchEnvelope[] = [];
+  private lastSequence = 0;
 
   replaceChunks(chunks: ChunkSnapshot[]): void {
     this.chunks = chunks;
   }
 
   applyPatch(patch: StreamPatchEnvelope): void {
+    if (patch.sequence <= this.lastSequence) {
+      return;
+    }
+    this.lastSequence = patch.sequence;
     this.patches.push(patch);
+    this.chunks = applyPatchToChunks(this.chunks, patch);
   }
 
   evictChunk(key: `${number}:${number}`): void {
@@ -211,6 +217,10 @@ class FakeProxyClient implements ExplorerProxyClient {
   emitStatus(status: StreamStatus): void {
     this.handlers?.onStatus(status);
   }
+
+  emitPatch(patch: StreamPatchEnvelope): void {
+    this.handlers?.onPatch(patch);
+  }
 }
 
 class FakeUi implements ExplorerUiBindings {
@@ -239,6 +249,64 @@ class FakeUi implements ExplorerUiBindings {
   setInspectPayload(payload: HexInspectPayload | null): void {
     this.inspectPayloads.push(payload);
   }
+}
+
+function applyPatchToChunks(
+  chunks: ChunkSnapshot[],
+  patch: StreamPatchEnvelope
+): ChunkSnapshot[] {
+  if (patch.kind === "chunk_snapshot") {
+    const payload = patch.payload as ChunkSnapshot;
+    if (!payload?.chunk?.key || !Array.isArray(payload.hexes)) {
+      return chunks;
+    }
+    return upsertChunk(chunks, payload);
+  }
+
+  if (patch.kind === "hex_patch") {
+    const payload = patch.payload as {
+      chunkKey?: `${number}:${number}`;
+      hex?: ChunkSnapshot["hexes"][number];
+    };
+    if (!payload.chunkKey || !payload.hex) {
+      return chunks;
+    }
+
+    const index = chunks.findIndex((chunk) => chunk.chunk.key === payload.chunkKey);
+    const base =
+      index === -1
+        ? chunk(payload.chunkKey, [])
+        : chunks[index] ?? chunk(payload.chunkKey, []);
+    const hexes = [...base.hexes];
+    const hexIndex = hexes.findIndex((hex) => hex.hexCoordinate === payload.hex?.hexCoordinate);
+    if (hexIndex === -1) {
+      hexes.push(payload.hex);
+    } else {
+      hexes[hexIndex] = payload.hex;
+    }
+    const updated: ChunkSnapshot = {
+      ...base,
+      headBlock: Math.max(base.headBlock, patch.blockNumber),
+      hexes
+    };
+    return upsertChunk(chunks, updated);
+  }
+
+  return chunks;
+}
+
+function upsertChunk(
+  chunks: ChunkSnapshot[],
+  updated: ChunkSnapshot
+): ChunkSnapshot[] {
+  const next = [...chunks];
+  const index = next.findIndex((chunk) => chunk.chunk.key === updated.chunk.key);
+  if (index === -1) {
+    next.push(updated);
+  } else {
+    next[index] = updated;
+  }
+  return next.sort((left, right) => left.chunk.key.localeCompare(right.chunk.key));
 }
 
 function createHarness() {
@@ -386,6 +454,39 @@ describe("explorer app flows (RED)", () => {
     expect(ui.statuses).toContain("degraded");
     expect(app.snapshot().status).toBe("live");
     expect(renderer.disposedCount).toBe(0);
+  });
+
+  it("flow.patch_updates_visible_hexes_without_full_reload.red", async () => {
+    const { app, proxy } = createHarness();
+    await app.mount();
+    const initialLoads = proxy.chunkCalls.length;
+
+    proxy.emitPatch({
+      schemaVersion: "explorer-v1",
+      sequence: 1,
+      blockNumber: 111,
+      txIndex: 0,
+      eventIndex: 0,
+      kind: "hex_patch",
+      payload: {
+        chunkKey: "0:0",
+        hex: {
+          hexCoordinate: "0x30",
+          biome: "Plains",
+          ownerAdventurerId: null,
+          decayLevel: 0,
+          isClaimable: false,
+          activeClaimCount: 0,
+          adventurerCount: 0,
+          plantCount: 0
+        }
+      },
+      emittedAtMs: 111
+    });
+    await Promise.resolve();
+
+    expect(app.snapshot().visibleHexes.map((hex) => hex.hexCoordinate)).toContain("0x30");
+    expect(proxy.chunkCalls.length).toBe(initialLoads);
   });
 
   it("flow.deep_link_restore_coord_owner_adventurer.red", async () => {

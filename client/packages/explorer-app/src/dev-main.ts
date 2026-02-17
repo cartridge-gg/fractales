@@ -1,10 +1,14 @@
 import { createExplorerApp } from "./app.js";
 import type { ExplorerUiBindings } from "./contracts.js";
 import { createDevRuntime } from "./dev-runtime.js";
-import { renderInspectPanelHtml } from "./inspect-format.js";
+import type { HexInspectPayload } from "@gen-dungeon/explorer-types";
+import {
+  renderInspectPanelHtml,
+  type InspectDetailMode
+} from "./inspect-format.js";
 import {
   createLiveToriiRuntime,
-  DEFAULT_LIVE_TORII_GRAPHQL_URL
+  DEFAULT_LIVE_PROXY_ORIGIN
 } from "./live-runtime.js";
 import "./dev.css";
 
@@ -14,6 +18,7 @@ const urlLabel = getRequiredElement<HTMLElement>("#url-label");
 const inspectSelected = getRequiredElement<HTMLElement>("#inspect-selected");
 const inspectLayout = getRequiredElement<HTMLElement>("#inspect-layout");
 const inspectDetails = getRequiredElement<HTMLElement>("#inspect-details");
+const inspectModeToggle = getRequiredElement<HTMLButtonElement>("#inspect-mode-toggle");
 const visibleList = getRequiredElement<HTMLOListElement>("#visible-list");
 const snapshotLine = getRequiredElement<HTMLElement>("#snapshot-line");
 const searchResults = getRequiredElement<HTMLUListElement>("#search-results");
@@ -26,16 +31,20 @@ const controlGrid = getRequiredElement<HTMLElement>("#control-grid");
 
 const params = new URLSearchParams(window.location.search);
 const runtimeMode = params.get("source") === "mock" ? "mock" : "live";
-const liveToriiGraphqlUrl = params.get("torii") ?? DEFAULT_LIVE_TORII_GRAPHQL_URL;
+const liveProxyOrigin = params.get("proxy") ?? DEFAULT_LIVE_PROXY_ORIGIN;
 const runtime =
   runtimeMode === "mock"
     ? createDevRuntime(canvas)
     : createLiveToriiRuntime(canvas, {
-        toriiGraphqlUrl: liveToriiGraphqlUrl
+        proxyOrigin: liveProxyOrigin
       });
 const routeBasePath = runtimeMode === "mock" ? "/explorer/mock" : "/explorer/live";
 urlLabel.textContent = routeBasePath;
 routeInput.value = routeBasePath;
+
+let inspectMode: InspectDetailMode = "compact";
+let inspectPayload: HexInspectPayload | null = null;
+syncInspectModeToggle();
 
 const ui: ExplorerUiBindings = {
   setConnectionStatus(status) {
@@ -58,7 +67,8 @@ const ui: ExplorerUiBindings = {
     inspectSelected.textContent = `selected: ${hexCoordinate ?? "none"}`;
   },
   setInspectPayload(payload) {
-    inspectDetails.innerHTML = renderInspectPanelHtml(payload);
+    inspectPayload = payload;
+    renderInspectPayload();
   },
   setSearchResults(results) {
     searchResults.innerHTML = "";
@@ -69,6 +79,12 @@ const ui: ExplorerUiBindings = {
     }
   }
 };
+
+inspectModeToggle.addEventListener("click", () => {
+  inspectMode = inspectMode === "compact" ? "full" : "compact";
+  syncInspectModeToggle();
+  renderInspectPayload();
+});
 
 const app = createExplorerApp(runtime.dependencies, {
   ui,
@@ -289,4 +305,14 @@ function getRequiredElement<TElement extends Element>(selector: string): TElemen
     throw new Error(`Missing required element: ${selector}`);
   }
   return element;
+}
+
+function renderInspectPayload(): void {
+  inspectDetails.innerHTML = renderInspectPanelHtml(inspectPayload, {
+    mode: inspectMode
+  });
+}
+
+function syncInspectModeToggle(): void {
+  inspectModeToggle.textContent = inspectMode === "compact" ? "Full" : "Compact";
 }

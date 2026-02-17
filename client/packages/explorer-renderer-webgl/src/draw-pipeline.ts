@@ -6,7 +6,7 @@ import {
   CLAIM_OVERLAY_SYMBOLS
 } from "./render-constants.js";
 
-export type OverlayMode = "biome" | "claims";
+export type OverlayMode = "biome" | "claims" | "composite";
 
 export function renderSceneSnapshot(
   chunks: ChunkSnapshot[],
@@ -78,6 +78,10 @@ function overlayForHex(
     return biomeOverlaySymbol(hex.biome);
   }
 
+  if (mode === "composite") {
+    return compositeSignalSymbol(hex);
+  }
+
   if (hex.activeClaimCount > 0) {
     return CLAIM_OVERLAY_SYMBOLS.active;
   }
@@ -97,6 +101,10 @@ function glyphForHex(
     return biomeGlyph(hex.biome);
   }
 
+  if (mode === "composite") {
+    return compositeSignalGlyph(hex);
+  }
+
   if (hex.activeClaimCount > 0) {
     return CLAIM_GLYPHS.active;
   }
@@ -110,6 +118,44 @@ function glyphForHex(
 
 function biomeOverlaySymbol(biome: string): string {
   return biomeGlyph(biome).charAt(0);
+}
+
+function compositeSignalSymbol(hex: ChunkSnapshot["hexes"][number]): string {
+  const tokens = compositeSignalTokens(hex);
+  if (tokens.length === 0) {
+    return ".";
+  }
+  return tokens.slice(0, 3).join("");
+}
+
+function compositeSignalGlyph(hex: ChunkSnapshot["hexes"][number]): string {
+  const tokens = compositeSignalTokens(hex);
+  if (tokens.length === 0) {
+    return biomeGlyph(hex.biome);
+  }
+  return tokens.slice(0, 3).join("").padEnd(3, "_");
+}
+
+function compositeSignalTokens(hex: ChunkSnapshot["hexes"][number]): string[] {
+  const tokens: string[] = [];
+  if (hex.activeClaimCount > 0) {
+    tokens.push("C");
+  } else if (hex.isClaimable) {
+    tokens.push("c");
+  }
+  if (hex.ownerAdventurerId) {
+    tokens.push("O");
+  }
+  if (hex.adventurerCount > 0) {
+    tokens.push("A");
+  }
+  if (hex.plantCount > 0) {
+    tokens.push("R");
+  }
+  if (hex.decayLevel > 0) {
+    tokens.push("D");
+  }
+  return tokens;
 }
 
 function biomeGlyph(biome: string): string {

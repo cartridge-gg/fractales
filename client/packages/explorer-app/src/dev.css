@@ -330,6 +330,28 @@ select {
   letter-spacing: 0.06em;
 }
 
+.inspect-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.inspect-mode-toggle {
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.inspect-mode-toggle:hover {
+  border-color: var(--accent);
+}
+
 .inspect-panel p {
   margin: 0 0 8px;
   color: var(--muted);
@@ -389,6 +411,19 @@ select {
 .inspect-empty p {
   margin: 0;
   font-size: 0.8rem;
+}
+
+.inspect-raw-pre {
+  margin: 0;
+  max-height: 180px;
+  overflow: auto;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: var(--muted);
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--line-soft);
+  border-radius: 4px;
+  padding: 8px;
 }
 
 .inspect-hero {

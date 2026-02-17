@@ -153,4 +153,43 @@ describe("inspect formatter (RED)", () => {
     expect(output).toContain("inspect-table");
     expect(output).toContain("title=");
   });
+
+  it("renders event tail rows in inspect table.red", () => {
+    const payload = inspectFixture();
+    payload.eventTail = [
+      {
+        blockNumber: 222,
+        txIndex: 1,
+        eventIndex: 0,
+        eventName: "ClaimStarted",
+        payloadJson: "{}"
+      },
+      {
+        blockNumber: 223,
+        txIndex: 0,
+        eventIndex: 4,
+        eventName: "ClaimDefended",
+        payloadJson: "{}"
+      }
+    ];
+
+    const output = renderInspectPanelHtml(payload);
+    expect(output).toContain("<h3>Events (2)</h3>");
+    expect(output).toContain("222/1/0");
+    expect(output).toContain("ClaimStarted");
+    expect(output).toContain("223/0/4");
+    expect(output).toContain("ClaimDefended");
+  });
+
+  it("supports compact/full mode and exposes raw field names in full.red", () => {
+    const payload = inspectFixture();
+    const compact = renderInspectPanelHtml(payload, { mode: "compact" });
+    const full = renderInspectPanelHtml(payload, { mode: "full" });
+
+    expect(compact).not.toContain("Hex Raw Fields");
+    expect(full).toContain("Hex Raw Fields");
+    expect(full).toContain("last_energy_payment_block");
+    expect(full).toContain("weight_per_unit");
+    expect(full.length).toBeGreaterThan(compact.length);
+  });
 });

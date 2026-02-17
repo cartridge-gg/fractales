@@ -384,6 +384,8 @@ Exit criteria:
 Exit criteria:
 - p95 freshness under 2s
 - baseline mobile sustained 30 FPS
+- hardening gate passes via `bun run test:perf-smoke`
+- CI publishes `artifacts/p5-hardening-gate-report.json`
 
 ## 16. Risks and Mitigations
 

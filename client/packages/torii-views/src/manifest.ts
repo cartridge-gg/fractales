@@ -21,13 +21,25 @@ export const toriiViewsManifestV1: ToriiViewsManifest = {
       id: "explorer_hex_base_v1",
       sqlPath: "sql/views/v1/explorer_hex_base_v1.sql",
       description: "Base discovered hex rows with decay overlays.",
-      requiredModelFields: ["Hex.coordinate", "Hex.biome", "Hex.is_discovered", "HexDecayState.decay_level"]
+      requiredModelFields: [
+        "Hex.coordinate",
+        "Hex.biome",
+        "Hex.is_discovered",
+        "HexDecayState.decay_level",
+        "HexDecayState.claimable_since_block"
+      ]
     },
     {
       id: "explorer_hex_render_v1",
       sqlPath: "sql/views/v1/explorer_hex_render_v1.sql",
       description: "Chunk render payload rows for discovered hexes.",
-      requiredModelFields: ["Hex.coordinate", "Hex.biome", "Hex.is_discovered", "HexDecayState.decay_level"]
+      requiredModelFields: [
+        "Hex.coordinate",
+        "Hex.biome",
+        "Hex.is_discovered",
+        "HexDecayState.decay_level",
+        "HexDecayState.claimable_since_block"
+      ]
     },
     {
       id: "explorer_hex_inspect_v1",
@@ -38,6 +50,7 @@ export const toriiViewsManifestV1: ToriiViewsManifest = {
         "HexArea.area_id",
         "AreaOwnership.owner_adventurer_id",
         "HexDecayState.decay_level",
+        "HexDecayState.claimable_since_block",
         "ClaimEscrow.claim_id",
         "PlantNode.plant_id",
         "HarvestReservation.reservation_id",

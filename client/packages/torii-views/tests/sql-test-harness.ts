@@ -121,7 +121,7 @@ function seedTables(): SeededTables {
       { area_id: "area-4", owner_adventurer_id: "adv-owner-c", claim_block: 12 }
     ],
     decay: [
-      { hex_coordinate: "0x1", owner_adventurer_id: "adv-owner-a", current_energy_reserve: 120, last_decay_processed_block: 10, decay_level: 40, claimable_since_block: 0 },
+      { hex_coordinate: "0x1", owner_adventurer_id: "adv-owner-a", current_energy_reserve: 120, last_decay_processed_block: 10, decay_level: 85, claimable_since_block: 0 },
       { hex_coordinate: "0x3", owner_adventurer_id: "adv-owner-b", current_energy_reserve: 80, last_decay_processed_block: 12, decay_level: 85, claimable_since_block: 12 }
     ],
     claims: [
@@ -271,7 +271,7 @@ function buildViews(seed: SeededTables): Map<string, Record<string, unknown>[]> 
         biome: hex.biome,
         owner_adventurer_id: control?.controller_adventurer_id ?? null,
         decay_level: decay?.decay_level ?? 0,
-        is_claimable: (decay?.decay_level ?? 0) >= 80 ? 1 : 0,
+        is_claimable: (decay?.claimable_since_block ?? 0) > 0 ? 1 : 0,
         active_claim_count: activeClaimsByHex.get(hex.coordinate)?.length ?? 0,
         adventurer_count: adventurersByHex.get(hex.coordinate)?.length ?? 0,
         plant_count: plantsByHex.get(hex.coordinate)?.length ?? 0

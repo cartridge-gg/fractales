@@ -1,0 +1,50 @@
+name: perf-hardening-gate
+
+on:
+  pull_request:
+    paths:
+      - "bun.lock"
+      - "package.json"
+      - "packages/**"
+      - "scripts/p5-hardening-gate.ts"
+      - "docs/p5-perf-runbook.md"
+      - ".github/workflows/perf-hardening-gate.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "bun.lock"
+      - "package.json"
+      - "packages/**"
+      - "scripts/p5-hardening-gate.ts"
+      - "docs/p5-perf-runbook.md"
+      - ".github/workflows/perf-hardening-gate.yml"
+
+jobs:
+  perf-hardening:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.1"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Deterministic replay gate
+        run: bun run test:deterministic-replay
+
+      - name: Freshness and perf smoke gate
+        run: bun run test:perf-smoke
+
+      - name: Upload hardening gate report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p5-hardening-gate-report
+          path: artifacts/p5-hardening-gate-report.json
+          if-no-files-found: warn

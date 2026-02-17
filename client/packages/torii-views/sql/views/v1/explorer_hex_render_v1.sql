@@ -6,7 +6,7 @@ SELECT
   h.biome AS biome,
   ac.controller_adventurer_id AS owner_adventurer_id,
   COALESCE(ds.decay_level, 0) AS decay_level,
-  CASE WHEN COALESCE(ds.decay_level, 0) >= 80 THEN 1 ELSE 0 END AS is_claimable,
+  CASE WHEN COALESCE(ds.claimable_since_block, 0) > 0 THEN 1 ELSE 0 END AS is_claimable,
   COALESCE(claims.active_claim_count, 0) AS active_claim_count,
   COALESCE(ap.adventurer_count, 0) AS adventurer_count,
   COALESCE(ps.plant_count, 0) AS plant_count

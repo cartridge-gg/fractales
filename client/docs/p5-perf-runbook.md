@@ -1,7 +1,7 @@
 # P5 Performance and Reliability Runbook
 
-Status: Draft  
-Last updated: 2026-02-16  
+Status: Active  
+Last updated: 2026-02-17  
 Owners: Client Platform + Game Infra
 
 ## 1. SLO Definitions
@@ -14,6 +14,10 @@ Client SLOs:
 Proxy/indexing SLOs:
 - Chunk query latency p95 within service budget.
 - Resync frequency remains below alert threshold for normal traffic windows.
+
+Runtime gate source of truth:
+- `scripts/p5-hardening-gate.ts` enforces thresholds and exits non-zero on regressions.
+- Default report output: `artifacts/p5-hardening-gate-report.json`.
 
 ## 2. Metrics and Dashboards
 
@@ -74,6 +78,7 @@ Run from `client/`:
 bun run typecheck
 bun run test
 bun run test:perf-smoke
+bun run test:hardening-gate
 ```
 
 Targeted package smoke:
@@ -82,3 +87,12 @@ Targeted package smoke:
 bun run --filter @gen-dungeon/explorer-renderer-webgl test:perf
 bun run --filter @gen-dungeon/explorer-data test:perf
 ```
+
+Custom report path:
+
+```bash
+bun run test:hardening-gate -- --report=artifacts/custom-hardening-report.json
+```
+
+CI workflow:
+- `.github/workflows/perf-hardening-gate.yml`

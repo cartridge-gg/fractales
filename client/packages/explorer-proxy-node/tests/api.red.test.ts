@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ChunkSnapshot, HexInspectPayload } from "@gen-dungeon/explorer-types";
+import type { ChunkSnapshot, EventTailRow, HexInspectPayload } from "@gen-dungeon/explorer-types";
 import type { ToriiViewsReader } from "@gen-dungeon/torii-views";
 import { createExplorerProxyApi } from "../src/api.js";
 
@@ -91,6 +91,52 @@ describe("proxy API adapter (RED)", () => {
     const api = createExplorerProxyApi({ reader });
 
     await expect(api.getHex("0xabc")).resolves.toEqual(payload);
+  });
+
+  it("hex.endpoint.merges_ordered_event_tail_from_reader.red", async () => {
+    const payload = makeInspectPayload("0xabc");
+    let eventTailQuery: { hexCoordinate?: string; limit: number } | null = null;
+    const reader: ToriiViewsReader = {
+      getChunks: async () => [],
+      getHexInspect: async () => payload,
+      search: async () => [],
+      getEventTail: async (query) => {
+        eventTailQuery = query;
+        const rows: EventTailRow[] = [
+          {
+            blockNumber: 120,
+            txIndex: 1,
+            eventIndex: 1,
+            eventName: "LateEvent",
+            payloadJson: "{}"
+          },
+          {
+            blockNumber: 119,
+            txIndex: 2,
+            eventIndex: 0,
+            eventName: "FirstEvent",
+            payloadJson: "{}"
+          },
+          {
+            blockNumber: 120,
+            txIndex: 0,
+            eventIndex: 9,
+            eventName: "MidEvent",
+            payloadJson: "{}"
+          }
+        ];
+        return rows;
+      }
+    };
+    const api = createExplorerProxyApi({ reader, eventTailLimit: 16 });
+
+    const result = await api.getHex("0xabc");
+    expect(eventTailQuery).toEqual({ hexCoordinate: "0xabc", limit: 16 });
+    expect(result.eventTail.map((row) => row.eventName)).toEqual([
+      "FirstEvent",
+      "MidEvent",
+      "LateEvent"
+    ]);
   });
 
   it("status endpoint returns explorer-v1 schema metadata", async () => {
