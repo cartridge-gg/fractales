@@ -9,6 +9,10 @@ import type {
   ConstructionProject,
   DeathRecord,
   HarvestReservation,
+  MineAccessGrant,
+  MineCollapseRecord,
+  MineNode,
+  MiningShift,
   Hex,
   HexArea,
   HexDecayState,
@@ -67,6 +71,10 @@ export interface HexInspectPayload {
   constructionProjects: ConstructionProject[];
   constructionEscrows: ConstructionMaterialEscrow[];
   deathRecords: DeathRecord[];
+  mineNodes: MineNode[];
+  miningShifts: MiningShift[];
+  mineAccessGrants: MineAccessGrant[];
+  mineCollapseRecords: MineCollapseRecord[];
   eventTail: EventTailRow[];
 }
 

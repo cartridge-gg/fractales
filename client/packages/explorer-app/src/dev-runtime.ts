@@ -271,6 +271,10 @@ export class MockProxyClient implements ExplorerProxyClient {
       constructionProjects: [],
       constructionEscrows: [],
       deathRecords: [],
+      mineNodes: [],
+      miningShifts: [],
+      mineAccessGrants: [],
+      mineCollapseRecords: [],
       eventTail: row ? eventTail : []
     };
   }

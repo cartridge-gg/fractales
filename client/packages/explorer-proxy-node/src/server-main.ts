@@ -95,6 +95,10 @@ function createStubReader(): ToriiViewsReader {
         constructionProjects: [],
         constructionEscrows: [],
         deathRecords: [],
+        mineNodes: [],
+        miningShifts: [],
+        mineAccessGrants: [],
+        mineCollapseRecords: [],
         eventTail: []
       };
     },

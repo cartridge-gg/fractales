@@ -42,6 +42,10 @@ function createApiStub(): ExplorerProxyApi {
         constructionProjects: [],
         constructionEscrows: [],
         deathRecords: [],
+        mineNodes: [],
+        miningShifts: [],
+        mineAccessGrants: [],
+        mineCollapseRecords: [],
         eventTail: []
       };
     },

@@ -374,6 +374,8 @@ function patchTouchesHex(
   patch: StreamPatchEnvelope,
   hexCoordinate: HexCoordinate
 ): boolean {
+  const normalizedTarget = normalizeCoordinate(hexCoordinate);
+
   if (patch.kind === "chunk_snapshot") {
     const snapshot = patch.payload as Partial<ChunkSnapshot>;
     if (!Array.isArray(snapshot.hexes)) {
@@ -383,24 +385,90 @@ function patchTouchesHex(
     return snapshot.hexes.some((hex) => {
       return (
         typeof hex?.hexCoordinate === "string" &&
-        normalizeCoordinate(hex.hexCoordinate) === normalizeCoordinate(hexCoordinate)
+        normalizeCoordinate(hex.hexCoordinate) === normalizedTarget
       );
     });
   }
 
-  if (patch.kind === "hex_patch") {
-    const payload = patch.payload as {
-      hex?: { hexCoordinate?: unknown };
-      row?: { hexCoordinate?: unknown };
-    };
-    const candidate = payload.hex?.hexCoordinate ?? payload.row?.hexCoordinate;
-    return (
-      typeof candidate === "string" &&
-      normalizeCoordinate(candidate as HexCoordinate) === normalizeCoordinate(hexCoordinate)
-    );
+  if (patch.kind === "resync_required" || patch.kind === "heartbeat") {
+    return false;
   }
 
-  return false;
+  const coordinates = extractPatchHexCoordinates(patch.payload);
+  return coordinates.some((candidate) => normalizeCoordinate(candidate) === normalizedTarget);
+}
+
+function extractPatchHexCoordinates(payload: unknown): HexCoordinate[] {
+  const coordinates = new Set<string>();
+  collectPatchHexCoordinates(payload, coordinates, 0);
+  return [...coordinates];
+}
+
+function collectPatchHexCoordinates(
+  value: unknown,
+  coordinates: Set<string>,
+  depth: number
+): void {
+  if (depth > 4 || value === null || value === undefined) {
+    return;
+  }
+
+  if (Array.isArray(value)) {
+    for (const entry of value) {
+      collectPatchHexCoordinates(entry, coordinates, depth + 1);
+    }
+    return;
+  }
+
+  if (typeof value !== "object") {
+    return;
+  }
+
+  const row = value as Record<string, unknown>;
+  addCoordinateCandidate(row.hexCoordinate, coordinates);
+  addCoordinateCandidate(row.hex_coordinate, coordinates);
+  addCoordinateCandidate(row.current_hex, coordinates);
+  addCoordinateCandidate(row.currentHex, coordinates);
+
+  const explicitNestedKeys = [
+    "row",
+    "hex",
+    "claim",
+    "plant",
+    "adventurer",
+    "reservation",
+    "shift",
+    "mine",
+    "area",
+    "hexes"
+  ] as const;
+
+  for (const key of explicitNestedKeys) {
+    if (key in row) {
+      collectPatchHexCoordinates(row[key], coordinates, depth + 1);
+    }
+  }
+
+  if (depth < 2) {
+    for (const nested of Object.values(row)) {
+      if (nested && typeof nested === "object") {
+        collectPatchHexCoordinates(nested, coordinates, depth + 1);
+      }
+    }
+  }
+}
+
+function addCoordinateCandidate(value: unknown, coordinates: Set<string>): void {
+  if (typeof value !== "string") {
+    return;
+  }
+
+  const candidate = value.trim();
+  if (candidate.length === 0) {
+    return;
+  }
+
+  coordinates.add(candidate);
 }
 
 function normalizeCoordinate(value: HexCoordinate): string {
