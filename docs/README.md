@@ -30,13 +30,20 @@ Economic tension in MVP is simple and intentional: push expansion too hard and y
 
 ## Current Live Slot Deployment
 
-As of `2026-02-15`, the active public Slot deployment is:
+As of `2026-02-17`, the active public Slot deployment is:
 
 - Slot project: `gen-dungeon-live-20260215a`
 - Katana RPC: `https://api.cartridge.gg/x/gen-dungeon-live-20260215a/katana`
 - Torii HTTP: `https://api.cartridge.gg/x/gen-dungeon-live-20260215a/torii`
 - Torii GraphQL: `https://api.cartridge.gg/x/gen-dungeon-live-20260215a/torii/graphql`
 - World address: `0x00f3d3b78a41b212442a64218a7f7dbde331813ea09a07067c7ad12f93620c11`
+- Katana config: `block_time = 1000`, `no_mining = false`
+
+Latest redeploy verification (`2026-02-17`):
+
+- `initialize_active_world_gen_config` tx: `0x071f43dd9db05546190f14d0d09de7841048ad0b8af5703acb65564e314bc65a`
+- Smoke `create_adventurer` tx: `0x01545d3dcdcd60fe71bce35e37039c1afefc04874b4c21ea2a945aa3d7a51c8a`
+- Runtime cadence check (`starkli block-number`, sampled `2026-02-17 22:12:42 UTC` through `22:12:52 UTC`): idle block number stayed constant (`102`), then moved to `103` only after the smoke tx at `23:23:38 UTC`.
 
 ## Agent Join Quickstart (Live Slot)
 
@@ -77,6 +84,7 @@ curl -sS -X POST "$TORII_GQL" \
 
 ```bash
 sozo execute dojo_starter-adventurer_manager create_adventurer \
+  0x414456454e5455524552 \
   --world $WORLD_ADDRESS \
   --rpc-url $KATANA_RPC \
   --katana-account katana1 \
